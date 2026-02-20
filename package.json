@@ -10,7 +10,8 @@
     "Other"
   ],
   "activationEvents": [
-    "onCommand:npm-gui-manager.openManager"
+    "onCommand:npm-visual-manager.openManager",
+    "onView:npm-visual-manager.sidebar"
   ],
   "main": "./out/extension.js",
   "contributes": {
@@ -19,8 +20,32 @@
         "command": "npm-visual-manager.openManager",
         "title": "Open NPM Package Manager",
         "icon": "$(package)"
+      },
+      {
+        "command": "npm-visual-manager.refresh",
+        "title": "Refresh Dependencies",
+        "icon": "$(refresh)"
       }
     ],
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "npm-visual-manager",
+          "title": "NPM Visual Manager",
+          "icon": "$(package)"
+        }
+      ]
+    },
+    "views": {
+      "npm-visual-manager": [
+        {
+          "type": "webview",
+          "id": "npm-visual-manager.sidebar",
+          "name": "Dependencies",
+          "contextualTitle": "NPM Dependencies"
+        }
+      ]
+    },
     "menus": {
       "commandPalette": [
         {
@@ -31,6 +56,13 @@
         {
           "command": "npm-visual-manager.openManager",
           "when": "resourceFilename == package.json",
+          "group": "navigation"
+        }
+      ],
+      "view/title": [
+        {
+          "command": "npm-visual-manager.refresh",
+          "when": "view == npm-visual-manager.sidebar",
           "group": "navigation"
         }
       ]
