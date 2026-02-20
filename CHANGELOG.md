@@ -2,6 +2,13 @@
 
 All notable changes to the "npm-visual-manager" extension will be documented in this file.
 
+## [0.1.1] - 2026-02-20
+
+### Added
+- Extension icon for marketplace
+- Gallery banner configuration
+- Marketplace badges
+
 ## [0.1.0] - 2026-02-20
 
 ### Added
