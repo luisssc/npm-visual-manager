@@ -74,13 +74,16 @@ function App() {
         break;
 
       case 'UPDATE_RESULT':
-        setProgressMessage(message.success ? null : message.message);
+        // Always clear progress message on update result
+        setProgressMessage(null);
         if (!message.success) {
           setError(message.message);
         }
         break;
 
       case 'ROLLBACK_RESULT':
+        // Clear progress message first
+        setProgressMessage(null);
         if (!message.success) {
           setError(message.message);
         } else {
@@ -207,6 +210,7 @@ function App() {
           dependencies={dependencies}
           onUpdatePackage={handleUpdatePackage}
           onUpdateAll={handleUpdateAll}
+          onRefresh={handleRetry}
           isLoading={isLoading}
           columnConfig={columnConfig}
           showAllPackages={showAllPackages}

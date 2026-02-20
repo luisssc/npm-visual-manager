@@ -318,10 +318,10 @@ export class NpmGuiManagerPanel {
       // Then send install command
       terminal.sendText(installCmd, true);
 
-      // Esperar un poco y recargar dependencias
+      // Esperar a que npm termine y recargar dependencias
       setTimeout(async () => {
         await this._loadDependencies();
-      }, 3000);
+      }, 5000);
 
       this._sendMessage({
         type: 'UPDATE_RESULT',
@@ -381,7 +381,7 @@ export class NpmGuiManagerPanel {
 
       setTimeout(async () => {
         await this._loadDependencies();
-      }, 5000);
+      }, 8000);
 
       vscode.window.showInformationMessage(`Updating ${packages.length} package(s)...`);
     } catch (error) {
@@ -441,7 +441,7 @@ export class NpmGuiManagerPanel {
 
       setTimeout(async () => {
         await this._loadDependencies();
-      }, 5000);
+      }, 8000);
 
       this._sendMessage({
         type: 'ROLLBACK_RESULT',

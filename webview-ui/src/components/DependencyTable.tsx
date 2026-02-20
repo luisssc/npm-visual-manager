@@ -13,6 +13,7 @@ interface DependencyTableProps {
   dependencies: Dependency[];
   onUpdatePackage: (packageName: string, version: string, currentVersion?: string) => void;
   onUpdateAll: (packages: { name: string; version: string; currentVersion?: string }[]) => void;
+  onRefresh?: () => void;
   isLoading: boolean;
   columnConfig: ColumnConfig;
   showAllPackages: boolean;
@@ -65,6 +66,7 @@ export const DependencyTable = ({
   dependencies,
   onUpdatePackage,
   onUpdateAll,
+  onRefresh,
   isLoading,
   columnConfig,
   showAllPackages,
@@ -231,6 +233,16 @@ export const DependencyTable = ({
             onChange={(e) => setFilter(e.target.value)}
             className="filter-input"
           />
+          {onRefresh && (
+            <button 
+              className="refresh-btn"
+              onClick={onRefresh}
+              disabled={isLoading}
+              title="Refresh dependencies"
+            >
+              <span>↻</span>
+            </button>
+          )}
           {(nodeVersion || packageManager) && (
             <div className="env-info">
               {nodeVersion && (
@@ -410,7 +422,7 @@ export const DependencyTable = ({
                   {columnConfig.lastUpdate && (
                     <td className="date-cell">
                       {dep.lastPublishDate ? (
-                        <Tooltip text={new Date(dep.lastPublishDate).toLocaleDateString()}>
+                        <Tooltip text={new Date(dep.lastPublishDate).toLocaleDateString('en-GB')}>
                           <span className="date-text">
                             {formatDate(dep.lastPublishDate)}
                           </span>
