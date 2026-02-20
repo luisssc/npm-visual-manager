@@ -312,7 +312,11 @@ export class NpmGuiManagerPanel {
       const installCmd = getInstallCommand(this._currentPackageManager, packageName, version);
       const terminal = this._getOrCreateTerminal();
       terminal.show();
-      terminal.sendText(`cd "${this._currentProjectPath}" && ${installCmd}`, true);
+      
+      // Send cd command first (works on all platforms)
+      terminal.sendText(`cd "${this._currentProjectPath}"`, true);
+      // Then send install command
+      terminal.sendText(installCmd, true);
 
       // Esperar un poco y recargar dependencias
       setTimeout(async () => {
@@ -369,7 +373,11 @@ export class NpmGuiManagerPanel {
       const info = getPackageManagerInfo(this._currentPackageManager);
       const terminal = this._getOrCreateTerminal();
       terminal.show();
-      terminal.sendText(`cd "${this._currentProjectPath}" && ${info.addCommand} ${packageList}`, true);
+      
+      // Send cd command first (works on all platforms)
+      terminal.sendText(`cd "${this._currentProjectPath}"`, true);
+      // Then send install command
+      terminal.sendText(`${info.addCommand} ${packageList}`, true);
 
       setTimeout(async () => {
         await this._loadDependencies();
@@ -421,7 +429,11 @@ export class NpmGuiManagerPanel {
       
       // Install previous versions
       const installArgs = packagesToRollback.map(p => `${p.name}@${p.previousVersion}`).join(' ');
-      terminal.sendText(`cd "${this._currentProjectPath}" && ${info.addCommand} ${installArgs}`, true);
+      
+      // Send cd command first (works on all platforms)
+      terminal.sendText(`cd "${this._currentProjectPath}"`, true);
+      // Then send install command
+      terminal.sendText(`${info.addCommand} ${installArgs}`, true);
 
       // Clear history after successful rollback
       const rolledBackPackages = packagesToRollback.map(p => p.name);
