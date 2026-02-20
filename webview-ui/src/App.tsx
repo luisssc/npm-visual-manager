@@ -169,17 +169,6 @@ function App() {
           ) : (
             <span className="package-name">{packageName}</span>
           )}
-          <div className="version-info">
-            {versions && (
-              <span className="version-badge" title={`Node.js v${versions.nodeVersion}`}>
-                ⬢ v{versions.nodeVersion}
-              </span>
-            )}
-            <span className={`package-manager-badge pm-${packageManager}`}>
-              {packageManager}
-              {versions && <span className="pm-version">v{versions.packageManagerVersion}</span>}
-            </span>
-          </div>
           <button 
             className="toggle-packages-btn"
             onClick={() => setShowAllPackages(!showAllPackages)}
@@ -198,6 +187,9 @@ function App() {
           isLoading={isLoading}
           columnConfig={columnConfig}
           showAllPackages={showAllPackages}
+          nodeVersion={versions?.nodeVersion}
+          packageManager={packageManager}
+          packageManagerVersion={versions?.packageManagerVersion}
         />
       </main>
     </div>

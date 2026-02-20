@@ -9,6 +9,9 @@ interface DependencyTableProps {
   isLoading: boolean;
   columnConfig: ColumnConfig;
   showAllPackages: boolean;
+  nodeVersion?: string;
+  packageManager?: string;
+  packageManagerVersion?: string;
 }
 
 type SortColumn = 'name' | 'installedVersion' | 'latestVersion' | 'type' | 'size' | 'lastPublishDate' | 'hasVulnerabilities';
@@ -54,7 +57,10 @@ export const DependencyTable = ({
   onUpdateAll,
   isLoading,
   columnConfig,
-  showAllPackages
+  showAllPackages,
+  nodeVersion,
+  packageManager,
+  packageManagerVersion
 }: DependencyTableProps) => {
   const [sortColumn, setSortColumn] = useState<SortColumn>('name');
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
@@ -174,6 +180,21 @@ export const DependencyTable = ({
             onChange={(e) => setFilter(e.target.value)}
             className="filter-input"
           />
+          {(nodeVersion || packageManager) && (
+            <div className="env-info">
+              {nodeVersion && (
+                <span className="env-badge node-badge" title={`Node.js v${nodeVersion}`}>
+                  ⬢ v{nodeVersion}
+                </span>
+              )}
+              {packageManager && (
+                <span className={`env-badge pm-badge pm-${packageManager}`}>
+                  {packageManager}
+                  {packageManagerVersion && <span className="pm-version">v{packageManagerVersion}</span>}
+                </span>
+              )}
+            </div>
+          )}
         </div>
         {updateCount > 0 && (
           <button 
@@ -181,7 +202,6 @@ export const DependencyTable = ({
             onClick={handleUpdateAll}
             disabled={isLoading}
           >
-            <span className="download-icon">⬇</span>
             Update All ({updateCount})
           </button>
         )}

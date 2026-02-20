@@ -86,8 +86,57 @@
   cursor: not-allowed;
 }
 
-.download-icon {
-  font-size: 14px;
+.env-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: 12px;
+  padding-left: 12px;
+  border-left: 1px solid var(--border-color);
+}
+
+.env-badge {
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-family: var(--vscode-editor-font-family, monospace);
+  white-space: nowrap;
+}
+
+.node-badge {
+  background: color-mix(in srgb, #68a063 20%, transparent);
+  color: #68a063;
+}
+
+.pm-badge {
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.pm-badge.npm {
+  background: color-mix(in srgb, #cb3837 20%, transparent);
+  color: #cb3837;
+}
+
+.pm-badge.yarn {
+  background: color-mix(in srgb, #2c8ebb 20%, transparent);
+  color: #2c8ebb;
+}
+
+.pm-badge.pnpm {
+  background: color-mix(in srgb, #f69220 20%, transparent);
+  color: #f69220;
+}
+
+.pm-badge.bun {
+  background: color-mix(in srgb, #f9f1e1 40%, transparent);
+  color: #8B4513;
+}
+
+.pm-version {
+  margin-left: 4px;
+  opacity: 0.8;
+  font-weight: 400;
 }
 
 /* Table */
@@ -192,12 +241,20 @@
 
 .security-col {
   width: 80px;
-  text-align: center;
+  text-align: center !important;
+}
+
+.security-cell {
+  text-align: center !important;
 }
 
 .action-col {
   width: 80px;
-  text-align: center;
+  text-align: center !important;
+}
+
+.action-cell {
+  text-align: center !important;
 }
 
 /* Package name cell */
