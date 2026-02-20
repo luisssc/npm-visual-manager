@@ -9,7 +9,8 @@ import { Dependency, WebviewToHostMessage, HostToWebviewMessage, ColumnConfig } 
 import { findPackageJson, readPackageJson, extractDependencies } from './packageService';
 import { getPackageDetails, isUpdateAvailable, getSemverUpdateType } from './npmService';
 import { findAllProjects, Project } from './workspaceService';
-import { runNpmAudit, hasVulnerabilities, getPackageVulnerabilityCount } from './auditService';
+import { runAudit, hasVulnerabilities, getPackageVulnerabilityCount, detectPackageManager } from './auditService';
+import { getInstallCommand, getPackageManagerInfo, PackageManager } from './packageManagerService';
 
 export class NpmGuiManagerPanel {
   public static currentPanel: NpmGuiManagerPanel | undefined;
@@ -19,6 +20,7 @@ export class NpmGuiManagerPanel {
   private _workspaceRoot: string;
   private _projects: Project[] = [];
   private _currentProjectPath: string;
+  private _currentPackageManager: PackageManager = 'npm';
 
   public static async createOrShow(extensionUri: vscode.Uri, workspaceRoot: string): Promise<void> {
     const column = vscode.window.activeTextEditor
@@ -167,10 +169,13 @@ export class NpmGuiManagerPanel {
       const packageJson = await readPackageJson(packageJsonPath);
       let dependencies = extractDependencies(packageJson, this._currentProjectPath);
       const columnConfig = this._getColumnConfig();
+      
+      // Detect package manager for this project
+      this._currentPackageManager = await detectPackageManager(this._currentProjectPath);
 
-      // Run npm audit to get real vulnerability data (silently)
+      // Run security audit (silently)
       try {
-        const auditResult = await runNpmAudit(this._currentProjectPath);
+        const auditResult = await runAudit(this._currentProjectPath);
         
         // Add vulnerability info to dependencies
         dependencies = dependencies.map(dep => ({
@@ -193,7 +198,8 @@ export class NpmGuiManagerPanel {
         packageName: displayName,
         columnConfig,
         projects: this._projects.map(p => ({ name: p.name, path: p.path, relativePath: p.relativePath })),
-        currentProjectPath: this._currentProjectPath
+        currentProjectPath: this._currentProjectPath,
+        packageManager: this._currentPackageManager
       });
 
       // Update panel title with project name
@@ -279,10 +285,11 @@ export class NpmGuiManagerPanel {
     });
 
     try {
-      // Use the project path for npm install
+      // Use detected package manager
+      const installCmd = getInstallCommand(this._currentPackageManager, packageName, version);
       const terminal = this._getOrCreateTerminal();
       terminal.show();
-      terminal.sendText(`cd "${this._currentProjectPath}" && npm install ${packageName}@${version}`, true);
+      terminal.sendText(`cd "${this._currentProjectPath}" && ${installCmd}`, true);
 
       // Esperar un poco y recargar dependencias
       setTimeout(async () => {
@@ -322,9 +329,11 @@ export class NpmGuiManagerPanel {
     });
 
     try {
+      // Use detected package manager
+      const info = getPackageManagerInfo(this._currentPackageManager);
       const terminal = this._getOrCreateTerminal();
       terminal.show();
-      terminal.sendText(`cd "${this._currentProjectPath}" && npm install ${packageList}`, true);
+      terminal.sendText(`cd "${this._currentProjectPath}" && ${info.addCommand} ${packageList}`, true);
 
       setTimeout(async () => {
         await this._loadDependencies();

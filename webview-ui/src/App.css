@@ -66,6 +66,35 @@
   background: var(--vscode-button-secondaryHoverBackground);
 }
 
+.package-manager-badge {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  padding: 2px 8px;
+  border-radius: 3px;
+  letter-spacing: 0.5px;
+}
+
+.pm-npm {
+  background: #cb3837;
+  color: white;
+}
+
+.pm-yarn {
+  background: #2c8ebb;
+  color: white;
+}
+
+.pm-pnpm {
+  background: #f69220;
+  color: white;
+}
+
+.pm-bun {
+  background: #f9f1e1;
+  color: #14151a;
+}
+
 .app-content {
   flex: 1;
   overflow: hidden;

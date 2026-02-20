@@ -1,9 +1,10 @@
 /**
- * Service for running npm audit and parsing results
+ * Service for running security audits using the detected package manager
  */
 
 import { exec } from 'child_process';
 import { promisify } from 'util';
+import { detectPackageManager, getAuditCommand, parseAuditOutput, PackageManager } from './packageManagerService';
 
 const execAsync = promisify(exec);
 
@@ -32,123 +33,74 @@ export interface AuditResult {
 }
 
 /**
- * Run npm audit and parse the results
+ * Run security audit using the detected package manager
  */
-export async function runNpmAudit(projectPath: string): Promise<AuditResult> {
+export async function runAudit(projectPath: string): Promise<AuditResult> {
+  const packageManager = await detectPackageManager(projectPath);
+  const auditCommand = getAuditCommand(packageManager);
+  
   try {
-    const { stdout } = await execAsync('npm audit --json', {
+    const { stdout } = await execAsync(auditCommand, {
       cwd: projectPath,
       timeout: 60000,
-      maxBuffer: 10 * 1024 * 1024 // 10MB buffer for large audits
+      maxBuffer: 10 * 1024 * 1024 // 10MB buffer
     });
 
-    return parseAuditResult(stdout);
+    const parsed = parseAuditOutput(packageManager, stdout);
+    
+    return {
+      vulnerabilities: parsed.vulnerabilities.map(v => ({
+        ...v,
+        overview: v.title
+      })),
+      metadata: {
+        vulnerabilities: parsed.metadata.vulnerabilities,
+        totalDependencies: 0 // Not available in all formats
+      }
+    };
   } catch (error) {
-    // npm audit returns exit code 1 when vulnerabilities are found
-    // but still outputs valid JSON
+    // Package managers return exit code 1 when vulnerabilities are found
+    // but still output valid data
     if (error instanceof Error && 'stdout' in error) {
       const stdout = (error as { stdout: string }).stdout;
       if (stdout) {
-        return parseAuditResult(stdout);
+        const parsed = parseAuditOutput(packageManager, stdout);
+        return {
+          vulnerabilities: parsed.vulnerabilities.map(v => ({
+            ...v,
+            overview: v.title
+          })),
+          metadata: {
+            vulnerabilities: parsed.metadata.vulnerabilities,
+            totalDependencies: 0
+          }
+        };
       }
     }
-    throw error;
+    // Return empty result if audit fails
+    return {
+      vulnerabilities: [],
+      metadata: {
+        vulnerabilities: { info: 0, low: 0, moderate: 0, high: 0, critical: 0 },
+        totalDependencies: 0
+      }
+    };
   }
-}
-
-function parseAuditResult(jsonOutput: string): AuditResult {
-  const audit = JSON.parse(jsonOutput);
-  
-  const vulnerabilities: Vulnerability[] = [];
-  
-  // Parse advisories (npm 6/7 format)
-  if (audit.advisories) {
-    for (const [id, advisory] of Object.entries(audit.advisories)) {
-      const adv = advisory as {
-        module_name: string;
-        title: string;
-        severity: string;
-        vulnerable_versions: string;
-        patched_versions: string;
-        overview: string;
-      };
-      vulnerabilities.push({
-        id,
-        title: adv.title,
-        severity: adv.severity as Vulnerability['severity'],
-        packageName: adv.module_name,
-        vulnerableVersions: adv.vulnerable_versions,
-        patchedVersions: adv.patched_versions,
-        overview: adv.overview
-      });
-    }
-  }
-  
-  // Parse vulnerabilities (npm 8+ format)
-  if (audit.vulnerabilities) {
-    for (const [packageName, vuln] of Object.entries(audit.vulnerabilities)) {
-      const v = vuln as {
-        severity: string;
-        via: Array<{ title: string; range: string }> | string;
-        effects: string[];
-        nodes: string[];
-        fixAvailable: boolean;
-      };
-      
-      const title = Array.isArray(v.via) && v.via.length > 0 && typeof v.via[0] === 'object' 
-        ? v.via[0].title 
-        : `Vulnerability in ${packageName}`;
-        
-      const vulnerableVersions = Array.isArray(v.via) && v.via.length > 0 && typeof v.via[0] === 'object'
-        ? v.via[0].range
-        : '*';
-      
-      vulnerabilities.push({
-        id: `${packageName}-${v.severity}`,
-        title,
-        severity: v.severity as Vulnerability['severity'],
-        packageName,
-        vulnerableVersions,
-        patchedVersions: v.fixAvailable ? 'Available' : 'Not available',
-        overview: title
-      });
-    }
-  }
-
-  const metadata = audit.metadata || {
-    vulnerabilities: { info: 0, low: 0, moderate: 0, high: 0, critical: 0 },
-    totalDependencies: 0
-  };
-
-  return {
-    vulnerabilities,
-    metadata: {
-      vulnerabilities: metadata.vulnerabilities || { info: 0, low: 0, moderate: 0, high: 0, critical: 0 },
-      totalDependencies: metadata.totalDependencies || 0
-    }
-  };
-}
-
-/**
- * Get vulnerability count for a specific package
- */
-export function getPackageVulnerabilityCount(
-  auditResult: AuditResult, 
-  packageName: string
-): number {
-  return auditResult.vulnerabilities.filter(v => 
-    v.packageName === packageName
-  ).length;
 }
 
 /**
  * Check if a package has vulnerabilities
  */
-export function hasVulnerabilities(
-  auditResult: AuditResult,
-  packageName: string
-): boolean {
-  return auditResult.vulnerabilities.some(v => 
-    v.packageName === packageName
-  );
+export function hasVulnerabilities(auditResult: AuditResult, packageName: string): boolean {
+  return auditResult.vulnerabilities.some(v => v.packageName === packageName);
 }
+
+/**
+ * Get vulnerability count for a specific package
+ */
+export function getPackageVulnerabilityCount(auditResult: AuditResult, packageName: string): number {
+  return auditResult.vulnerabilities.filter(v => v.packageName === packageName).length;
+}
+
+// Re-export for convenience
+export { detectPackageManager, PackageManager };
