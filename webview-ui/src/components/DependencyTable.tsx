@@ -115,6 +115,15 @@ export const DependencyTable = ({
 
     // Sort
     result.sort((a, b) => {
+      // If showing all packages, always show updates at the top
+      if (showAllPackages) {
+        const aUpdate = a.updateAvailable ? 1 : 0;
+        const bUpdate = b.updateAvailable ? 1 : 0;
+        if (aUpdate !== bUpdate) {
+          return bUpdate - aUpdate; // Updates (1) before no-updates (0)
+        }
+      }
+
       let comparison = 0;
       switch (sortColumn) {
         case 'name':
