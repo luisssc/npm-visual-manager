@@ -1,5 +1,5 @@
-import React, { useState, useMemo } from 'react';
-import { Dependency } from '../types';
+import { useState, useMemo } from 'react';
+import { Dependency, SemverUpdateType } from '../types';
 import './DependencyTable.css';
 
 interface DependencyTableProps {
@@ -9,15 +9,49 @@ interface DependencyTableProps {
   isLoading: boolean;
 }
 
-type SortColumn = 'name' | 'installedVersion' | 'latestVersion' | 'type';
+type SortColumn = 'name' | 'installedVersion' | 'latestVersion' | 'type' | 'size' | 'lastPublishDate' | 'hasVulnerabilities';
 type SortDirection = 'asc' | 'desc';
 
-export const DependencyTable: React.FC<DependencyTableProps> = ({
+const getSemverColor = (type: SemverUpdateType | undefined): string => {
+  switch (type) {
+    case 'major': return 'var(--vscode-errorForeground, #f44336)';
+    case 'minor': return 'var(--vscode-warningForeground, #ff9800)';
+    case 'patch': return 'var(--vscode-testing-iconPassed, #4caf50)';
+    default: return 'var(--vscode-descriptionForeground, #888)';
+  }
+};
+
+const getSemverLabel = (type: SemverUpdateType | undefined): string => {
+  switch (type) {
+    case 'major': return 'MAJOR';
+    case 'minor': return 'MINOR';
+    case 'patch': return 'PATCH';
+    default: return '';
+  }
+};
+
+const formatDate = (dateString: string | undefined): string => {
+  if (!dateString) {return '-';}
+  const date = new Date(dateString);
+  const now = new Date();
+  const diffTime = Math.abs(now.getTime() - date.getTime());
+  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+  
+  if (diffDays < 30) {
+    return `${diffDays}d ago`;
+  } else if (diffDays < 365) {
+    return `${Math.floor(diffDays / 30)}mo ago`;
+  } else {
+    return `${Math.floor(diffDays / 365)}y ago`;
+  }
+};
+
+export const DependencyTable = ({
   dependencies,
   onUpdatePackage,
   onUpdateAll,
   isLoading
-}) => {
+}: DependencyTableProps) => {
   const [sortColumn, setSortColumn] = useState<SortColumn>('name');
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
   const [filter, setFilter] = useState('');
@@ -85,6 +119,15 @@ export const DependencyTable: React.FC<DependencyTableProps> = ({
           break;
         case 'type':
           comparison = a.type.localeCompare(b.type);
+          break;
+        case 'size':
+          comparison = (a.size || '').localeCompare(b.size || '');
+          break;
+        case 'lastPublishDate':
+          comparison = (a.lastPublishDate || '').localeCompare(b.lastPublishDate || '');
+          break;
+        case 'hasVulnerabilities':
+          comparison = (a.hasVulnerabilities ? 1 : 0) - (b.hasVulnerabilities ? 1 : 0);
           break;
       }
       return sortDirection === 'asc' ? comparison : -comparison;
@@ -158,13 +201,22 @@ export const DependencyTable: React.FC<DependencyTableProps> = ({
               <th onClick={() => handleSort('latestVersion')} className="sortable version-col">
                 Latest {getSortIndicator('latestVersion')}
               </th>
+              <th className="sortable update-type-col">
+                Update
+              </th>
+              <th onClick={() => handleSort('lastPublishDate')} className="sortable date-col">
+                Last Update {getSortIndicator('lastPublishDate')}
+              </th>
+              <th className="sortable security-col">
+                Security
+              </th>
               <th className="action-col">Action</th>
             </tr>
           </thead>
           <tbody>
             {sortedAndFilteredDeps.length === 0 ? (
               <tr>
-                <td colSpan={5} className="empty-state">
+                <td colSpan={8} className="empty-state">
                   {dependencies.length === 0 
                     ? 'No dependencies found in package.json'
                     : 'No packages match the current filter'
@@ -179,9 +231,6 @@ export const DependencyTable: React.FC<DependencyTableProps> = ({
                 >
                   <td className="package-name">
                     <span className="name">{dep.name}</span>
-                    {dep.updateAvailable && (
-                      <span className="update-badge">update</span>
-                    )}
                   </td>
                   <td className="type-cell">
                     <span className={`type-badge type-${dep.type}`}>
@@ -198,6 +247,38 @@ export const DependencyTable: React.FC<DependencyTableProps> = ({
                       </code>
                     ) : (
                       <span className="checking">checking...</span>
+                    )}
+                  </td>
+                  <td className="update-type-cell">
+                    {dep.updateAvailable && dep.semverUpdateType && dep.semverUpdateType !== 'none' && (
+                      <span 
+                        className="semver-badge"
+                        style={{ 
+                          backgroundColor: getSemverColor(dep.semverUpdateType),
+                          color: '#fff'
+                        }}
+                        title={`${getSemverLabel(dep.semverUpdateType)} update available`}
+                      >
+                        {getSemverLabel(dep.semverUpdateType)}
+                      </span>
+                    )}
+                  </td>
+                  <td className="date-cell">
+                    {dep.lastPublishDate ? (
+                      <span className="date-text" title={new Date(dep.lastPublishDate).toLocaleDateString()}>
+                        {formatDate(dep.lastPublishDate)}
+                      </span>
+                    ) : (
+                      <span className="checking">-</span>
+                    )}
+                  </td>
+                  <td className="security-cell">
+                    {dep.hasVulnerabilities ? (
+                      <span className="security-badge security-danger" title={`${dep.vulnerabilityCount || 1} vulnerabilities found`}>
+                        ⚠ {dep.vulnerabilityCount || 1}
+                      </span>
+                    ) : (
+                      <span className="security-badge security-safe">✓</span>
                     )}
                   </td>
                   <td className="action-cell">

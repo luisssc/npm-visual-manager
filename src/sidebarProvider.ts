@@ -6,7 +6,7 @@ import * as vscode from 'vscode';
 import * as path from 'path';
 import { Dependency, WebviewToHostMessage, HostToWebviewMessage } from './types';
 import { findPackageJson, readPackageJson, extractDependencies } from './packageService';
-import { getLatestVersion, isUpdateAvailable } from './npmService';
+import { getPackageDetails, isUpdateAvailable, getSemverUpdateType } from './npmService';
 
 export class NpmDependenciesProvider implements vscode.WebviewViewProvider {
   public static readonly viewType = 'npm-visual-manager.sidebar';
@@ -121,11 +121,15 @@ export class NpmDependenciesProvider implements vscode.WebviewViewProvider {
       const batch = dependencies.slice(i, i + batchSize);
       const promises = batch.map(async (dep) => {
         try {
-          const latestVersion = await getLatestVersion(dep.name);
+          const details = await getPackageDetails(dep.name);
+          const semverUpdateType = getSemverUpdateType(dep.installedVersion, details.latestVersion);
+          
           this._sendMessage({
             type: 'VERSION_CHECK_RESULT',
             dependency: dep,
-            latestVersion
+            latestVersion: details.latestVersion,
+            semverUpdateType,
+            lastPublishDate: details.lastPublishDate
           });
         } catch (error) {
           console.warn(`Failed to check version for ${dep.name}:`, error);

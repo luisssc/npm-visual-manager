@@ -30,7 +30,9 @@ function App() {
               ? {
                   ...dep,
                   latestVersion: message.latestVersion,
-                  updateAvailable: isUpdateAvailable(dep.installedVersion, message.latestVersion)
+                  updateAvailable: isUpdateAvailable(dep.installedVersion, message.latestVersion),
+                  semverUpdateType: message.semverUpdateType,
+                  lastPublishDate: message.lastPublishDate
                 }
               : dep
           )

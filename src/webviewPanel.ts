@@ -7,7 +7,7 @@ import * as path from 'path';
 import * as fs from 'fs';
 import { Dependency, WebviewToHostMessage, HostToWebviewMessage } from './types';
 import { findPackageJson, readPackageJson, extractDependencies } from './packageService';
-import { getLatestVersion, isUpdateAvailable } from './npmService';
+import { getPackageDetails, isUpdateAvailable, getSemverUpdateType, SemverUpdateType } from './npmService';
 
 export class NpmGuiManagerPanel {
   public static currentPanel: NpmGuiManagerPanel | undefined;
@@ -147,11 +147,15 @@ export class NpmGuiManagerPanel {
       const batch = dependencies.slice(i, i + batchSize);
       const promises = batch.map(async (dep) => {
         try {
-          const latestVersion = await getLatestVersion(dep.name);
+          const details = await getPackageDetails(dep.name);
+          const semverUpdateType = getSemverUpdateType(dep.installedVersion, details.latestVersion);
+          
           this._sendMessage({
             type: 'VERSION_CHECK_RESULT',
             dependency: dep,
-            latestVersion
+            latestVersion: details.latestVersion,
+            semverUpdateType,
+            lastPublishDate: details.lastPublishDate
           });
         } catch (error) {
           console.warn(`Failed to check version for ${dep.name}:`, error);

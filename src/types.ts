@@ -2,12 +2,20 @@
  * Tipos compartidos entre Extension Host y Webview
  */
 
+export type SemverUpdateType = 'major' | 'minor' | 'patch' | 'none' | 'unknown';
+
 export interface Dependency {
   name: string;
   installedVersion: string;
   latestVersion?: string;
   type: 'dependencies' | 'devDependencies' | 'peerDependencies';
   updateAvailable?: boolean;
+  semverUpdateType?: SemverUpdateType;
+  // New fields
+  size?: string;
+  lastPublishDate?: string;
+  hasVulnerabilities?: boolean;
+  vulnerabilityCount?: number;
 }
 
 export interface PackageJson {
@@ -29,6 +37,6 @@ export type WebviewToHostMessage =
 export type HostToWebviewMessage =
   | { type: 'DEPENDENCIES_DATA'; dependencies: Dependency[]; packageName: string }
   | { type: 'UPDATE_RESULT'; success: boolean; packageName: string; message: string }
-  | { type: 'VERSION_CHECK_RESULT'; dependency: Dependency; latestVersion: string }
+  | { type: 'VERSION_CHECK_RESULT'; dependency: Dependency; latestVersion: string; semverUpdateType?: SemverUpdateType; lastPublishDate?: string }
   | { type: 'ERROR'; message: string }
   | { type: 'PROGRESS'; message: string };

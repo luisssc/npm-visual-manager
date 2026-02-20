@@ -11,7 +11,19 @@ export interface NpmPackageInfo {
     [tag: string]: string;
   };
   versions: Record<string, unknown>;
+  time?: {
+    created: string;
+    modified: string;
+    [version: string]: string;
+  };
 }
+
+export interface PackageDetails {
+  latestVersion: string;
+  lastPublishDate?: string;
+}
+
+export type SemverUpdateType = 'major' | 'minor' | 'patch' | 'none' | 'unknown';
 
 /**
  * Obtiene la información de un paquete desde el registro de NPM
@@ -24,7 +36,7 @@ export function getPackageInfo(packageName: string): Promise<NpmPackageInfo> {
     const req = https.get(url, {
       headers: {
         'Accept': 'application/json',
-        'User-Agent': 'npm-gui-manager-vscode-extension'
+        'User-Agent': 'npm-visual-manager-vscode-extension'
       },
       timeout: 10000
     }, (res) => {
@@ -59,6 +71,27 @@ export function getPackageInfo(packageName: string): Promise<NpmPackageInfo> {
       reject(new Error(`Request timeout for package "${packageName}"`));
     });
   });
+}
+
+/**
+ * Obtiene los detalles de un paquete (versión y fecha)
+ */
+export async function getPackageDetails(packageName: string): Promise<PackageDetails> {
+  const info = await getPackageInfo(packageName);
+  const latestVersion = info['dist-tags'].latest;
+  
+  // Get the publish date for the latest version
+  let lastPublishDate: string | undefined;
+  if (info.time && info.time[latestVersion]) {
+    lastPublishDate = info.time[latestVersion];
+  } else if (info.time?.modified) {
+    lastPublishDate = info.time.modified;
+  }
+
+  return {
+    latestVersion,
+    lastPublishDate
+  };
 }
 
 /**
@@ -103,4 +136,33 @@ export function compareVersions(v1: string, v2: string): number {
  */
 export function isUpdateAvailable(installed: string, latest: string): boolean {
   return compareVersions(cleanVersion(installed), latest) < 0;
+}
+
+/**
+ * Determina el tipo de actualización semver (major, minor, patch)
+ */
+export function getSemverUpdateType(installed: string, latest: string): SemverUpdateType {
+  const cleanInstalled = cleanVersion(installed);
+  const cleanLatest = cleanVersion(latest);
+
+  const installedParts = cleanInstalled.split('.').map(Number);
+  const latestParts = cleanLatest.split('.').map(Number);
+
+  const major1 = installedParts[0] || 0;
+  const major2 = latestParts[0] || 0;
+  const minor1 = installedParts[1] || 0;
+  const minor2 = latestParts[1] || 0;
+  const patch1 = installedParts[2] || 0;
+  const patch2 = latestParts[2] || 0;
+
+  if (major1 !== major2) {
+    return major2 > major1 ? 'major' : 'unknown';
+  }
+  if (minor1 !== minor2) {
+    return minor2 > minor1 ? 'minor' : 'unknown';
+  }
+  if (patch1 !== patch2) {
+    return patch2 > patch1 ? 'patch' : 'unknown';
+  }
+  return 'none';
 }

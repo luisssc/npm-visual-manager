@@ -14,8 +14,9 @@
   --badge-bg: var(--vscode-badge-background);
   --badge-fg: var(--vscode-badge-foreground);
   --error-fg: var(--vscode-errorForeground);
-  --success-fg: var(--vscode-testing-iconPassed, #89d185);
-  --warning-fg: var(--vscode-editorWarning-foreground, #cca700);
+  --success-fg: var(--vscode-testing-iconPassed, #4caf50);
+  --warning-fg: var(--vscode-editorWarning-foreground, #ff9800);
+  --info-fg: var(--vscode-editorInfo-foreground, #2196f3);
   --focus-border: var(--vscode-focusBorder);
   
   background: var(--table-bg);
@@ -143,24 +144,38 @@
 }
 
 .dependency-table tbody tr.has-update {
-  background: color-mix(in srgb, var(--warning-fg) 8%, transparent);
+  background: color-mix(in srgb, var(--warning-fg) 5%, transparent);
 }
 
 .dependency-table tbody tr.has-update:hover {
-  background: color-mix(in srgb, var(--warning-fg) 15%, var(--row-hover-bg));
+  background: color-mix(in srgb, var(--warning-fg) 10%, var(--row-hover-bg));
 }
 
 /* Column widths */
 .type-col {
-  width: 80px;
+  width: 70px;
 }
 
 .version-col {
-  width: 120px;
+  width: 100px;
+}
+
+.update-type-col {
+  width: 70px;
+  text-align: center;
+}
+
+.date-col {
+  width: 100px;
+}
+
+.security-col {
+  width: 80px;
+  text-align: center;
 }
 
 .action-col {
-  width: 90px;
+  width: 80px;
   text-align: center;
 }
 
@@ -216,6 +231,54 @@
   font-size: 12px;
 }
 
+/* Semver badges */
+.semver-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 3px;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* Date cell */
+.date-cell .date-text {
+  color: var(--vscode-descriptionForeground, #888);
+  font-size: 12px;
+}
+
+.date-cell .checking {
+  color: var(--vscode-descriptionForeground, #888);
+  font-style: italic;
+  font-size: 12px;
+}
+
+/* Security badges */
+.security-cell {
+  text-align: center;
+}
+
+.security-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2px 8px;
+  border-radius: 3px;
+  font-size: 12px;
+  font-weight: 500;
+  gap: 4px;
+}
+
+.security-safe {
+  color: var(--success-fg);
+}
+
+.security-danger {
+  background: color-mix(in srgb, var(--error-fg) 15%, transparent);
+  color: var(--error-fg);
+}
+
 /* Action cell */
 .action-cell {
   text-align: center;
@@ -229,7 +292,7 @@
   border-radius: 2px;
   font-size: 12px;
   cursor: pointer;
-  min-width: 70px;
+  min-width: 60px;
 }
 
 .update-btn:hover:not(:disabled) {
