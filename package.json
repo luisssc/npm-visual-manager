@@ -1,8 +1,31 @@
 {
   "name": "npm-visual-manager",
   "displayName": "NPM Visual Manager",
-  "description": "Manage NPM dependencies with a visual interface like NuGet Package Manager",
+  "description": "Visual package manager for NPM dependencies with update checking, security audit, and bulk operations",
   "version": "0.1.0",
+  "publisher": "YOUR_PUBLISHER_NAME",
+  "author": {
+    "name": "Luis Clement Cremades"
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/luisssc/npm-visual-manager.git"
+  },
+  "bugs": {
+    "url": "https://github.com/luisssc/npm-visual-manager/issues"
+  },
+  "homepage": "https://github.com/luisssc/npm-visual-manager#readme",
+  "keywords": [
+    "npm",
+    "dependencies",
+    "packages",
+    "manager",
+    "update",
+    "audit",
+    "security",
+    "semver"
+  ],
   "engines": {
     "vscode": "^1.85.0"
   },

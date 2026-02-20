@@ -9,8 +9,14 @@ A Visual Studio Code extension that provides a visual interface for managing NPM
 - 📊 **Visual Dependency Table**: View all dependencies (production, development, and peer) in a clean, sortable table
 - 🔄 **Version Checking**: Automatically checks for latest versions from the NPM registry
 - ⬆️ **One-Click Updates**: Update individual packages or all outdated packages at once
+- 🛡️ **Security Audit**: Shows vulnerability counts from `npm audit`
+- ↩️ **Rollback Support**: Restore previous versions if an update breaks something
+- 🏢 **Multi-Project**: Detects all package.json files in monorepos
+- 📦 **Multiple Package Managers**: Auto-detects and uses npm, yarn, pnpm, or bun
+- 📏 **Package Size**: Shows estimated package sizes
+- 🏷️ **Semver Badges**: Visual indicators for MAJOR, MINOR, and PATCH updates
 - 🔍 **Filtering & Search**: Filter by dependency type and search by package name
-- 🎨 **Theme-Aware UI**: Uses VS Code's native CSS variables for seamless integration with any theme
+- 🎨 **Theme-Aware UI**: Uses VS Code's native CSS variables for seamless integration
 - ⚡ **Fast & Lightweight**: Built with React and Vite for optimal performance
 
 ## Requirements
@@ -124,11 +130,13 @@ npm run watch
 
 ## Extension Settings
 
-Currently, this extension does not contribute any settings. Future versions may include:
+This extension contributes the following settings:
 
-- Registry URL configuration
-- Update check interval
-- Default version prefix preference (^, ~, exact)
+- `npm-visual-manager.columns.size`: Show Size column (default: true)
+- `npm-visual-manager.columns.type`: Show Type column (default: false)
+- `npm-visual-manager.columns.lastUpdate`: Show Last Update column (default: true)
+- `npm-visual-manager.columns.security`: Show Security column (default: true)
+- `npm-visual-manager.columns.semverUpdate`: Show Update Type column (default: true)
 
 ## Known Issues
 
@@ -137,12 +145,10 @@ Currently, this extension does not contribute any settings. Future versions may 
 
 ## Roadmap
 
-- [ ] Support for Yarn and pnpm
 - [ ] Install new packages via search interface
-- [ ] Semantic versioning suggestions
-- [ ] Vulnerability checking via `npm audit`
-- [ ] Bulk select with checkboxes
 - [ ] Export dependency report
+- [ ] Dependency usage analysis (find unused packages)
+- [ ] Changelog preview before updating
 
 ## Contributing
 
