@@ -30,8 +30,8 @@ export interface PackageJson {
 // Mensajes desde Webview al Extension Host
 export type WebviewToHostMessage =
   | { type: 'GET_DEPENDENCIES' }
-  | { type: 'UPDATE_PACKAGE'; packageName: string; version: string }
-  | { type: 'UPDATE_ALL_PACKAGES'; packages: { name: string; version: string }[] }
+  | { type: 'UPDATE_PACKAGE'; packageName: string; version: string; currentVersion?: string }
+  | { type: 'UPDATE_ALL_PACKAGES'; packages: { name: string; version: string; currentVersion?: string }[] }
   | { type: 'CHECK_UPDATES'; dependencies: Dependency[] };
 
 // Mensajes desde Extension Host al Webview

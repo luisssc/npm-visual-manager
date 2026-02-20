@@ -72,8 +72,8 @@ function App() {
     return clean(installed) !== latest;
   }
 
-  const handleUpdatePackage = (packageName: string, version: string) => {
-    updatePackage(packageName, version);
+  const handleUpdatePackage = (packageName: string, version: string, currentVersion?: string) => {
+    updatePackage(packageName, version, currentVersion);
   };
 
   const handleUpdateAll = (packages: { name: string; version: string }[]) => {

@@ -160,6 +160,19 @@
   width: 100px;
 }
 
+.size-col {
+  width: 80px;
+}
+
+.size-cell {
+  font-size: 12px;
+  color: var(--vscode-descriptionForeground, #888);
+}
+
+.size-text {
+  font-family: var(--vscode-editor-font-family, monospace);
+}
+
 .update-type-col {
   width: 70px;
   text-align: center;

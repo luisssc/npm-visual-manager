@@ -94,7 +94,7 @@ export class NpmGuiManagerPanel {
         break;
 
       case 'UPDATE_PACKAGE':
-        await this._updatePackage(message.packageName, message.version);
+        await this._updatePackage(message.packageName, message.version, message.currentVersion);
         break;
 
       case 'UPDATE_ALL_PACKAGES':
@@ -119,7 +119,7 @@ export class NpmGuiManagerPanel {
       }
 
       const packageJson = await readPackageJson(packageJsonPath);
-      const dependencies = extractDependencies(packageJson);
+      const dependencies = extractDependencies(packageJson, this._workspaceRoot);
 
       this._sendMessage({
         type: 'DEPENDENCIES_DATA',
@@ -169,7 +169,23 @@ export class NpmGuiManagerPanel {
   /**
    * Actualiza un paquete específico
    */
-  private async _updatePackage(packageName: string, version: string): Promise<void> {
+  private async _updatePackage(packageName: string, version: string, currentVersion?: string): Promise<void> {
+    // Show confirmation modal
+    const message = currentVersion 
+      ? `Update "${packageName}" from ${currentVersion} to ${version}?`
+      : `Update "${packageName}" to ${version}?`;
+    
+    const result = await vscode.window.showWarningMessage(
+      message,
+      { modal: true },
+      'Update',
+      'Cancel'
+    );
+
+    if (result !== 'Update') {
+      return;
+    }
+
     this._sendMessage({
       type: 'PROGRESS',
       message: `Installing ${packageName}@${version}...`

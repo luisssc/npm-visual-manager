@@ -37,8 +37,8 @@ export function useVsCodeApi() {
     postMessage({ type: 'GET_DEPENDENCIES' });
   }, [postMessage]);
 
-  const updatePackage = useCallback((packageName: string, version: string) => {
-    postMessage({ type: 'UPDATE_PACKAGE', packageName, version });
+  const updatePackage = useCallback((packageName: string, version: string, currentVersion?: string) => {
+    postMessage({ type: 'UPDATE_PACKAGE', packageName, version, currentVersion });
   }, [postMessage]);
 
   const updateAllPackages = useCallback((packages: { name: string; version: string }[]) => {

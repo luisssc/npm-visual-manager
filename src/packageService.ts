@@ -5,6 +5,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import { PackageJson, Dependency } from './types';
+import { getPackageSize } from './sizeService';
 
 /**
  * Busca el package.json en el workspace
@@ -31,7 +32,7 @@ export async function readPackageJson(packageJsonPath: string): Promise<PackageJ
 /**
  * Extrae las dependencias del package.json
  */
-export function extractDependencies(packageJson: PackageJson): Dependency[] {
+export function extractDependencies(packageJson: PackageJson, workspaceRoot?: string): Dependency[] {
   const dependencies: Dependency[] = [];
 
   if (packageJson.dependencies) {
@@ -39,7 +40,8 @@ export function extractDependencies(packageJson: PackageJson): Dependency[] {
       dependencies.push({
         name,
         installedVersion: version,
-        type: 'dependencies'
+        type: 'dependencies',
+        size: workspaceRoot ? getPackageSize(workspaceRoot, name) : undefined
       });
     }
   }
@@ -49,7 +51,8 @@ export function extractDependencies(packageJson: PackageJson): Dependency[] {
       dependencies.push({
         name,
         installedVersion: version,
-        type: 'devDependencies'
+        type: 'devDependencies',
+        size: workspaceRoot ? getPackageSize(workspaceRoot, name) : undefined
       });
     }
   }
@@ -59,7 +62,8 @@ export function extractDependencies(packageJson: PackageJson): Dependency[] {
       dependencies.push({
         name,
         installedVersion: version,
-        type: 'peerDependencies'
+        type: 'peerDependencies',
+        size: workspaceRoot ? getPackageSize(workspaceRoot, name) : undefined
       });
     }
   }

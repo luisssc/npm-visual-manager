@@ -4,8 +4,8 @@ import './DependencyTable.css';
 
 interface DependencyTableProps {
   dependencies: Dependency[];
-  onUpdatePackage: (packageName: string, version: string) => void;
-  onUpdateAll: (packages: { name: string; version: string }[]) => void;
+  onUpdatePackage: (packageName: string, version: string, currentVersion?: string) => void;
+  onUpdateAll: (packages: { name: string; version: string; currentVersion?: string }[]) => void;
   isLoading: boolean;
 }
 
@@ -70,7 +70,7 @@ export const DependencyTable = ({
   const handleUpdate = (dep: Dependency) => {
     if (!dep.latestVersion) {return;}
     setUpdatingPackages(prev => new Set(prev).add(dep.name));
-    onUpdatePackage(dep.name, 'latest');
+    onUpdatePackage(dep.name, 'latest', dep.installedVersion);
     setTimeout(() => {
       setUpdatingPackages(prev => {
         const next = new Set(prev);
@@ -201,6 +201,9 @@ export const DependencyTable = ({
               <th onClick={() => handleSort('latestVersion')} className="sortable version-col">
                 Latest {getSortIndicator('latestVersion')}
               </th>
+              <th onClick={() => handleSort('size')} className="sortable size-col">
+                Size {getSortIndicator('size')}
+              </th>
               <th className="sortable update-type-col">
                 Update
               </th>
@@ -216,7 +219,7 @@ export const DependencyTable = ({
           <tbody>
             {sortedAndFilteredDeps.length === 0 ? (
               <tr>
-                <td colSpan={8} className="empty-state">
+                <td colSpan={9} className="empty-state">
                   {dependencies.length === 0 
                     ? 'No dependencies found in package.json'
                     : 'No packages match the current filter'
@@ -248,6 +251,9 @@ export const DependencyTable = ({
                     ) : (
                       <span className="checking">checking...</span>
                     )}
+                  </td>
+                  <td className="size-cell">
+                    <span className="size-text">{dep.size || '-'}</span>
                   </td>
                   <td className="update-type-cell">
                     {dep.updateAvailable && dep.semverUpdateType && dep.semverUpdateType !== 'none' && (
