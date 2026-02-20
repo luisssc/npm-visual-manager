@@ -8,6 +8,7 @@ interface DependencyTableProps {
   onUpdateAll: (packages: { name: string; version: string; currentVersion?: string }[]) => void;
   isLoading: boolean;
   columnConfig: ColumnConfig;
+  showAllPackages: boolean;
 }
 
 type SortColumn = 'name' | 'installedVersion' | 'latestVersion' | 'type' | 'size' | 'lastPublishDate' | 'hasVulnerabilities';
@@ -52,7 +53,8 @@ export const DependencyTable = ({
   onUpdatePackage,
   onUpdateAll,
   isLoading,
-  columnConfig
+  columnConfig,
+  showAllPackages
 }: DependencyTableProps) => {
   const [sortColumn, setSortColumn] = useState<SortColumn>('name');
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
@@ -91,6 +93,11 @@ export const DependencyTable = ({
 
   const sortedAndFilteredDeps = useMemo(() => {
     let result = [...dependencies];
+
+    // Filter by update availability (unless showing all)
+    if (!showAllPackages) {
+      result = result.filter(d => d.updateAvailable);
+    }
 
     // Filter by type
     if (typeFilter !== 'all') {
@@ -242,7 +249,9 @@ export const DependencyTable = ({
                 <td colSpan={visibleColumnCount} className="empty-state">
                   {dependencies.length === 0 
                     ? 'No dependencies found in package.json'
-                    : 'No packages match the current filter'
+                    : !showAllPackages 
+                      ? '🎉 All packages are up to date! Click "Show All Packages" to see everything.'
+                      : 'No packages match the current filter'
                   }
                 </td>
               </tr>

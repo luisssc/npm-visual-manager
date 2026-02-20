@@ -9,6 +9,7 @@ import { Dependency, WebviewToHostMessage, HostToWebviewMessage, ColumnConfig } 
 import { findPackageJson, readPackageJson, extractDependencies } from './packageService';
 import { getPackageDetails, isUpdateAvailable, getSemverUpdateType } from './npmService';
 import { findAllProjects, Project } from './workspaceService';
+import { runNpmAudit, hasVulnerabilities, getPackageVulnerabilityCount } from './auditService';
 
 export class NpmGuiManagerPanel {
   public static currentPanel: NpmGuiManagerPanel | undefined;
@@ -164,8 +165,27 @@ export class NpmGuiManagerPanel {
       }
 
       const packageJson = await readPackageJson(packageJsonPath);
-      const dependencies = extractDependencies(packageJson, this._currentProjectPath);
+      let dependencies = extractDependencies(packageJson, this._currentProjectPath);
       const columnConfig = this._getColumnConfig();
+
+      // Run npm audit to get real vulnerability data
+      try {
+        this._sendMessage({
+          type: 'PROGRESS',
+          message: 'Running npm audit...'
+        });
+        const auditResult = await runNpmAudit(this._currentProjectPath);
+        
+        // Add vulnerability info to dependencies
+        dependencies = dependencies.map(dep => ({
+          ...dep,
+          hasVulnerabilities: hasVulnerabilities(auditResult, dep.name),
+          vulnerabilityCount: getPackageVulnerabilityCount(auditResult, dep.name)
+        }));
+      } catch (auditError) {
+        console.warn('npm audit failed:', auditError);
+        // Continue without audit data
+      }
 
       // Get current project name
       const currentProject = this._projects.find(p => p.path === this._currentProjectPath);

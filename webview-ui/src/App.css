@@ -30,6 +30,12 @@
   font-weight: 400;
 }
 
+.header-controls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
 .app-header .project-selector {
   background: var(--vscode-input-background);
   color: var(--vscode-input-foreground);
@@ -43,6 +49,21 @@
 .app-header .project-selector:focus {
   outline: none;
   border-color: var(--vscode-focusBorder);
+}
+
+.toggle-packages-btn {
+  background: var(--vscode-button-secondaryBackground);
+  color: var(--vscode-button-secondaryForeground);
+  border: none;
+  padding: 4px 12px;
+  border-radius: 2px;
+  font-size: 12px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.toggle-packages-btn:hover {
+  background: var(--vscode-button-secondaryHoverBackground);
 }
 
 .app-content {

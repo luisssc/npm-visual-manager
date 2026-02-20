@@ -21,6 +21,7 @@ function App() {
   });
   const [projects, setProjects] = useState<ProjectInfo[]>([]);
   const [currentProjectPath, setCurrentProjectPath] = useState<string>('');
+  const [showAllPackages, setShowAllPackages] = useState(false);
 
   // Manejar mensajes del Extension Host
   const handleMessage = useCallback((message: HostToWebviewMessage) => {
@@ -143,21 +144,30 @@ function App() {
       
       <header className="app-header">
         <h1>📦 NPM Visual Manager</h1>
-        {projects.length > 1 ? (
-          <select 
-            className="project-selector"
-            value={currentProjectPath}
-            onChange={(e) => handleSelectProject(e.target.value)}
+        <div className="header-controls">
+          {projects.length > 1 ? (
+            <select 
+              className="project-selector"
+              value={currentProjectPath}
+              onChange={(e) => handleSelectProject(e.target.value)}
+            >
+              {projects.map(project => (
+                <option key={project.path} value={project.path}>
+                  {project.name} ({project.relativePath})
+                </option>
+              ))}
+            </select>
+          ) : (
+            <span className="package-name">{packageName}</span>
+          )}
+          <button 
+            className="toggle-packages-btn"
+            onClick={() => setShowAllPackages(!showAllPackages)}
+            title={showAllPackages ? "Show only packages with updates" : "Show all packages"}
           >
-            {projects.map(project => (
-              <option key={project.path} value={project.path}>
-                {project.name} ({project.relativePath})
-              </option>
-            ))}
-          </select>
-        ) : (
-          <span className="package-name">{packageName}</span>
-        )}
+            {showAllPackages ? '✓ Show Updates Only' : '⊕ Show All Packages'}
+          </button>
+        </div>
       </header>
 
       <main className="app-content">
@@ -167,6 +177,7 @@ function App() {
           onUpdateAll={handleUpdateAll}
           isLoading={isLoading}
           columnConfig={columnConfig}
+          showAllPackages={showAllPackages}
         />
       </main>
     </div>
