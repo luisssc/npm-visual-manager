@@ -133,7 +133,7 @@ function App() {
   if (error) {
     return (
       <div className="error-container">
-        <div className="error-icon">⚠</div>
+        <div className="error-icon"><i className="codicon codicon-error" /></div>
         <p className="error-message">{error}</p>
         <button className="retry-btn" onClick={handleRetry}>
           Retry
@@ -152,7 +152,7 @@ function App() {
       )}
       
       <header className="app-header">
-        <h1>📦 NPM Visual Manager</h1>
+        <h1><i className="codicon codicon-package" /> NPM Visual Manager</h1>
         <div className="header-controls">
           {projects.length > 1 ? (
             <select 
@@ -174,7 +174,10 @@ function App() {
             onClick={() => setShowAllPackages(!showAllPackages)}
             title={showAllPackages ? "Show only packages with updates" : "Show all packages"}
           >
-            {showAllPackages ? '✓ Show Updates Only' : '⊕ Show All Packages'}
+            {showAllPackages
+              ? <><i className="codicon codicon-check" /> Show Updates Only</>
+              : <><i className="codicon codicon-list-flat" /> Show All Packages</>
+            }
           </button>
         </div>
       </header>

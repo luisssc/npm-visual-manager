@@ -1,6 +1,13 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, ReactNode } from 'react';
 import { Dependency, SemverUpdateType, ColumnConfig } from '../types';
 import './DependencyTable.css';
+
+const Tooltip = ({ text, children }: { text: string; children: ReactNode }) => (
+  <span className="tooltip-wrapper">
+    {children}
+    <span className="tooltip">{text}</span>
+  </span>
+);
 
 interface DependencyTableProps {
   dependencies: Dependency[];
@@ -157,8 +164,10 @@ export const DependencyTable = ({
   const updateCount = dependencies.filter(d => d.updateAvailable).length;
 
   const getSortIndicator = (column: SortColumn) => {
-    if (sortColumn !== column) {return '⇅';}
-    return sortDirection === 'asc' ? '↑' : '↓';
+    if (sortColumn !== column) {return <i className="codicon codicon-arrow-swap" />;}
+    return sortDirection === 'asc'
+      ? <i className="codicon codicon-arrow-up" />
+      : <i className="codicon codicon-arrow-down" />;
   };
 
   // Calculate colspan for empty state
@@ -255,7 +264,7 @@ export const DependencyTable = ({
                   {dependencies.length === 0 
                     ? 'No dependencies found in package.json'
                     : !showAllPackages 
-                      ? '🎉 All packages are up to date! Click "Show All Packages" to see everything.'
+                      ? 'All packages are up to date! Click "Show All Packages" to see everything.'
                       : 'No packages match the current filter'
                   }
                 </td>
@@ -267,15 +276,16 @@ export const DependencyTable = ({
                   className={dep.updateAvailable ? 'has-update' : ''}
                 >
                   <td className="package-name">
-                    <a 
-                      href={`https://www.npmjs.com/package/${dep.name}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="package-link"
-                      title="View on npm"
-                    >
-                      {dep.name}
-                    </a>
+                    <Tooltip text="View on npm">
+                      <a
+                        href={`https://www.npmjs.com/package/${dep.name}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="package-link"
+                      >
+                        {dep.name}
+                      </a>
+                    </Tooltip>
                   </td>
                   {columnConfig.type && (
                     <td className="type-cell">
@@ -304,25 +314,28 @@ export const DependencyTable = ({
                   {columnConfig.semverUpdate && (
                     <td className="update-type-cell">
                       {dep.updateAvailable && dep.semverUpdateType && dep.semverUpdateType !== 'none' && (
-                        <span 
-                          className="semver-badge"
-                          style={{ 
-                            backgroundColor: getSemverColor(dep.semverUpdateType),
-                            color: '#fff'
-                          }}
-                          title={`${getSemverLabel(dep.semverUpdateType)} update available`}
-                        >
-                          {getSemverLabel(dep.semverUpdateType)}
-                        </span>
+                        <Tooltip text={`${getSemverLabel(dep.semverUpdateType)} update available`}>
+                          <span
+                            className="semver-badge"
+                            style={{
+                              backgroundColor: getSemverColor(dep.semverUpdateType),
+                              color: '#fff'
+                            }}
+                          >
+                            {getSemverLabel(dep.semverUpdateType)}
+                          </span>
+                        </Tooltip>
                       )}
                     </td>
                   )}
                   {columnConfig.lastUpdate && (
                     <td className="date-cell">
                       {dep.lastPublishDate ? (
-                        <span className="date-text" title={new Date(dep.lastPublishDate).toLocaleDateString()}>
-                          {formatDate(dep.lastPublishDate)}
-                        </span>
+                        <Tooltip text={new Date(dep.lastPublishDate).toLocaleDateString()}>
+                          <span className="date-text">
+                            {formatDate(dep.lastPublishDate)}
+                          </span>
+                        </Tooltip>
                       ) : (
                         <span className="checking">-</span>
                       )}
@@ -331,11 +344,13 @@ export const DependencyTable = ({
                   {columnConfig.security && (
                     <td className="security-cell">
                       {dep.hasVulnerabilities ? (
-                        <span className="security-badge security-danger" title={`${dep.vulnerabilityCount || 1} vulnerabilities found`}>
-                          ⚠ {dep.vulnerabilityCount || 1}
-                        </span>
+                        <Tooltip text={`${dep.vulnerabilityCount || 1} vulnerabilities found`}>
+                          <span className="security-badge security-danger">
+                            <i className="codicon codicon-warning" /> {dep.vulnerabilityCount || 1}
+                          </span>
+                        </Tooltip>
                       ) : (
-                        <span className="security-badge security-safe">✓</span>
+                        <span className="security-badge security-safe"><i className="codicon codicon-shield" /></span>
                       )}
                     </td>
                   )}
@@ -349,7 +364,7 @@ export const DependencyTable = ({
                         {updatingPackages.has(dep.name) ? '...' : 'Update'}
                       </button>
                     ) : (
-                      <span className="up-to-date">✓</span>
+                      <span className="up-to-date"><i className="codicon codicon-check" /></span>
                     )}
                   </td>
                 </tr>

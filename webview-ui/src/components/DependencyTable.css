@@ -28,6 +28,12 @@
   flex-direction: column;
 }
 
+/* Codicon alignment */
+.codicon {
+  vertical-align: middle;
+  line-height: 1;
+}
+
 /* Toolbar */
 .toolbar {
   display: flex;
@@ -296,6 +302,7 @@
   background: color-mix(in srgb, var(--table-fg) 5%, transparent);
   padding: 2px 6px;
   border-radius: 3px;
+  animation: fadeIn 0.2s ease-out;
 }
 
 .version-cell .latest-version {
@@ -309,6 +316,11 @@
   font-size: 12px;
 }
 
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-2px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
 /* Semver badges */
 .semver-badge {
   display: inline-block;
@@ -318,6 +330,37 @@
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.5px;
+  animation: fadeIn 0.2s ease-out;
+}
+
+/* Tooltip - VS Code native style */
+.tooltip-wrapper {
+  position: relative;
+}
+
+.tooltip-wrapper .tooltip {
+  visibility: hidden;
+  opacity: 0;
+  position: absolute;
+  bottom: calc(100% + 6px);
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--vscode-editorHoverWidget-background, var(--vscode-editor-background));
+  border: 1px solid var(--vscode-editorHoverWidget-border, var(--border-color));
+  color: var(--vscode-editorHoverWidget-foreground, var(--table-fg));
+  padding: 4px 8px;
+  border-radius: 3px;
+  font-size: 12px;
+  white-space: nowrap;
+  pointer-events: none;
+  z-index: 1000;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.16);
+  transition: opacity 0.15s ease-in, visibility 0.15s ease-in;
+}
+
+.tooltip-wrapper:hover .tooltip {
+  visibility: visible;
+  opacity: 1;
 }
 
 /* Date cell */
