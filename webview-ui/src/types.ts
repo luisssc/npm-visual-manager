@@ -8,6 +8,7 @@ export type SemverUpdateType = 'major' | 'minor' | 'patch' | 'none' | 'unknown';
 export interface Dependency {
   name: string;
   installedVersion: string;
+  declaredVersion: string;  // Versión del package.json (ej: "^5", "~1.2.0")
   latestVersion?: string;
   type: 'dependencies' | 'devDependencies' | 'peerDependencies';
   updateAvailable?: boolean;
@@ -49,7 +50,8 @@ export interface UpdateHistory {
   timestamp: number;
   packages: Array<{
     name: string;
-    previousVersion: string;
+    previousDeclaredVersion: string;  // ej: "^5" - versión del package.json
+    previousInstalledVersion: string; // ej: "5.9.3" - versión real en node_modules
     newVersion: string;
   }>;
 }

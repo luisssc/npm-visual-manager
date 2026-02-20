@@ -6,6 +6,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { PackageJson, Dependency } from './types';
 import { getPackageSize } from './sizeService';
+import { getInstalledVersion } from './installedVersionService';
 
 /**
  * Busca el package.json en el workspace
@@ -32,40 +33,47 @@ export async function readPackageJson(packageJsonPath: string): Promise<PackageJ
 /**
  * Extrae las dependencias del package.json
  */
-export function extractDependencies(packageJson: PackageJson, workspaceRoot?: string): Dependency[] {
+export async function extractDependencies(
+  packageJson: PackageJson, 
+  workspaceRoot?: string
+): Promise<Dependency[]> {
   const dependencies: Dependency[] = [];
 
-  if (packageJson.dependencies) {
-    for (const [name, version] of Object.entries(packageJson.dependencies)) {
+  const extractDeps = async (
+    deps: Record<string, string>, 
+    type: 'dependencies' | 'devDependencies' | 'peerDependencies'
+  ) => {
+    for (const [name, version] of Object.entries(deps)) {
+      let installedVersion: string | null = null;
+      
+      if (workspaceRoot) {
+        try {
+          installedVersion = await getInstalledVersion(workspaceRoot, name);
+        } catch {
+          // Ignore errors - will use declared version as fallback
+        }
+      }
+      
       dependencies.push({
         name,
-        installedVersion: version,
-        type: 'dependencies',
+        declaredVersion: version,                       // ej: "^5"
+        installedVersion: installedVersion || version,  // ej: "5.9.3" o fallback a declarada
+        type,
         size: workspaceRoot ? getPackageSize(workspaceRoot, name) : undefined
       });
     }
+  };
+
+  if (packageJson.dependencies) {
+    await extractDeps(packageJson.dependencies, 'dependencies');
   }
 
   if (packageJson.devDependencies) {
-    for (const [name, version] of Object.entries(packageJson.devDependencies)) {
-      dependencies.push({
-        name,
-        installedVersion: version,
-        type: 'devDependencies',
-        size: workspaceRoot ? getPackageSize(workspaceRoot, name) : undefined
-      });
-    }
+    await extractDeps(packageJson.devDependencies, 'devDependencies');
   }
 
   if (packageJson.peerDependencies) {
-    for (const [name, version] of Object.entries(packageJson.peerDependencies)) {
-      dependencies.push({
-        name,
-        installedVersion: version,
-        type: 'peerDependencies',
-        size: workspaceRoot ? getPackageSize(workspaceRoot, name) : undefined
-      });
-    }
+    await extractDeps(packageJson.peerDependencies, 'peerDependencies');
   }
 
   return dependencies.sort((a, b) => a.name.localeCompare(b.name));

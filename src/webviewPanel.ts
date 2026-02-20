@@ -174,7 +174,7 @@ export class NpmGuiManagerPanel {
       }
 
       const packageJson = await readPackageJson(packageJsonPath);
-      let dependencies = extractDependencies(packageJson, this._currentProjectPath);
+      let dependencies = await extractDependencies(packageJson, this._currentProjectPath);
       const columnConfig = this._getColumnConfig();
       
       // Detect package manager for this project
@@ -294,13 +294,14 @@ export class NpmGuiManagerPanel {
     // Get exact installed version from node_modules before updating
     const exactVersion = await getInstalledVersion(this._currentProjectPath, packageName);
     
-    // Save to history before updating (use exact version if available)
-    if (exactVersion || currentVersion) {
+    // Save to history before updating (use declared version for rollback)
+    if (currentVersion) {
       this._updateHistory = {
         timestamp: Date.now(),
         packages: [{
           name: packageName,
-          previousVersion: exactVersion || currentVersion!,
+          previousDeclaredVersion: currentVersion,     // ej: "^5"
+          previousInstalledVersion: exactVersion || currentVersion, // ej: "5.9.3"
           newVersion: version
         }]
       };
@@ -359,14 +360,15 @@ export class NpmGuiManagerPanel {
     const packageNames = packages.map(p => p.name);
     const installedVersions = await getInstalledVersions(this._currentProjectPath, packageNames);
     
-    // Save to history before updating (use exact versions if available)
+    // Save to history before updating (use declared versions for rollback)
     this._updateHistory = {
       timestamp: Date.now(),
       packages: packages
         .filter(p => p.currentVersion)
         .map(p => ({
           name: p.name,
-          previousVersion: installedVersions.get(p.name) || p.currentVersion!,
+          previousDeclaredVersion: p.currentVersion!,  // ej: "^5"
+          previousInstalledVersion: installedVersions.get(p.name) || p.currentVersion!,
           newVersion: p.version
         }))
     };
@@ -390,8 +392,6 @@ export class NpmGuiManagerPanel {
       setTimeout(async () => {
         await this._loadDependencies();
       }, 8000);
-
-      vscode.window.showInformationMessage(`Updating ${packages.length} package(s)...`);
     } catch (error) {
       this._updateHistory = null; // Clear history on error
       vscode.window.showErrorMessage(`Failed to update packages: ${error instanceof Error ? error.message : String(error)}`);
@@ -412,7 +412,7 @@ export class NpmGuiManagerPanel {
     }
 
     const packagesToRollback = this._updateHistory.packages;
-    const packageList = packagesToRollback.map(p => `${p.name}@${p.previousVersion}`).join(', ');
+    const packageList = packagesToRollback.map(p => `${p.name}@${p.previousDeclaredVersion}`).join(', ');
     
     const result = await vscode.window.showWarningMessage(
       `Rollback ${packagesToRollback.length} package(s) to previous versions?\n\n${packageList}`,
@@ -435,21 +435,26 @@ export class NpmGuiManagerPanel {
       const terminal = this._getOrCreateTerminal();
       terminal.show();
       
-      // Install previous versions
-      const installArgs = packagesToRollback.map(p => `${p.name}@${p.previousVersion}`).join(' ');
+      // Install using the EXACT installed version to get the right package
+      // We'll restore the declared version in package.json after
+      const installArgs = packagesToRollback
+        .map(p => `"${p.name}@${p.previousInstalledVersion}"`)
+        .join(' ');
       
       // Send cd command first (works on all platforms)
       terminal.sendText(`cd "${this._currentProjectPath}"`, true);
       // Then send install command
       terminal.sendText(`${info.addCommand} ${installArgs}`, true);
 
+      // Wait for npm to finish, then restore package.json with declared versions
+      setTimeout(async () => {
+        await this._restorePackageJsonVersions(packagesToRollback);
+        await this._loadDependencies();
+      }, 3000);
+
       // Clear history after successful rollback
       const rolledBackPackages = packagesToRollback.map(p => p.name);
       this._updateHistory = null;
-
-      setTimeout(async () => {
-        await this._loadDependencies();
-      }, 8000);
 
       this._sendMessage({
         type: 'ROLLBACK_RESULT',
@@ -463,6 +468,37 @@ export class NpmGuiManagerPanel {
         success: false,
         message: `Failed to rollback: ${error instanceof Error ? error.message : String(error)}`
       });
+    }
+  }
+
+  /**
+   * Restore declared versions in package.json after rollback
+   * This preserves the original format (^, ~, exact versions, etc.)
+   */
+  private async _restorePackageJsonVersions(
+    packages: Array<{ name: string; previousDeclaredVersion: string; previousInstalledVersion: string; newVersion: string }>
+  ): Promise<void> {
+    try {
+      const packageJsonPath = path.join(this._currentProjectPath, 'package.json');
+      const content = await fs.promises.readFile(packageJsonPath, 'utf-8');
+      const pkg = JSON.parse(content);
+
+      for (const { name, previousDeclaredVersion } of packages) {
+        // Find which dependency type this package is in
+        if (pkg.dependencies && name in pkg.dependencies) {
+          pkg.dependencies[name] = previousDeclaredVersion;
+        } else if (pkg.devDependencies && name in pkg.devDependencies) {
+          pkg.devDependencies[name] = previousDeclaredVersion;
+        } else if (pkg.peerDependencies && name in pkg.peerDependencies) {
+          pkg.peerDependencies[name] = previousDeclaredVersion;
+        }
+      }
+
+      // Write back with proper formatting
+      await fs.promises.writeFile(packageJsonPath, JSON.stringify(pkg, null, 2) + '\n');
+    } catch (error) {
+      console.error('[npm-visual-manager] Failed to restore package.json versions:', error);
+      // Don't throw - the rollback technically succeeded, just package.json wasn't restored
     }
   }
 

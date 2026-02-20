@@ -95,7 +95,7 @@ export const DependencyTable = ({
   const handleUpdate = (dep: Dependency) => {
     if (!dep.latestVersion) {return;}
     setUpdatingPackages(prev => new Set(prev).add(dep.name));
-    onUpdatePackage(dep.name, 'latest', dep.installedVersion);
+    onUpdatePackage(dep.name, 'latest', dep.declaredVersion);
     setTimeout(() => {
       setUpdatingPackages(prev => {
         const next = new Set(prev);
@@ -132,7 +132,7 @@ export const DependencyTable = ({
   const handleUpdateSelected = () => {
     const packagesToUpdate = sortedAndFilteredDeps
       .filter(d => selectedPackages.has(d.name) && d.updateAvailable && d.latestVersion)
-      .map(d => ({ name: d.name, version: 'latest', currentVersion: d.installedVersion }));
+      .map(d => ({ name: d.name, version: 'latest', currentVersion: d.declaredVersion }));
     
     if (packagesToUpdate.length > 0) {
       onUpdateAll(packagesToUpdate);
@@ -143,7 +143,7 @@ export const DependencyTable = ({
   const handleUpdateAll = () => {
     const packagesToUpdate = sortedAndFilteredDeps
       .filter(d => d.updateAvailable && d.latestVersion)
-      .map(d => ({ name: d.name, version: 'latest', currentVersion: d.installedVersion }));
+      .map(d => ({ name: d.name, version: 'latest', currentVersion: d.declaredVersion }));
     onUpdateAll(packagesToUpdate);
   };
 
@@ -160,7 +160,7 @@ export const DependencyTable = ({
       const filterLower = filter.toLowerCase();
       result = result.filter(d => 
         d.name.toLowerCase().includes(filterLower) ||
-        d.installedVersion.toLowerCase().includes(filterLower)
+        d.declaredVersion.toLowerCase().includes(filterLower)
       );
     }
 
@@ -181,7 +181,7 @@ export const DependencyTable = ({
           comparison = a.name.localeCompare(b.name);
           break;
         case 'installedVersion':
-          comparison = a.installedVersion.localeCompare(b.installedVersion);
+          comparison = a.declaredVersion.localeCompare(b.declaredVersion);
           break;
         case 'latestVersion':
           comparison = (a.latestVersion || '').localeCompare(b.latestVersion || '');
@@ -386,7 +386,7 @@ export const DependencyTable = ({
                     </td>
                   )}
                   <td className="version-cell">
-                    <code>{dep.installedVersion}</code>
+                    <code>{dep.declaredVersion}</code>
                   </td>
                   <td className="version-cell">
                     {dep.latestVersion ? (

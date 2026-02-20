@@ -114,10 +114,24 @@ function App() {
     }
   }, [isReady, requestDependencies]);
 
-  // Función auxiliar para comparar versiones
+  // Función auxiliar para comparar versiones semver
   function isUpdateAvailable(installed: string, latest: string): boolean {
     const clean = (v: string) => v.replace(/^[\^~>=<]+/, '');
-    return clean(installed) !== latest;
+    const cleanInstalled = clean(installed);
+    const cleanLatest = clean(latest);
+    
+    // Comparación semver numérica (no de strings)
+    const parseVersion = (v: string): number[] => v.split('.').map(Number);
+    const installedParts = parseVersion(cleanInstalled);
+    const latestParts = parseVersion(cleanLatest);
+    
+    for (let i = 0; i < Math.max(installedParts.length, latestParts.length); i++) {
+      const inst = installedParts[i] || 0;
+      const lat = latestParts[i] || 0;
+      if (lat > inst) {return true;}
+      if (lat < inst) {return false;}
+    }
+    return false; // Son iguales
   }
 
   const handleUpdatePackage = (packageName: string, version: string, currentVersion?: string) => {
