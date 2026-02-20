@@ -91,7 +91,12 @@ async function getProjectName(packageJsonPath: string): Promise<string> {
   try {
     const content = await fs.promises.readFile(packageJsonPath, 'utf-8');
     const pkg = JSON.parse(content);
-    return pkg.name || path.basename(path.dirname(packageJsonPath));
+    if (pkg.name) {
+      // Return just the package name, not the folder name
+      return pkg.name;
+    }
+    // Fallback to folder name if no name in package.json
+    return path.basename(path.dirname(packageJsonPath));
   } catch {
     return path.basename(path.dirname(packageJsonPath));
   }

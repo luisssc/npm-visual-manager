@@ -14,7 +14,7 @@ function App() {
   const [progressMessage, setProgressMessage] = useState<string | null>(null);
   const [columnConfig, setColumnConfig] = useState<ColumnConfig>({
     size: true,
-    type: true,
+    type: false,
     lastUpdate: true,
     security: true,
     semverUpdate: true
@@ -158,7 +158,7 @@ function App() {
             >
               {projects.map(project => (
                 <option key={project.path} value={project.path}>
-                  {project.name} ({project.relativePath})
+                  {project.name}
                 </option>
               ))}
             </select>

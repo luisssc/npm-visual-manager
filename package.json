@@ -70,7 +70,7 @@
         },
         "npm-visual-manager.columns.type": {
           "type": "boolean",
-          "default": true,
+          "default": false,
           "description": "Show Type column"
         },
         "npm-visual-manager.columns.lastUpdate": {

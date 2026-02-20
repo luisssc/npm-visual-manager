@@ -188,9 +188,9 @@ export class NpmGuiManagerPanel {
         // Continue without audit data
       }
 
-      // Get current project name
+      // Get current project name - show only project name, not path
       const currentProject = this._projects.find(p => p.path === this._currentProjectPath);
-      const displayName = currentProject ? `${currentProject.name} (${currentProject.relativePath})` : (packageJson.name || 'Unnamed Package');
+      const displayName = currentProject ? currentProject.name : (packageJson.name || 'Unnamed Package');
 
       this._sendMessage({
         type: 'DEPENDENCIES_DATA',
