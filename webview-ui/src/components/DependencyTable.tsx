@@ -21,6 +21,7 @@ interface DependencyTableProps {
   packageManagerVersion?: string;
   lastUpdate?: UpdateHistory | null;
   onRollback?: () => void;
+  rollbackMessage?: string | null;
 }
 
 type SortColumn = 'name' | 'installedVersion' | 'latestVersion' | 'type' | 'size' | 'lastPublishDate' | 'hasVulnerabilities';
@@ -71,12 +72,14 @@ export const DependencyTable = ({
   packageManager,
   packageManagerVersion,
   lastUpdate,
-  onRollback
+  onRollback,
+  rollbackMessage
 }: DependencyTableProps) => {
   const [sortColumn, setSortColumn] = useState<SortColumn>('name');
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
   const [filter, setFilter] = useState('');
   const [updatingPackages, setUpdatingPackages] = useState<Set<string>>(new Set());
+  const [selectedPackages, setSelectedPackages] = useState<Set<string>>(new Set());
 
   const handleSort = (column: SortColumn) => {
     if (sortColumn === column) {
@@ -98,6 +101,41 @@ export const DependencyTable = ({
         return next;
       });
     }, 3000);
+  };
+
+  const handleSelectPackage = (packageName: string, checked: boolean) => {
+    setSelectedPackages(prev => {
+      const next = new Set(prev);
+      if (checked) {
+        next.add(packageName);
+      } else {
+        next.delete(packageName);
+      }
+      return next;
+    });
+  };
+
+  const handleSelectAll = (checked: boolean) => {
+    if (checked) {
+      // Only select packages with updates
+      const updatable = sortedAndFilteredDeps
+        .filter(d => d.updateAvailable)
+        .map(d => d.name);
+      setSelectedPackages(new Set(updatable));
+    } else {
+      setSelectedPackages(new Set());
+    }
+  };
+
+  const handleUpdateSelected = () => {
+    const packagesToUpdate = sortedAndFilteredDeps
+      .filter(d => selectedPackages.has(d.name) && d.updateAvailable && d.latestVersion)
+      .map(d => ({ name: d.name, version: 'latest', currentVersion: d.installedVersion }));
+    
+    if (packagesToUpdate.length > 0) {
+      onUpdateAll(packagesToUpdate);
+      setSelectedPackages(new Set()); // Clear selection after update
+    }
   };
 
   const handleUpdateAll = () => {
@@ -175,7 +213,7 @@ export const DependencyTable = ({
   };
 
   // Calculate colspan for empty state
-  const visibleColumnCount = 4 + // Always visible: Package, Installed, Latest, Action
+  const visibleColumnCount = 5 + // Always visible: Checkbox, Package, Installed, Latest, Action
     (columnConfig.type ? 1 : 0) +
     (columnConfig.size ? 1 : 0) +
     (columnConfig.semverUpdate ? 1 : 0) +
@@ -220,7 +258,15 @@ export const DependencyTable = ({
               <span>↩</span> Rollback
             </button>
           )}
-          {updateCount > 0 && (
+          {selectedPackages.size > 0 ? (
+            <button 
+              className="update-selected-btn"
+              onClick={handleUpdateSelected}
+              disabled={isLoading}
+            >
+              Update Selected ({selectedPackages.size})
+            </button>
+          ) : updateCount > 0 && (
             <button 
               className="update-all-btn"
               onClick={handleUpdateAll}
@@ -236,6 +282,14 @@ export const DependencyTable = ({
         <table className="dependency-table">
           <thead>
             <tr>
+              <th className="checkbox-col">
+                <input
+                  type="checkbox"
+                  checked={selectedPackages.size > 0 && selectedPackages.size === sortedAndFilteredDeps.filter(d => d.updateAvailable).length}
+                  onChange={(e) => handleSelectAll(e.target.checked)}
+                  title="Select all packages with updates"
+                />
+              </th>
               <th onClick={() => handleSort('name')} className="sortable package-col">
                 Package {getSortIndicator('name')}
               </th>
@@ -291,6 +345,15 @@ export const DependencyTable = ({
                   key={dep.name} 
                   className={dep.updateAvailable ? 'has-update' : ''}
                 >
+                  <td className="checkbox-cell">
+                    <input
+                      type="checkbox"
+                      checked={selectedPackages.has(dep.name)}
+                      onChange={(e) => handleSelectPackage(dep.name, e.target.checked)}
+                      disabled={!dep.updateAvailable}
+                      title={dep.updateAvailable ? 'Select for update' : 'No update available'}
+                    />
+                  </td>
                   <td className="package-name">
                     <Tooltip text="View on npm">
                       <a
@@ -392,6 +455,11 @@ export const DependencyTable = ({
 
       <div className="footer">
         <span>Showing {sortedAndFilteredDeps.length} of {dependencies.length} packages</span>
+        {rollbackMessage && (
+          <span className="rollback-message">
+            <i className="codicon codicon-history" /> {rollbackMessage}
+          </span>
+        )}
         {updateCount > 0 && (
           <span className="update-summary">
             {updateCount} update{updateCount !== 1 ? 's' : ''} available

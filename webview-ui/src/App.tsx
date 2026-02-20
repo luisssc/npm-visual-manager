@@ -25,6 +25,7 @@ function App() {
   const [packageManager, setPackageManager] = useState<PackageManager>('npm');
   const [versions, setVersions] = useState<VersionInfo | null>(null);
   const [lastUpdate, setLastUpdate] = useState<UpdateHistory | null>(null);
+  const [rollbackMessage, setRollbackMessage] = useState<string | null>(null);
 
   // Manejar mensajes del Extension Host
   const handleMessage = useCallback((message: HostToWebviewMessage) => {
@@ -80,9 +81,13 @@ function App() {
         break;
 
       case 'ROLLBACK_RESULT':
-        setProgressMessage(message.success ? `Rolled back: ${message.message}` : message.message);
-        if (message.success) {
+        if (!message.success) {
+          setError(message.message);
+        } else {
           setLastUpdate(null);
+          // Show rollback success in footer instead of progress
+          setRollbackMessage(message.message);
+          setTimeout(() => setRollbackMessage(null), 5000);
         }
         break;
 
@@ -210,6 +215,7 @@ function App() {
           packageManagerVersion={versions?.packageManagerVersion}
           lastUpdate={lastUpdate}
           onRollback={handleRollback}
+          rollbackMessage={rollbackMessage}
         />
       </main>
     </div>
