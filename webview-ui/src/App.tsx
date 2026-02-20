@@ -1,7 +1,7 @@
 import { useState, useCallback, useEffect } from 'react';
 import { DependencyTable } from './components/DependencyTable';
 import { useVsCodeApi, useVsCodeMessages } from './hooks/useVsCodeApi';
-import { Dependency, HostToWebviewMessage, ColumnConfig, ProjectInfo, PackageManager } from './types';
+import { Dependency, HostToWebviewMessage, ColumnConfig, ProjectInfo, PackageManager, VersionInfo } from './types';
 import './App.css';
 
 function App() {
@@ -23,6 +23,7 @@ function App() {
   const [currentProjectPath, setCurrentProjectPath] = useState<string>('');
   const [showAllPackages, setShowAllPackages] = useState(false);
   const [packageManager, setPackageManager] = useState<PackageManager>('npm');
+  const [versions, setVersions] = useState<VersionInfo | null>(null);
 
   // Manejar mensajes del Extension Host
   const handleMessage = useCallback((message: HostToWebviewMessage) => {
@@ -39,6 +40,9 @@ function App() {
         }
         if (message.packageManager) {
           setPackageManager(message.packageManager);
+        }
+        if (message.versions) {
+          setVersions(message.versions);
         }
         setIsLoading(false);
         setError(null);
@@ -165,9 +169,17 @@ function App() {
           ) : (
             <span className="package-name">{packageName}</span>
           )}
-          <span className={`package-manager-badge pm-${packageManager}`}>
-            {packageManager}
-          </span>
+          <div className="version-info">
+            {versions && (
+              <span className="version-badge" title={`Node.js v${versions.nodeVersion}`}>
+                ⬢ v{versions.nodeVersion}
+              </span>
+            )}
+            <span className={`package-manager-badge pm-${packageManager}`}>
+              {packageManager}
+              {versions && <span className="pm-version">v{versions.packageManagerVersion}</span>}
+            </span>
+          </div>
           <button 
             className="toggle-packages-btn"
             onClick={() => setShowAllPackages(!showAllPackages)}

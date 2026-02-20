@@ -40,6 +40,11 @@ export interface ProjectInfo {
   relativePath: string;
 }
 
+export interface VersionInfo {
+  nodeVersion: string;
+  packageManagerVersion: string;
+}
+
 // Mensajes desde Webview al Extension Host
 export type WebviewToHostMessage =
   | { type: 'GET_DEPENDENCIES' }
@@ -52,7 +57,7 @@ export type PackageManager = 'npm' | 'yarn' | 'pnpm' | 'bun';
 
 // Mensajes desde Extension Host al Webview
 export type HostToWebviewMessage =
-  | { type: 'DEPENDENCIES_DATA'; dependencies: Dependency[]; packageName: string; columnConfig: ColumnConfig; projects?: ProjectInfo[]; currentProjectPath?: string; packageManager?: PackageManager }
+  | { type: 'DEPENDENCIES_DATA'; dependencies: Dependency[]; packageName: string; columnConfig: ColumnConfig; projects?: ProjectInfo[]; currentProjectPath?: string; packageManager?: PackageManager; versions?: VersionInfo }
   | { type: 'UPDATE_RESULT'; success: boolean; packageName: string; message: string }
   | { type: 'VERSION_CHECK_RESULT'; dependency: Dependency; latestVersion: string; semverUpdateType?: SemverUpdateType; lastPublishDate?: string }
   | { type: 'COLUMN_CONFIG'; config: ColumnConfig }

@@ -48,10 +48,15 @@ export interface ProjectInfo {
   relativePath: string;
 }
 
+export interface VersionInfo {
+  nodeVersion: string;
+  packageManagerVersion: string;
+}
+
 export type PackageManager = 'npm' | 'yarn' | 'pnpm' | 'bun';
 
 export type HostToWebviewMessage =
-  | { type: 'DEPENDENCIES_DATA'; dependencies: Dependency[]; packageName: string; columnConfig: ColumnConfig; projects?: ProjectInfo[]; currentProjectPath?: string; packageManager?: PackageManager }
+  | { type: 'DEPENDENCIES_DATA'; dependencies: Dependency[]; packageName: string; columnConfig: ColumnConfig; projects?: ProjectInfo[]; currentProjectPath?: string; packageManager?: PackageManager; versions?: VersionInfo }
   | { type: 'UPDATE_RESULT'; success: boolean; packageName: string; message: string }
   | { type: 'VERSION_CHECK_RESULT'; dependency: Dependency; latestVersion: string; semverUpdateType?: SemverUpdateType; lastPublishDate?: string }
   | { type: 'COLUMN_CONFIG'; config: ColumnConfig }

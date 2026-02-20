@@ -62,21 +62,6 @@
   border-color: var(--focus-border);
 }
 
-.type-filter {
-  background: var(--input-bg);
-  color: var(--input-fg);
-  border: 1px solid var(--input-border);
-  padding: 6px 10px;
-  border-radius: 2px;
-  font-size: 13px;
-  cursor: pointer;
-}
-
-.type-filter:focus {
-  outline: none;
-  border-color: var(--focus-border);
-}
-
 .update-all-btn {
   background: var(--button-bg);
   color: var(--button-fg);
@@ -87,6 +72,9 @@
   font-weight: 500;
   cursor: pointer;
   white-space: nowrap;
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
 
 .update-all-btn:hover:not(:disabled) {
@@ -96,6 +84,10 @@
 .update-all-btn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+}
+
+.download-icon {
+  font-size: 14px;
 }
 
 /* Table */
@@ -152,6 +144,22 @@
 }
 
 /* Column widths */
+.package-col {
+  width: 150px;
+  max-width: 200px;
+}
+
+.package-link {
+  color: var(--vscode-textLink-foreground);
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.package-link:hover {
+  color: var(--vscode-textLink-activeForeground);
+  text-decoration: underline;
+}
+
 .type-col {
   width: 70px;
 }

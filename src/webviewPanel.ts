@@ -11,6 +11,7 @@ import { getPackageDetails, isUpdateAvailable, getSemverUpdateType } from './npm
 import { findAllProjects, Project } from './workspaceService';
 import { runAudit, hasVulnerabilities, getPackageVulnerabilityCount, detectPackageManager } from './auditService';
 import { getInstallCommand, getPackageManagerInfo, PackageManager } from './packageManagerService';
+import { getVersions } from './nodeVersionService';
 
 export class NpmGuiManagerPanel {
   public static currentPanel: NpmGuiManagerPanel | undefined;
@@ -192,6 +193,9 @@ export class NpmGuiManagerPanel {
       const currentProject = this._projects.find(p => p.path === this._currentProjectPath);
       const displayName = currentProject ? currentProject.name : (packageJson.name || 'Unnamed Package');
 
+      // Get Node and package manager versions
+      const versions = await getVersions(this._currentPackageManager);
+
       this._sendMessage({
         type: 'DEPENDENCIES_DATA',
         dependencies,
@@ -199,7 +203,8 @@ export class NpmGuiManagerPanel {
         columnConfig,
         projects: this._projects.map(p => ({ name: p.name, path: p.path, relativePath: p.relativePath })),
         currentProjectPath: this._currentProjectPath,
-        packageManager: this._currentPackageManager
+        packageManager: this._currentPackageManager,
+        versions
       });
 
       // Update panel title with project name

@@ -59,7 +59,6 @@ export const DependencyTable = ({
   const [sortColumn, setSortColumn] = useState<SortColumn>('name');
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
   const [filter, setFilter] = useState('');
-  const [typeFilter, setTypeFilter] = useState<'all' | Dependency['type']>('all');
   const [updatingPackages, setUpdatingPackages] = useState<Set<string>>(new Set());
 
   const handleSort = (column: SortColumn) => {
@@ -97,11 +96,6 @@ export const DependencyTable = ({
     // Filter by update availability (unless showing all)
     if (!showAllPackages) {
       result = result.filter(d => d.updateAvailable);
-    }
-
-    // Filter by type
-    if (typeFilter !== 'all') {
-      result = result.filter(d => d.type === typeFilter);
     }
 
     // Filter by search text
@@ -152,22 +146,13 @@ export const DependencyTable = ({
     });
 
     return result;
-  }, [dependencies, sortColumn, sortDirection, filter, typeFilter, showAllPackages]);
+  }, [dependencies, sortColumn, sortDirection, filter, showAllPackages]);
 
   const updateCount = dependencies.filter(d => d.updateAvailable).length;
 
   const getSortIndicator = (column: SortColumn) => {
     if (sortColumn !== column) {return '⇅';}
     return sortDirection === 'asc' ? '↑' : '↓';
-  };
-
-  const getTypeLabel = (type: Dependency['type']) => {
-    switch (type) {
-      case 'dependencies': return 'Prod';
-      case 'devDependencies': return 'Dev';
-      case 'peerDependencies': return 'Peer';
-      default: return type;
-    }
   };
 
   // Calculate colspan for empty state
@@ -189,16 +174,6 @@ export const DependencyTable = ({
             onChange={(e) => setFilter(e.target.value)}
             className="filter-input"
           />
-          <select
-            value={typeFilter}
-            onChange={(e) => setTypeFilter(e.target.value as typeof typeFilter)}
-            className="type-filter"
-          >
-            <option value="all">All Types</option>
-            <option value="dependencies">Production</option>
-            <option value="devDependencies">Development</option>
-            <option value="peerDependencies">Peer</option>
-          </select>
         </div>
         {updateCount > 0 && (
           <button 
@@ -206,6 +181,7 @@ export const DependencyTable = ({
             onClick={handleUpdateAll}
             disabled={isLoading}
           >
+            <span className="download-icon">⬇</span>
             Update All ({updateCount})
           </button>
         )}
@@ -215,7 +191,7 @@ export const DependencyTable = ({
         <table className="dependency-table">
           <thead>
             <tr>
-              <th onClick={() => handleSort('name')} className="sortable">
+              <th onClick={() => handleSort('name')} className="sortable package-col">
                 Package {getSortIndicator('name')}
               </th>
               {columnConfig.type && (
@@ -271,12 +247,20 @@ export const DependencyTable = ({
                   className={dep.updateAvailable ? 'has-update' : ''}
                 >
                   <td className="package-name">
-                    <span className="name">{dep.name}</span>
+                    <a 
+                      href={`https://www.npmjs.com/package/${dep.name}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="package-link"
+                      title="View on npm"
+                    >
+                      {dep.name}
+                    </a>
                   </td>
                   {columnConfig.type && (
                     <td className="type-cell">
                       <span className={`type-badge type-${dep.type}`}>
-                        {getTypeLabel(dep.type)}
+                        {dep.type === 'dependencies' ? 'Prod' : dep.type === 'devDependencies' ? 'Dev' : 'Peer'}
                       </span>
                     </td>
                   )}

@@ -79,6 +79,21 @@
   background: var(--vscode-button-secondaryHoverBackground);
 }
 
+.version-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.version-badge {
+  font-size: 11px;
+  background: color-mix(in srgb, var(--vscode-button-background) 20%, transparent);
+  color: var(--vscode-button-foreground);
+  padding: 3px 8px;
+  border-radius: 4px;
+  font-family: var(--vscode-editor-font-family, monospace);
+}
+
 .package-manager-badge {
   font-size: 10px;
   font-weight: 700;
@@ -106,6 +121,12 @@
 .pm-bun {
   background: #f9f1e1;
   color: #14151a;
+}
+
+.pm-version {
+  margin-left: 4px;
+  opacity: 0.8;
+  font-weight: 400;
 }
 
 .app-content {
