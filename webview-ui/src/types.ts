@@ -12,11 +12,18 @@ export interface Dependency {
   type: 'dependencies' | 'devDependencies' | 'peerDependencies';
   updateAvailable?: boolean;
   semverUpdateType?: SemverUpdateType;
-  // New fields
   size?: string;
   lastPublishDate?: string;
   hasVulnerabilities?: boolean;
   vulnerabilityCount?: number;
+}
+
+export interface ColumnConfig {
+  size: boolean;
+  type: boolean;
+  lastUpdate: boolean;
+  security: boolean;
+  semverUpdate: boolean;
 }
 
 export interface PackageJson {
@@ -36,8 +43,9 @@ export type WebviewToHostMessage =
 
 // Mensajes desde Extension Host al Webview
 export type HostToWebviewMessage =
-  | { type: 'DEPENDENCIES_DATA'; dependencies: Dependency[]; packageName: string }
+  | { type: 'DEPENDENCIES_DATA'; dependencies: Dependency[]; packageName: string; columnConfig: ColumnConfig }
   | { type: 'UPDATE_RESULT'; success: boolean; packageName: string; message: string }
   | { type: 'VERSION_CHECK_RESULT'; dependency: Dependency; latestVersion: string; semverUpdateType?: SemverUpdateType; lastPublishDate?: string }
+  | { type: 'COLUMN_CONFIG'; config: ColumnConfig }
   | { type: 'ERROR'; message: string }
   | { type: 'PROGRESS'; message: string };

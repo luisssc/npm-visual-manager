@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { Dependency, SemverUpdateType } from '../types';
+import { Dependency, SemverUpdateType, ColumnConfig } from '../types';
 import './DependencyTable.css';
 
 interface DependencyTableProps {
@@ -7,6 +7,7 @@ interface DependencyTableProps {
   onUpdatePackage: (packageName: string, version: string, currentVersion?: string) => void;
   onUpdateAll: (packages: { name: string; version: string; currentVersion?: string }[]) => void;
   isLoading: boolean;
+  columnConfig: ColumnConfig;
 }
 
 type SortColumn = 'name' | 'installedVersion' | 'latestVersion' | 'type' | 'size' | 'lastPublishDate' | 'hasVulnerabilities';
@@ -50,7 +51,8 @@ export const DependencyTable = ({
   dependencies,
   onUpdatePackage,
   onUpdateAll,
-  isLoading
+  isLoading,
+  columnConfig
 }: DependencyTableProps) => {
   const [sortColumn, setSortColumn] = useState<SortColumn>('name');
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
@@ -83,7 +85,7 @@ export const DependencyTable = ({
   const handleUpdateAll = () => {
     const packagesToUpdate = sortedAndFilteredDeps
       .filter(d => d.updateAvailable && d.latestVersion)
-      .map(d => ({ name: d.name, version: 'latest' }));
+      .map(d => ({ name: d.name, version: 'latest', currentVersion: d.installedVersion }));
     onUpdateAll(packagesToUpdate);
   };
 
@@ -152,6 +154,14 @@ export const DependencyTable = ({
     }
   };
 
+  // Calculate colspan for empty state
+  const visibleColumnCount = 4 + // Always visible: Package, Installed, Latest, Action
+    (columnConfig.type ? 1 : 0) +
+    (columnConfig.size ? 1 : 0) +
+    (columnConfig.semverUpdate ? 1 : 0) +
+    (columnConfig.lastUpdate ? 1 : 0) +
+    (columnConfig.security ? 1 : 0);
+
   return (
     <div className="dependency-table-container">
       <div className="toolbar">
@@ -192,34 +202,44 @@ export const DependencyTable = ({
               <th onClick={() => handleSort('name')} className="sortable">
                 Package {getSortIndicator('name')}
               </th>
-              <th onClick={() => handleSort('type')} className="sortable type-col">
-                Type {getSortIndicator('type')}
-              </th>
+              {columnConfig.type && (
+                <th onClick={() => handleSort('type')} className="sortable type-col">
+                  Type {getSortIndicator('type')}
+                </th>
+              )}
               <th onClick={() => handleSort('installedVersion')} className="sortable version-col">
                 Installed {getSortIndicator('installedVersion')}
               </th>
               <th onClick={() => handleSort('latestVersion')} className="sortable version-col">
                 Latest {getSortIndicator('latestVersion')}
               </th>
-              <th onClick={() => handleSort('size')} className="sortable size-col">
-                Size {getSortIndicator('size')}
-              </th>
-              <th className="sortable update-type-col">
-                Update
-              </th>
-              <th onClick={() => handleSort('lastPublishDate')} className="sortable date-col">
-                Last Update {getSortIndicator('lastPublishDate')}
-              </th>
-              <th className="sortable security-col">
-                Security
-              </th>
+              {columnConfig.size && (
+                <th onClick={() => handleSort('size')} className="sortable size-col">
+                  Size {getSortIndicator('size')}
+                </th>
+              )}
+              {columnConfig.semverUpdate && (
+                <th className="sortable update-type-col">
+                  Update
+                </th>
+              )}
+              {columnConfig.lastUpdate && (
+                <th onClick={() => handleSort('lastPublishDate')} className="sortable date-col">
+                  Last Update {getSortIndicator('lastPublishDate')}
+                </th>
+              )}
+              {columnConfig.security && (
+                <th className="sortable security-col">
+                  Security
+                </th>
+              )}
               <th className="action-col">Action</th>
             </tr>
           </thead>
           <tbody>
             {sortedAndFilteredDeps.length === 0 ? (
               <tr>
-                <td colSpan={9} className="empty-state">
+                <td colSpan={visibleColumnCount} className="empty-state">
                   {dependencies.length === 0 
                     ? 'No dependencies found in package.json'
                     : 'No packages match the current filter'
@@ -235,11 +255,13 @@ export const DependencyTable = ({
                   <td className="package-name">
                     <span className="name">{dep.name}</span>
                   </td>
-                  <td className="type-cell">
-                    <span className={`type-badge type-${dep.type}`}>
-                      {getTypeLabel(dep.type)}
-                    </span>
-                  </td>
+                  {columnConfig.type && (
+                    <td className="type-cell">
+                      <span className={`type-badge type-${dep.type}`}>
+                        {getTypeLabel(dep.type)}
+                      </span>
+                    </td>
+                  )}
                   <td className="version-cell">
                     <code>{dep.installedVersion}</code>
                   </td>
@@ -252,41 +274,49 @@ export const DependencyTable = ({
                       <span className="checking">checking...</span>
                     )}
                   </td>
-                  <td className="size-cell">
-                    <span className="size-text">{dep.size || '-'}</span>
-                  </td>
-                  <td className="update-type-cell">
-                    {dep.updateAvailable && dep.semverUpdateType && dep.semverUpdateType !== 'none' && (
-                      <span 
-                        className="semver-badge"
-                        style={{ 
-                          backgroundColor: getSemverColor(dep.semverUpdateType),
-                          color: '#fff'
-                        }}
-                        title={`${getSemverLabel(dep.semverUpdateType)} update available`}
-                      >
-                        {getSemverLabel(dep.semverUpdateType)}
-                      </span>
-                    )}
-                  </td>
-                  <td className="date-cell">
-                    {dep.lastPublishDate ? (
-                      <span className="date-text" title={new Date(dep.lastPublishDate).toLocaleDateString()}>
-                        {formatDate(dep.lastPublishDate)}
-                      </span>
-                    ) : (
-                      <span className="checking">-</span>
-                    )}
-                  </td>
-                  <td className="security-cell">
-                    {dep.hasVulnerabilities ? (
-                      <span className="security-badge security-danger" title={`${dep.vulnerabilityCount || 1} vulnerabilities found`}>
-                        ⚠ {dep.vulnerabilityCount || 1}
-                      </span>
-                    ) : (
-                      <span className="security-badge security-safe">✓</span>
-                    )}
-                  </td>
+                  {columnConfig.size && (
+                    <td className="size-cell">
+                      <span className="size-text">{dep.size || '-'}</span>
+                    </td>
+                  )}
+                  {columnConfig.semverUpdate && (
+                    <td className="update-type-cell">
+                      {dep.updateAvailable && dep.semverUpdateType && dep.semverUpdateType !== 'none' && (
+                        <span 
+                          className="semver-badge"
+                          style={{ 
+                            backgroundColor: getSemverColor(dep.semverUpdateType),
+                            color: '#fff'
+                          }}
+                          title={`${getSemverLabel(dep.semverUpdateType)} update available`}
+                        >
+                          {getSemverLabel(dep.semverUpdateType)}
+                        </span>
+                      )}
+                    </td>
+                  )}
+                  {columnConfig.lastUpdate && (
+                    <td className="date-cell">
+                      {dep.lastPublishDate ? (
+                        <span className="date-text" title={new Date(dep.lastPublishDate).toLocaleDateString()}>
+                          {formatDate(dep.lastPublishDate)}
+                        </span>
+                      ) : (
+                        <span className="checking">-</span>
+                      )}
+                    </td>
+                  )}
+                  {columnConfig.security && (
+                    <td className="security-cell">
+                      {dep.hasVulnerabilities ? (
+                        <span className="security-badge security-danger" title={`${dep.vulnerabilityCount || 1} vulnerabilities found`}>
+                          ⚠ {dep.vulnerabilityCount || 1}
+                        </span>
+                      ) : (
+                        <span className="security-badge security-safe">✓</span>
+                      )}
+                    </td>
+                  )}
                   <td className="action-cell">
                     {dep.updateAvailable && dep.latestVersion ? (
                       <button

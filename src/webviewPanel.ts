@@ -5,7 +5,7 @@
 import * as vscode from 'vscode';
 import * as path from 'path';
 import * as fs from 'fs';
-import { Dependency, WebviewToHostMessage, HostToWebviewMessage } from './types';
+import { Dependency, WebviewToHostMessage, HostToWebviewMessage, ColumnConfig } from './types';
 import { findPackageJson, readPackageJson, extractDependencies } from './packageService';
 import { getPackageDetails, isUpdateAvailable, getSemverUpdateType, SemverUpdateType } from './npmService';
 
@@ -120,11 +120,13 @@ export class NpmGuiManagerPanel {
 
       const packageJson = await readPackageJson(packageJsonPath);
       const dependencies = extractDependencies(packageJson, this._workspaceRoot);
+      const columnConfig = this._getColumnConfig();
 
       this._sendMessage({
         type: 'DEPENDENCIES_DATA',
         dependencies,
-        packageName: packageJson.name || 'Unnamed Package'
+        packageName: packageJson.name || 'Unnamed Package',
+        columnConfig
       });
 
       // Iniciar verificación de actualizaciones en paralelo
@@ -135,6 +137,20 @@ export class NpmGuiManagerPanel {
         message: `Failed to load dependencies: ${error instanceof Error ? error.message : String(error)}`
       });
     }
+  }
+
+  /**
+   * Get column visibility configuration
+   */
+  private _getColumnConfig(): ColumnConfig {
+    const config = vscode.workspace.getConfiguration('npm-visual-manager.columns');
+    return {
+      size: config.get('size', true),
+      type: config.get('type', true),
+      lastUpdate: config.get('lastUpdate', true),
+      security: config.get('security', true),
+      semverUpdate: config.get('semverUpdate', true)
+    };
   }
 
   /**

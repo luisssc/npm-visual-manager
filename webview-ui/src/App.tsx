@@ -1,7 +1,7 @@
 import { useState, useCallback, useEffect } from 'react';
 import { DependencyTable } from './components/DependencyTable';
 import { useVsCodeApi, useVsCodeMessages } from './hooks/useVsCodeApi';
-import { Dependency, HostToWebviewMessage } from './types';
+import { Dependency, HostToWebviewMessage, ColumnConfig } from './types';
 import './App.css';
 
 function App() {
@@ -12,6 +12,13 @@ function App() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [progressMessage, setProgressMessage] = useState<string | null>(null);
+  const [columnConfig, setColumnConfig] = useState<ColumnConfig>({
+    size: true,
+    type: true,
+    lastUpdate: true,
+    security: true,
+    semverUpdate: true
+  });
 
   // Manejar mensajes del Extension Host
   const handleMessage = useCallback((message: HostToWebviewMessage) => {
@@ -19,8 +26,13 @@ function App() {
       case 'DEPENDENCIES_DATA':
         setDependencies(message.dependencies);
         setPackageName(message.packageName);
+        setColumnConfig(message.columnConfig);
         setIsLoading(false);
         setError(null);
+        break;
+
+      case 'COLUMN_CONFIG':
+        setColumnConfig(message.config);
         break;
 
       case 'VERSION_CHECK_RESULT':
@@ -127,6 +139,7 @@ function App() {
           onUpdatePackage={handleUpdatePackage}
           onUpdateAll={handleUpdateAll}
           isLoading={isLoading}
+          columnConfig={columnConfig}
         />
       </main>
     </div>

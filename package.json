@@ -41,8 +41,8 @@
         {
           "type": "webview",
           "id": "npm-visual-manager.sidebar",
-          "name": "Dependencies",
-          "contextualTitle": "NPM Dependencies"
+          "name": "NPM Visual Manager",
+          "contextualTitle": "NPM Visual Manager"
         }
       ]
     },
@@ -58,14 +58,37 @@
           "when": "resourceFilename == package.json",
           "group": "navigation"
         }
-      ],
-      "view/title": [
-        {
-          "command": "npm-visual-manager.refresh",
-          "when": "view == npm-visual-manager.sidebar",
-          "group": "navigation"
-        }
       ]
+    },
+    "configuration": {
+      "title": "NPM Visual Manager",
+      "properties": {
+        "npm-visual-manager.columns.size": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show Size column"
+        },
+        "npm-visual-manager.columns.type": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show Type column"
+        },
+        "npm-visual-manager.columns.lastUpdate": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show Last Update column"
+        },
+        "npm-visual-manager.columns.security": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show Security column"
+        },
+        "npm-visual-manager.columns.semverUpdate": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show Update Type column (MAJOR/MINOR/PATCH)"
+        }
+      }
     }
   },
   "scripts": {
