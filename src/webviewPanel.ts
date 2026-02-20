@@ -12,6 +12,7 @@ import { findAllProjects, Project } from './workspaceService';
 import { runAudit, hasVulnerabilities, getPackageVulnerabilityCount, detectPackageManager } from './auditService';
 import { getInstallCommand, getPackageManagerInfo, PackageManager } from './packageManagerService';
 import { getVersions } from './nodeVersionService';
+import { getInstalledVersion, getInstalledVersions } from './installedVersionService';
 
 export class NpmGuiManagerPanel {
   public static currentPanel: NpmGuiManagerPanel | undefined;
@@ -290,13 +291,16 @@ export class NpmGuiManagerPanel {
       return;
     }
 
-    // Save to history before updating
-    if (currentVersion) {
+    // Get exact installed version from node_modules before updating
+    const exactVersion = await getInstalledVersion(this._currentProjectPath, packageName);
+    
+    // Save to history before updating (use exact version if available)
+    if (exactVersion || currentVersion) {
       this._updateHistory = {
         timestamp: Date.now(),
         packages: [{
           name: packageName,
-          previousVersion: currentVersion,
+          previousVersion: exactVersion || currentVersion!,
           newVersion: version
         }]
       };
@@ -351,14 +355,18 @@ export class NpmGuiManagerPanel {
 
     const packageList = packages.map(p => `${p.name}@${p.version}`).join(' ');
 
-    // Save to history before updating
+    // Get exact installed versions from node_modules before updating
+    const packageNames = packages.map(p => p.name);
+    const installedVersions = await getInstalledVersions(this._currentProjectPath, packageNames);
+    
+    // Save to history before updating (use exact versions if available)
     this._updateHistory = {
       timestamp: Date.now(),
       packages: packages
         .filter(p => p.currentVersion)
         .map(p => ({
           name: p.name,
-          previousVersion: p.currentVersion!,
+          previousVersion: installedVersions.get(p.name) || p.currentVersion!,
           newVersion: p.version
         }))
     };
