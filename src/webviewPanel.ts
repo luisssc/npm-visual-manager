@@ -168,12 +168,8 @@ export class NpmGuiManagerPanel {
       let dependencies = extractDependencies(packageJson, this._currentProjectPath);
       const columnConfig = this._getColumnConfig();
 
-      // Run npm audit to get real vulnerability data
+      // Run npm audit to get real vulnerability data (silently)
       try {
-        this._sendMessage({
-          type: 'PROGRESS',
-          message: 'Running npm audit...'
-        });
         const auditResult = await runNpmAudit(this._currentProjectPath);
         
         // Add vulnerability info to dependencies

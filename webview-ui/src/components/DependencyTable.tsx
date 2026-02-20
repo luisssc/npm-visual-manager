@@ -143,7 +143,7 @@ export const DependencyTable = ({
     });
 
     return result;
-  }, [dependencies, sortColumn, sortDirection, filter, typeFilter]);
+  }, [dependencies, sortColumn, sortDirection, filter, typeFilter, showAllPackages]);
 
   const updateCount = dependencies.filter(d => d.updateAvailable).length;
 

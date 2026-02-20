@@ -103,6 +103,7 @@ function App() {
 
   const handleSelectProject = (path: string) => {
     setCurrentProjectPath(path);
+    setIsLoading(true);
     selectProject(path);
   };
 
