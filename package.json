@@ -37,7 +37,7 @@
     "onView:npm-visual-manager.sidebar"
   ],
   "main": "./out/extension.js",
-  "icon": "resources/icon-marketplace.svg",
+  "icon": "resources/icon.png",
   "galleryBanner": {
     "color": "#CB3837",
     "theme": "dark"
