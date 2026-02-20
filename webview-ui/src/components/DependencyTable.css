@@ -1,0 +1,360 @@
+/* Variables CSS nativas de VS Code - se adaptan automáticamente al tema */
+.dependency-table-container {
+  --table-bg: var(--vscode-editor-background);
+  --table-fg: var(--vscode-editor-foreground);
+  --border-color: var(--vscode-panel-border, var(--vscode-widget-border));
+  --header-bg: var(--vscode-editorGroupHeader-tabsBackground, var(--vscode-tab-inactiveBackground));
+  --row-hover-bg: var(--vscode-list-hoverBackground);
+  --button-bg: var(--vscode-button-background);
+  --button-fg: var(--vscode-button-foreground);
+  --button-hover-bg: var(--vscode-button-hoverBackground);
+  --input-bg: var(--vscode-input-background);
+  --input-fg: var(--vscode-input-foreground);
+  --input-border: var(--vscode-input-border);
+  --badge-bg: var(--vscode-badge-background);
+  --badge-fg: var(--vscode-badge-foreground);
+  --error-fg: var(--vscode-errorForeground);
+  --success-fg: var(--vscode-testing-iconPassed, #89d185);
+  --warning-fg: var(--vscode-editorWarning-foreground, #cca700);
+  --focus-border: var(--vscode-focusBorder);
+  
+  background: var(--table-bg);
+  color: var(--table-fg);
+  font-family: var(--vscode-font-family);
+  font-size: var(--vscode-font-size);
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Toolbar */
+.toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border-color);
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.filters {
+  display: flex;
+  gap: 8px;
+  flex: 1;
+  min-width: 200px;
+}
+
+.filter-input {
+  background: var(--input-bg);
+  color: var(--input-fg);
+  border: 1px solid var(--input-border);
+  padding: 6px 10px;
+  border-radius: 2px;
+  font-size: 13px;
+  flex: 1;
+  max-width: 300px;
+}
+
+.filter-input:focus {
+  outline: none;
+  border-color: var(--focus-border);
+}
+
+.type-filter {
+  background: var(--input-bg);
+  color: var(--input-fg);
+  border: 1px solid var(--input-border);
+  padding: 6px 10px;
+  border-radius: 2px;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.type-filter:focus {
+  outline: none;
+  border-color: var(--focus-border);
+}
+
+.update-all-btn {
+  background: var(--button-bg);
+  color: var(--button-fg);
+  border: none;
+  padding: 6px 14px;
+  border-radius: 2px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.update-all-btn:hover:not(:disabled) {
+  background: var(--button-hover-bg);
+}
+
+.update-all-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Table */
+.table-wrapper {
+  flex: 1;
+  overflow: auto;
+}
+
+.dependency-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.dependency-table thead {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
+.dependency-table th {
+  background: var(--header-bg);
+  padding: 10px 12px;
+  text-align: left;
+  font-weight: 600;
+  border-bottom: 1px solid var(--border-color);
+  white-space: nowrap;
+}
+
+.dependency-table th.sortable {
+  cursor: pointer;
+  user-select: none;
+}
+
+.dependency-table th.sortable:hover {
+  background: var(--row-hover-bg);
+}
+
+.dependency-table td {
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.dependency-table tbody tr:hover {
+  background: var(--row-hover-bg);
+}
+
+.dependency-table tbody tr.has-update {
+  background: color-mix(in srgb, var(--warning-fg) 8%, transparent);
+}
+
+.dependency-table tbody tr.has-update:hover {
+  background: color-mix(in srgb, var(--warning-fg) 15%, var(--row-hover-bg));
+}
+
+/* Column widths */
+.type-col {
+  width: 80px;
+}
+
+.version-col {
+  width: 120px;
+}
+
+.action-col {
+  width: 90px;
+  text-align: center;
+}
+
+/* Package name cell */
+.package-name {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.package-name .name {
+  font-weight: 500;
+}
+
+.update-badge {
+  background: var(--warning-fg);
+  color: var(--table-bg);
+  font-size: 10px;
+  padding: 2px 6px;
+  border-radius: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+/* Type badges */
+.type-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 3px;
+  font-size: 11px;
+  font-weight: 500;
+  background: var(--badge-bg);
+  color: var(--badge-fg);
+}
+
+/* Version cells */
+.version-cell code {
+  font-family: var(--vscode-editor-font-family, monospace);
+  font-size: 12px;
+  background: color-mix(in srgb, var(--table-fg) 5%, transparent);
+  padding: 2px 6px;
+  border-radius: 3px;
+}
+
+.version-cell .latest-version {
+  background: color-mix(in srgb, var(--success-fg) 20%, transparent);
+  color: var(--success-fg);
+}
+
+.version-cell .checking {
+  color: var(--vscode-descriptionForeground, #888);
+  font-style: italic;
+  font-size: 12px;
+}
+
+/* Action cell */
+.action-cell {
+  text-align: center;
+}
+
+.update-btn {
+  background: var(--button-bg);
+  color: var(--button-fg);
+  border: none;
+  padding: 4px 12px;
+  border-radius: 2px;
+  font-size: 12px;
+  cursor: pointer;
+  min-width: 70px;
+}
+
+.update-btn:hover:not(:disabled) {
+  background: var(--button-hover-bg);
+}
+
+.update-btn:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+
+.up-to-date {
+  color: var(--success-fg);
+  font-size: 14px;
+}
+
+/* Empty state */
+.empty-state {
+  text-align: center;
+  padding: 40px;
+  color: var(--vscode-descriptionForeground, #888);
+  font-style: italic;
+}
+
+/* Footer */
+.footer {
+  display: flex;
+  justify-content: space-between;
+  padding: 10px 16px;
+  border-top: 1px solid var(--border-color);
+  font-size: 12px;
+  color: var(--vscode-descriptionForeground, #888);
+}
+
+.update-summary {
+  color: var(--warning-fg);
+  font-weight: 500;
+}
+
+/* Loading state */
+.loading-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  gap: 16px;
+}
+
+.spinner {
+  width: 32px;
+  height: 32px;
+  border: 3px solid color-mix(in srgb, var(--table-fg) 20%, transparent);
+  border-top-color: var(--button-bg);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Error state */
+.error-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  gap: 16px;
+  padding: 40px;
+  text-align: center;
+}
+
+.error-icon {
+  font-size: 48px;
+  color: var(--error-fg);
+}
+
+.error-message {
+  color: var(--error-fg);
+  max-width: 400px;
+}
+
+.retry-btn {
+  background: var(--button-bg);
+  color: var(--button-fg);
+  border: none;
+  padding: 8px 16px;
+  border-radius: 2px;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.retry-btn:hover {
+  background: var(--button-hover-bg);
+}
+
+/* Progress indicator */
+.progress-bar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: var(--button-bg);
+  animation: progress 2s ease-in-out infinite;
+  z-index: 100;
+}
+
+@keyframes progress {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+.progress-message {
+  position: fixed;
+  top: 8px;
+  right: 16px;
+  background: var(--badge-bg);
+  color: var(--badge-fg);
+  padding: 4px 12px;
+  border-radius: 3px;
+  font-size: 12px;
+  z-index: 100;
+}

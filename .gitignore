@@ -1,0 +1,11 @@
+out
+dist
+node_modules
+.vscode-test/
+*.vsix
+.DS_Store
+*.log
+*.tsbuildinfo
+
+# Archivos de desarrollo local
+DEV.md
