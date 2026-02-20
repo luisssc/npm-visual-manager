@@ -39,6 +39,7 @@ export type WebviewToHostMessage =
   | { type: 'SELECT_PROJECT'; path: string }
   | { type: 'UPDATE_PACKAGE'; packageName: string; version: string; currentVersion?: string }
   | { type: 'UPDATE_ALL_PACKAGES'; packages: { name: string; version: string; currentVersion?: string }[] }
+  | { type: 'ROLLBACK_LAST' }
   | { type: 'CHECK_UPDATES'; dependencies: Dependency[] };
 
 // Mensajes desde Extension Host al Webview
@@ -53,11 +54,21 @@ export interface VersionInfo {
   packageManagerVersion: string;
 }
 
+export interface UpdateHistory {
+  timestamp: number;
+  packages: Array<{
+    name: string;
+    previousVersion: string;
+    newVersion: string;
+  }>;
+}
+
 export type PackageManager = 'npm' | 'yarn' | 'pnpm' | 'bun';
 
 export type HostToWebviewMessage =
-  | { type: 'DEPENDENCIES_DATA'; dependencies: Dependency[]; packageName: string; columnConfig: ColumnConfig; projects?: ProjectInfo[]; currentProjectPath?: string; packageManager?: PackageManager; versions?: VersionInfo }
+  | { type: 'DEPENDENCIES_DATA'; dependencies: Dependency[]; packageName: string; columnConfig: ColumnConfig; projects?: ProjectInfo[]; currentProjectPath?: string; packageManager?: PackageManager; versions?: VersionInfo; lastUpdate?: UpdateHistory | null }
   | { type: 'UPDATE_RESULT'; success: boolean; packageName: string; message: string }
+  | { type: 'ROLLBACK_RESULT'; success: boolean; message: string; rolledBackPackages?: string[] }
   | { type: 'VERSION_CHECK_RESULT'; dependency: Dependency; latestVersion: string; semverUpdateType?: SemverUpdateType; lastPublishDate?: string }
   | { type: 'COLUMN_CONFIG'; config: ColumnConfig }
   | { type: 'ERROR'; message: string }

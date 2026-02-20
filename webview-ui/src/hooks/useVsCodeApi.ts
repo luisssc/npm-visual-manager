@@ -53,6 +53,10 @@ export function useVsCodeApi() {
     postMessage({ type: 'SELECT_PROJECT', path });
   }, [postMessage]);
 
+  const rollbackLast = useCallback(() => {
+    postMessage({ type: 'ROLLBACK_LAST' });
+  }, [postMessage]);
+
   return {
     vscode: vscodeRef.current,
     isReady,
@@ -61,7 +65,8 @@ export function useVsCodeApi() {
     updatePackage,
     updateAllPackages,
     checkUpdates,
-    selectProject
+    selectProject,
+    rollbackLast
   };
 }
 

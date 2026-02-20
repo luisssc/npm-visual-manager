@@ -1,5 +1,5 @@
 import { useState, useMemo, ReactNode } from 'react';
-import { Dependency, SemverUpdateType, ColumnConfig } from '../types';
+import { Dependency, SemverUpdateType, ColumnConfig, UpdateHistory } from '../types';
 import './DependencyTable.css';
 
 const Tooltip = ({ text, children }: { text: string; children: ReactNode }) => (
@@ -19,6 +19,8 @@ interface DependencyTableProps {
   nodeVersion?: string;
   packageManager?: string;
   packageManagerVersion?: string;
+  lastUpdate?: UpdateHistory | null;
+  onRollback?: () => void;
 }
 
 type SortColumn = 'name' | 'installedVersion' | 'latestVersion' | 'type' | 'size' | 'lastPublishDate' | 'hasVulnerabilities';
@@ -67,7 +69,9 @@ export const DependencyTable = ({
   showAllPackages,
   nodeVersion,
   packageManager,
-  packageManagerVersion
+  packageManagerVersion,
+  lastUpdate,
+  onRollback
 }: DependencyTableProps) => {
   const [sortColumn, setSortColumn] = useState<SortColumn>('name');
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
@@ -205,15 +209,27 @@ export const DependencyTable = ({
             </div>
           )}
         </div>
-        {updateCount > 0 && (
-          <button 
-            className="update-all-btn"
-            onClick={handleUpdateAll}
-            disabled={isLoading}
-          >
-            Update All ({updateCount})
-          </button>
-        )}
+        <div className="toolbar-actions">
+          {lastUpdate && onRollback && (
+            <button 
+              className="rollback-btn"
+              onClick={onRollback}
+              disabled={isLoading}
+              title={`Rollback last update (${lastUpdate.packages.length} package${lastUpdate.packages.length > 1 ? 's' : ''})`}
+            >
+              <span>↩</span> Rollback
+            </button>
+          )}
+          {updateCount > 0 && (
+            <button 
+              className="update-all-btn"
+              onClick={handleUpdateAll}
+              disabled={isLoading}
+            >
+              Update All ({updateCount})
+            </button>
+          )}
+        </div>
       </div>
 
       <div className="table-wrapper">

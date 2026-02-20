@@ -1,11 +1,11 @@
 import { useState, useCallback, useEffect } from 'react';
 import { DependencyTable } from './components/DependencyTable';
 import { useVsCodeApi, useVsCodeMessages } from './hooks/useVsCodeApi';
-import { Dependency, HostToWebviewMessage, ColumnConfig, ProjectInfo, PackageManager, VersionInfo } from './types';
+import { Dependency, HostToWebviewMessage, ColumnConfig, ProjectInfo, PackageManager, VersionInfo, UpdateHistory } from './types';
 import './App.css';
 
 function App() {
-  const { requestDependencies, updatePackage, updateAllPackages, selectProject, isReady } = useVsCodeApi();
+  const { requestDependencies, updatePackage, updateAllPackages, selectProject, rollbackLast, isReady } = useVsCodeApi();
   
   const [dependencies, setDependencies] = useState<Dependency[]>([]);
   const [packageName, setPackageName] = useState<string>('');
@@ -24,6 +24,7 @@ function App() {
   const [showAllPackages, setShowAllPackages] = useState(false);
   const [packageManager, setPackageManager] = useState<PackageManager>('npm');
   const [versions, setVersions] = useState<VersionInfo | null>(null);
+  const [lastUpdate, setLastUpdate] = useState<UpdateHistory | null>(null);
 
   // Manejar mensajes del Extension Host
   const handleMessage = useCallback((message: HostToWebviewMessage) => {
@@ -43,6 +44,9 @@ function App() {
         }
         if (message.versions) {
           setVersions(message.versions);
+        }
+        if (message.lastUpdate !== undefined) {
+          setLastUpdate(message.lastUpdate);
         }
         setIsLoading(false);
         setError(null);
@@ -72,6 +76,13 @@ function App() {
         setProgressMessage(message.success ? null : message.message);
         if (!message.success) {
           setError(message.message);
+        }
+        break;
+
+      case 'ROLLBACK_RESULT':
+        setProgressMessage(message.success ? `Rolled back: ${message.message}` : message.message);
+        if (message.success) {
+          setLastUpdate(null);
         }
         break;
 
@@ -113,6 +124,10 @@ function App() {
     setCurrentProjectPath(path);
     setIsLoading(true);
     selectProject(path);
+  };
+
+  const handleRollback = () => {
+    rollbackLast();
   };
 
   const handleRetry = () => {
@@ -193,6 +208,8 @@ function App() {
           nodeVersion={versions?.nodeVersion}
           packageManager={packageManager}
           packageManagerVersion={versions?.packageManagerVersion}
+          lastUpdate={lastUpdate}
+          onRollback={handleRollback}
         />
       </main>
     </div>

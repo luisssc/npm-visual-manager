@@ -5,7 +5,7 @@
 import * as vscode from 'vscode';
 import * as path from 'path';
 import * as fs from 'fs';
-import { Dependency, WebviewToHostMessage, HostToWebviewMessage, ColumnConfig } from './types';
+import { Dependency, WebviewToHostMessage, HostToWebviewMessage, ColumnConfig, UpdateHistory } from './types';
 import { findPackageJson, readPackageJson, extractDependencies } from './packageService';
 import { getPackageDetails, isUpdateAvailable, getSemverUpdateType } from './npmService';
 import { findAllProjects, Project } from './workspaceService';
@@ -22,6 +22,7 @@ export class NpmGuiManagerPanel {
   private _projects: Project[] = [];
   private _currentProjectPath: string;
   private _currentPackageManager: PackageManager = 'npm';
+  private _updateHistory: UpdateHistory | null = null;
 
   public static async createOrShow(extensionUri: vscode.Uri, workspaceRoot: string): Promise<void> {
     const column = vscode.window.activeTextEditor
@@ -122,6 +123,10 @@ export class NpmGuiManagerPanel {
       case 'UPDATE_ALL_PACKAGES':
         await this._updateAllPackages(message.packages);
         break;
+
+      case 'ROLLBACK_LAST':
+        await this._rollbackLastUpdate();
+        break;
     }
   }
 
@@ -204,7 +209,8 @@ export class NpmGuiManagerPanel {
         projects: this._projects.map(p => ({ name: p.name, path: p.path, relativePath: p.relativePath })),
         currentProjectPath: this._currentProjectPath,
         packageManager: this._currentPackageManager,
-        versions
+        versions,
+        lastUpdate: this._updateHistory
       });
 
       // Update panel title with project name
@@ -284,6 +290,18 @@ export class NpmGuiManagerPanel {
       return;
     }
 
+    // Save to history before updating
+    if (currentVersion) {
+      this._updateHistory = {
+        timestamp: Date.now(),
+        packages: [{
+          name: packageName,
+          previousVersion: currentVersion,
+          newVersion: version
+        }]
+      };
+    }
+
     this._sendMessage({
       type: 'PROGRESS',
       message: `Installing ${packageName}@${version}...`
@@ -308,6 +326,7 @@ export class NpmGuiManagerPanel {
         message: `Successfully initiated update for ${packageName}`
       });
     } catch (error) {
+      this._updateHistory = null; // Clear history on error
       this._sendMessage({
         type: 'UPDATE_RESULT',
         success: false,
@@ -328,6 +347,18 @@ export class NpmGuiManagerPanel {
 
     const packageList = packages.map(p => `${p.name}@${p.version}`).join(' ');
 
+    // Save to history before updating
+    this._updateHistory = {
+      timestamp: Date.now(),
+      packages: packages
+        .filter(p => p.currentVersion)
+        .map(p => ({
+          name: p.name,
+          previousVersion: p.currentVersion!,
+          newVersion: p.version
+        }))
+    };
+
     this._sendMessage({
       type: 'PROGRESS',
       message: `Installing ${packages.length} package(s)...`
@@ -346,7 +377,72 @@ export class NpmGuiManagerPanel {
 
       vscode.window.showInformationMessage(`Updating ${packages.length} package(s)...`);
     } catch (error) {
+      this._updateHistory = null; // Clear history on error
       vscode.window.showErrorMessage(`Failed to update packages: ${error instanceof Error ? error.message : String(error)}`);
+    }
+  }
+
+  /**
+   * Rollback the last update operation
+   */
+  private async _rollbackLastUpdate(): Promise<void> {
+    if (!this._updateHistory || this._updateHistory.packages.length === 0) {
+      this._sendMessage({
+        type: 'ROLLBACK_RESULT',
+        success: false,
+        message: 'No previous update to rollback'
+      });
+      return;
+    }
+
+    const packagesToRollback = this._updateHistory.packages;
+    const packageList = packagesToRollback.map(p => `${p.name}@${p.previousVersion}`).join(', ');
+    
+    const result = await vscode.window.showWarningMessage(
+      `Rollback ${packagesToRollback.length} package(s) to previous versions?\n\n${packageList}`,
+      { modal: true },
+      'Rollback',
+      'Cancel'
+    );
+
+    if (result !== 'Rollback') {
+      return;
+    }
+
+    this._sendMessage({
+      type: 'PROGRESS',
+      message: `Rolling back ${packagesToRollback.length} package(s)...`
+    });
+
+    try {
+      const info = getPackageManagerInfo(this._currentPackageManager);
+      const terminal = this._getOrCreateTerminal();
+      terminal.show();
+      
+      // Install previous versions
+      const installArgs = packagesToRollback.map(p => `${p.name}@${p.previousVersion}`).join(' ');
+      terminal.sendText(`cd "${this._currentProjectPath}" && ${info.addCommand} ${installArgs}`, true);
+
+      // Clear history after successful rollback
+      const rolledBackPackages = packagesToRollback.map(p => p.name);
+      this._updateHistory = null;
+
+      setTimeout(async () => {
+        await this._loadDependencies();
+      }, 5000);
+
+      this._sendMessage({
+        type: 'ROLLBACK_RESULT',
+        success: true,
+        message: `Successfully rolled back ${packagesToRollback.length} package(s)`,
+        rolledBackPackages
+      });
+    } catch (error) {
+      this._sendMessage({
+        type: 'ROLLBACK_RESULT',
+        success: false,
+        message: `Failed to rollback: ${error instanceof Error ? error.message : String(error)}`
+      });
     }
   }
 

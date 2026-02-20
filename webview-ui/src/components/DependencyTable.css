@@ -92,6 +92,37 @@
   cursor: not-allowed;
 }
 
+.toolbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.rollback-btn {
+  background: var(--vscode-errorForeground);
+  color: white;
+  border: none;
+  padding: 6px 14px;
+  border-radius: 2px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: opacity 0.2s;
+}
+
+.rollback-btn:hover:not(:disabled) {
+  opacity: 0.9;
+}
+
+.rollback-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 .env-info {
   display: flex;
   align-items: center;
