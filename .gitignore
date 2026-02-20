@@ -7,5 +7,13 @@ node_modules
 *.log
 *.tsbuildinfo
 
-# Archivos de desarrollo local
+# Development files
 DEV.md
+AGENTS.md
+
+# IDE directories
+.claude/
+.vscode/
+
+# OS files
+Thumbs.db

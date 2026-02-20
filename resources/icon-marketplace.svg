@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128">
+  <!-- Background circle -->
+  <circle cx="64" cy="64" r="60" fill="#CB3837"/>
+  
+  <!-- NPM package cube -->
+  <g transform="translate(64, 64)">
+    <!-- Main cube body -->
+    <path d="M-30,-20 L30,-20 L30,20 L0,35 L-30,20 Z" fill="#ffffff"/>
+    
+    <!-- NPM text -->
+    <text x="0" y="10" text-anchor="middle" font-family="Arial, sans-serif" font-size="20" font-weight="bold" fill="#CB3837">npm</text>
+    
+    <!-- Version arrow up -->
+    <path d="M-15,-35 L0,-50 L15,-35" fill="none" stroke="#ffffff" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M0,-50 L0,-25" fill="none" stroke="#ffffff" stroke-width="4" stroke-linecap="round"/>
+  </g>
+  
+  <!-- Small decorative packages -->
+  <rect x="95" y="25" width="15" height="15" fill="#ffffff" opacity="0.3" rx="2"/>
+  <rect x="100" y="35" width="12" height="12" fill="#ffffff" opacity="0.2" rx="2"/>
+</svg>

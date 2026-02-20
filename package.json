@@ -37,6 +37,23 @@
     "onView:npm-visual-manager.sidebar"
   ],
   "main": "./out/extension.js",
+  "icon": "resources/icon-marketplace.svg",
+  "galleryBanner": {
+    "color": "#CB3837",
+    "theme": "dark"
+  },
+  "badges": [
+    {
+      "url": "https://img.shields.io/visual-studio-marketplace/v/LuisClementDev.npm-visual-manager",
+      "href": "https://marketplace.visualstudio.com/items?itemName=LuisClementDev.npm-visual-manager",
+      "description": "VS Code Marketplace Version"
+    },
+    {
+      "url": "https://img.shields.io/visual-studio-marketplace/d/LuisClementDev.npm-visual-manager",
+      "href": "https://marketplace.visualstudio.com/items?itemName=LuisClementDev.npm-visual-manager",
+      "description": "VS Code Marketplace Downloads"
+    }
+  ],
   "contributes": {
     "commands": [
       {

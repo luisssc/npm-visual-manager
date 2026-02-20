@@ -2,7 +2,24 @@
 
 A Visual Studio Code extension that provides a visual interface for managing NPM dependencies, inspired by the NuGet Package Manager in Visual Studio.
 
-![NPM Visual Manager Screenshot](https://via.placeholder.com/800x400?text=NPM+GUI+Manager+Screenshot)
+![NPM Visual Manager - Main Interface](screenshots/main-interface.png)
+
+## Screenshots
+
+### Dependency Table
+View all your dependencies with installed versions, latest versions, update availability, and security status.
+
+![Dependency Table](screenshots/dependency-table.png)
+
+### Bulk Updates
+Select multiple packages and update them all at once with a single click.
+
+![Bulk Updates](screenshots/bulk-updates.png)
+
+### Security Audit
+See vulnerability counts directly in the dependency list.
+
+![Security Audit](screenshots/security-audit.png)
 
 ## Features
 
