@@ -450,7 +450,7 @@ export class NpmGuiManagerPanel {
       setTimeout(async () => {
         await this._restorePackageJsonVersions(packagesToRollback);
         await this._loadDependencies();
-      }, 3000);
+      }, 5000);
 
       // Clear history after successful rollback
       const rolledBackPackages = packagesToRollback.map(p => p.name);
