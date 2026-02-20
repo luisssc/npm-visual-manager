@@ -1,11 +1,11 @@
 import { useState, useCallback, useEffect } from 'react';
 import { DependencyTable } from './components/DependencyTable';
 import { useVsCodeApi, useVsCodeMessages } from './hooks/useVsCodeApi';
-import { Dependency, HostToWebviewMessage, ColumnConfig } from './types';
+import { Dependency, HostToWebviewMessage, ColumnConfig, ProjectInfo } from './types';
 import './App.css';
 
 function App() {
-  const { requestDependencies, updatePackage, updateAllPackages, isReady } = useVsCodeApi();
+  const { requestDependencies, updatePackage, updateAllPackages, selectProject, isReady } = useVsCodeApi();
   
   const [dependencies, setDependencies] = useState<Dependency[]>([]);
   const [packageName, setPackageName] = useState<string>('');
@@ -19,6 +19,8 @@ function App() {
     security: true,
     semverUpdate: true
   });
+  const [projects, setProjects] = useState<ProjectInfo[]>([]);
+  const [currentProjectPath, setCurrentProjectPath] = useState<string>('');
 
   // Manejar mensajes del Extension Host
   const handleMessage = useCallback((message: HostToWebviewMessage) => {
@@ -27,6 +29,12 @@ function App() {
         setDependencies(message.dependencies);
         setPackageName(message.packageName);
         setColumnConfig(message.columnConfig);
+        if (message.projects) {
+          setProjects(message.projects);
+        }
+        if (message.currentProjectPath) {
+          setCurrentProjectPath(message.currentProjectPath);
+        }
         setIsLoading(false);
         setError(null);
         break;
@@ -88,8 +96,13 @@ function App() {
     updatePackage(packageName, version, currentVersion);
   };
 
-  const handleUpdateAll = (packages: { name: string; version: string }[]) => {
+  const handleUpdateAll = (packages: { name: string; version: string; currentVersion?: string }[]) => {
     updateAllPackages(packages);
+  };
+
+  const handleSelectProject = (path: string) => {
+    setCurrentProjectPath(path);
+    selectProject(path);
   };
 
   const handleRetry = () => {
@@ -130,7 +143,21 @@ function App() {
       
       <header className="app-header">
         <h1>📦 NPM Visual Manager</h1>
-        <span className="package-name">{packageName}</span>
+        {projects.length > 1 ? (
+          <select 
+            className="project-selector"
+            value={currentProjectPath}
+            onChange={(e) => handleSelectProject(e.target.value)}
+          >
+            {projects.map(project => (
+              <option key={project.path} value={project.path}>
+                {project.name} ({project.relativePath})
+              </option>
+            ))}
+          </select>
+        ) : (
+          <span className="package-name">{packageName}</span>
+        )}
       </header>
 
       <main className="app-content">

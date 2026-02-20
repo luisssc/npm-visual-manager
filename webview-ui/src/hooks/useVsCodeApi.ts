@@ -49,6 +49,10 @@ export function useVsCodeApi() {
     postMessage({ type: 'CHECK_UPDATES', dependencies });
   }, [postMessage]);
 
+  const selectProject = useCallback((path: string) => {
+    postMessage({ type: 'SELECT_PROJECT', path });
+  }, [postMessage]);
+
   return {
     vscode: vscodeRef.current,
     isReady,
@@ -56,7 +60,8 @@ export function useVsCodeApi() {
     requestDependencies,
     updatePackage,
     updateAllPackages,
-    checkUpdates
+    checkUpdates,
+    selectProject
   };
 }
 

@@ -1,5 +1,5 @@
 /**
- * Manejador del Webview Panel para NPM Visual Manager
+ * Webview Panel handler for NPM Visual Manager
  */
 
 import * as vscode from 'vscode';
@@ -7,7 +7,8 @@ import * as path from 'path';
 import * as fs from 'fs';
 import { Dependency, WebviewToHostMessage, HostToWebviewMessage, ColumnConfig } from './types';
 import { findPackageJson, readPackageJson, extractDependencies } from './packageService';
-import { getPackageDetails, isUpdateAvailable, getSemverUpdateType, SemverUpdateType } from './npmService';
+import { getPackageDetails, isUpdateAvailable, getSemverUpdateType } from './npmService';
+import { findAllProjects, Project } from './workspaceService';
 
 export class NpmGuiManagerPanel {
   public static currentPanel: NpmGuiManagerPanel | undefined;
@@ -15,15 +16,25 @@ export class NpmGuiManagerPanel {
   private readonly _extensionUri: vscode.Uri;
   private _disposables: vscode.Disposable[] = [];
   private _workspaceRoot: string;
+  private _projects: Project[] = [];
+  private _currentProjectPath: string;
 
   public static async createOrShow(extensionUri: vscode.Uri, workspaceRoot: string): Promise<void> {
     const column = vscode.window.activeTextEditor
       ? vscode.window.activeTextEditor.viewColumn
       : undefined;
 
-    // Si ya existe un panel, mostrarlo
+    // Find all projects in workspace
+    const projects = await findAllProjects(workspaceRoot);
+    if (projects.length === 0) {
+      vscode.window.showErrorMessage('npm-visual-manager: No package.json found in workspace');
+      return;
+    }
+
+    // Si ya existe un panel, mostrarlo y actualizar proyectos
     if (NpmGuiManagerPanel.currentPanel) {
       NpmGuiManagerPanel.currentPanel._panel.reveal(column);
+      NpmGuiManagerPanel.currentPanel._projects = projects;
       await NpmGuiManagerPanel.currentPanel._loadDependencies();
       return;
     }
@@ -47,18 +58,21 @@ export class NpmGuiManagerPanel {
       dark: vscode.Uri.joinPath(extensionUri, 'resources', 'icon-dark.svg')
     };
 
-    NpmGuiManagerPanel.currentPanel = new NpmGuiManagerPanel(panel, extensionUri, workspaceRoot);
+    NpmGuiManagerPanel.currentPanel = new NpmGuiManagerPanel(panel, extensionUri, workspaceRoot, projects);
     await NpmGuiManagerPanel.currentPanel._loadDependencies();
   }
 
   private constructor(
     panel: vscode.WebviewPanel,
     extensionUri: vscode.Uri,
-    workspaceRoot: string
+    workspaceRoot: string,
+    projects: Project[]
   ) {
     this._panel = panel;
     this._extensionUri = extensionUri;
     this._workspaceRoot = workspaceRoot;
+    this._projects = projects;
+    this._currentProjectPath = projects[0].path;
 
     // Configurar contenido HTML inicial
     this._update();
@@ -89,6 +103,10 @@ export class NpmGuiManagerPanel {
         await this._loadDependencies();
         break;
 
+      case 'SELECT_PROJECT':
+        await this._selectProject(message.path);
+        break;
+
       case 'CHECK_UPDATES':
         await this._checkUpdates(message.dependencies);
         break;
@@ -104,30 +122,67 @@ export class NpmGuiManagerPanel {
   }
 
   /**
-   * Carga las dependencias del package.json
+   * Cambia el proyecto actual
+   */
+  private async _selectProject(projectPath: string): Promise<void> {
+    this._currentProjectPath = projectPath;
+    await this._loadDependencies();
+  }
+
+  /**
+   * Muestra un quick pick para seleccionar proyecto
+   */
+  public async showProjectPicker(): Promise<void> {
+    const items = this._projects.map(p => ({
+      label: p.name,
+      description: p.relativePath,
+      path: p.path
+    }));
+
+    const selected = await vscode.window.showQuickPick(items, {
+      placeHolder: 'Select a project to manage dependencies'
+    });
+
+    if (selected) {
+      await this._selectProject(selected.path);
+    }
+  }
+
+  /**
+   * Carga las dependencias del package.json del proyecto actual
    */
   private async _loadDependencies(): Promise<void> {
     try {
-      const packageJsonPath = await findPackageJson(this._workspaceRoot);
+      const packageJsonPath = await findPackageJson(this._currentProjectPath);
 
       if (!packageJsonPath) {
         this._sendMessage({
           type: 'ERROR',
-          message: 'No package.json found in the workspace root'
+          message: 'No package.json found in the selected project'
         });
         return;
       }
 
       const packageJson = await readPackageJson(packageJsonPath);
-      const dependencies = extractDependencies(packageJson, this._workspaceRoot);
+      const dependencies = extractDependencies(packageJson, this._currentProjectPath);
       const columnConfig = this._getColumnConfig();
+
+      // Get current project name
+      const currentProject = this._projects.find(p => p.path === this._currentProjectPath);
+      const displayName = currentProject ? `${currentProject.name} (${currentProject.relativePath})` : (packageJson.name || 'Unnamed Package');
 
       this._sendMessage({
         type: 'DEPENDENCIES_DATA',
         dependencies,
-        packageName: packageJson.name || 'Unnamed Package',
-        columnConfig
+        packageName: displayName,
+        columnConfig,
+        projects: this._projects.map(p => ({ name: p.name, path: p.path, relativePath: p.relativePath })),
+        currentProjectPath: this._currentProjectPath
       });
+
+      // Update panel title with project name
+      const projectName = currentProject?.name || packageJson.name || 'NPM Package Manager';
+      this._panel.title = `NPM: ${projectName}`;
 
       // Iniciar verificación de actualizaciones en paralelo
       await this._checkUpdates(dependencies);
@@ -208,9 +263,10 @@ export class NpmGuiManagerPanel {
     });
 
     try {
+      // Use the project path for npm install
       const terminal = this._getOrCreateTerminal();
       terminal.show();
-      terminal.sendText(`npm install ${packageName}@${version}`, true);
+      terminal.sendText(`cd "${this._currentProjectPath}" && npm install ${packageName}@${version}`, true);
 
       // Esperar un poco y recargar dependencias
       setTimeout(async () => {
@@ -236,7 +292,7 @@ export class NpmGuiManagerPanel {
   /**
    * Actualiza múltiples paquetes
    */
-  private async _updateAllPackages(packages: { name: string; version: string }[]): Promise<void> {
+  private async _updateAllPackages(packages: { name: string; version: string; currentVersion?: string }[]): Promise<void> {
     if (packages.length === 0) {
       vscode.window.showInformationMessage('No packages to update');
       return;
@@ -252,7 +308,7 @@ export class NpmGuiManagerPanel {
     try {
       const terminal = this._getOrCreateTerminal();
       terminal.show();
-      terminal.sendText(`npm install ${packageList}`, true);
+      terminal.sendText(`cd "${this._currentProjectPath}" && npm install ${packageList}`, true);
 
       setTimeout(async () => {
         await this._loadDependencies();
