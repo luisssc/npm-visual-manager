@@ -575,11 +575,12 @@
   font-size: 14px;
 }
 
-/* Pin/Ignore buttons */
+/* Action buttons */
 .action-buttons {
   display: flex;
   gap: 4px;
   align-items: center;
+  justify-content: center;
 }
 
 .ignore-btn {
@@ -603,16 +604,64 @@ tr:hover .ignore-btn {
   color: var(--vscode-foreground);
 }
 
-.ignore-btn.ignored {
-  opacity: 0;
-  color: var(--vscode-warningForeground, #ff9800);
-}
-
-tr:hover .ignore-btn.ignored {
-  opacity: 1;
-}
-
 .ignore-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+/* Ignored section */
+.ignored-separator {
+  cursor: pointer;
+  user-select: none;
+}
+
+.ignored-separator td {
+  padding: 8px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--vscode-descriptionForeground, #888);
+  border-bottom: 1px solid var(--border-color);
+  background: var(--header-bg);
+}
+
+.ignored-separator:hover td {
+  background: var(--row-hover-bg);
+}
+
+.ignored-separator .codicon {
+  font-size: 10px;
+}
+
+.ignored-row {
+  opacity: 0.5;
+}
+
+.ignored-row:hover {
+  opacity: 0.8;
+}
+
+.package-link-disabled {
+  color: var(--vscode-descriptionForeground, #888);
+  font-weight: 500;
+}
+
+.unignore-btn {
+  background: transparent;
+  border: none;
+  color: var(--vscode-descriptionForeground, #888);
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 3px;
+  font-size: 12px;
+  transition: background 0.2s, color 0.2s;
+}
+
+.unignore-btn:hover:not(:disabled) {
+  background: var(--row-hover-bg);
+  color: var(--vscode-foreground);
+}
+
+.unignore-btn:disabled {
   opacity: 0.3;
   cursor: not-allowed;
 }

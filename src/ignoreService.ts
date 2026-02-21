@@ -11,20 +11,22 @@ export interface IgnoredPackage {
   pinnedVersion?: string;
 }
 
-const CONFIG_KEY = 'npm-visual-manager.ignoredPackages';
+const SECTION = 'npm-visual-manager';
+const SETTING_KEY = 'ignoredPackages';
 
 export class IgnoreService {
-  private _config: vscode.WorkspaceConfiguration;
-
-  constructor() {
-    this._config = vscode.workspace.getConfiguration();
+  /**
+   * Get a fresh configuration scoped to our extension section
+   */
+  private _getConfig(): vscode.WorkspaceConfiguration {
+    return vscode.workspace.getConfiguration(SECTION);
   }
 
   /**
    * Get all ignored packages
    */
   getIgnoredPackages(): IgnoredPackage[] {
-    return this._config.get<IgnoredPackage[]>(CONFIG_KEY, []);
+    return this._getConfig().get<IgnoredPackage[]>(SETTING_KEY, []);
   }
 
   /**
@@ -49,10 +51,10 @@ export class IgnoreService {
    */
   async ignorePackage(packageName: string, reason?: string, pinnedVersion?: string): Promise<void> {
     const ignored = this.getIgnoredPackages();
-    
+
     // Remove if already exists (to update)
     const filtered = ignored.filter(p => p.name !== packageName);
-    
+
     // Add new entry
     filtered.push({
       name: packageName,
@@ -60,7 +62,7 @@ export class IgnoreService {
       pinnedVersion
     });
 
-    await this._config.update(CONFIG_KEY, filtered, vscode.ConfigurationTarget.Workspace);
+    await this._getConfig().update(SETTING_KEY, filtered, vscode.ConfigurationTarget.Workspace);
   }
 
   /**
@@ -69,8 +71,8 @@ export class IgnoreService {
   async unignorePackage(packageName: string): Promise<void> {
     const ignored = this.getIgnoredPackages();
     const filtered = ignored.filter(p => p.name !== packageName);
-    
-    await this._config.update(CONFIG_KEY, filtered, vscode.ConfigurationTarget.Workspace);
+
+    await this._getConfig().update(SETTING_KEY, filtered, vscode.ConfigurationTarget.Workspace);
   }
 
   /**
@@ -81,14 +83,7 @@ export class IgnoreService {
       await this.unignorePackage(packageName);
       return false;
     } else {
-      // Show input for reason
-      const reason = await vscode.window.showInputBox({
-        prompt: `Why do you want to ignore ${packageName}? (optional)`,
-        placeHolder: 'e.g., Staying on v18 for compatibility',
-        value: `Pinned to ${currentVersion || 'current version'}`
-      });
-      
-      await this.ignorePackage(packageName, reason || undefined, currentVersion);
+      await this.ignorePackage(packageName, undefined, currentVersion);
       return true;
     }
   }

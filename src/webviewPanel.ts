@@ -179,17 +179,25 @@ export class NpmGuiManagerPanel {
    * Toggle ignore status for a package
    */
   private async _toggleIgnorePackage(packageName: string, currentVersion?: string): Promise<void> {
-    const ignoreService = getIgnoreService();
-    const isIgnored = await ignoreService.toggleIgnore(packageName, currentVersion);
-    
-    this._sendMessage({
-      type: 'IGNORE_TOGGLED',
-      packageName,
-      isIgnored
-    });
-    
-    // Reload to update UI
-    await this._loadDependencies();
+    try {
+      const ignoreService = getIgnoreService();
+      const isIgnored = await ignoreService.toggleIgnore(packageName, currentVersion);
+
+      this._sendMessage({
+        type: 'IGNORE_TOGGLED',
+        packageName,
+        isIgnored
+      });
+
+      // Reload to update UI
+      await this._loadDependencies();
+    } catch (error) {
+      console.error('[npm-visual-manager] Failed to toggle ignore:', error);
+      this._sendMessage({
+        type: 'ERROR',
+        message: `Failed to toggle ignore for ${packageName}: ${error instanceof Error ? error.message : String(error)}`
+      });
+    }
   }
 
   /**

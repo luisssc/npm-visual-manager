@@ -127,6 +127,20 @@
           "type": "boolean",
           "default": true,
           "description": "Show Update Type column (MAJOR/MINOR/PATCH)"
+        },
+        "npm-visual-manager.ignoredPackages": {
+          "type": "array",
+          "default": [],
+          "description": "List of packages to ignore for updates",
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": { "type": "string" },
+              "reason": { "type": "string" },
+              "pinnedVersion": { "type": "string" }
+            },
+            "required": ["name"]
+          }
         }
       }
     }

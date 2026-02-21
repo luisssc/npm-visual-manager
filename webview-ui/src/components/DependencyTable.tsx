@@ -73,6 +73,7 @@ export const DependencyTable = ({
   const [filter, setFilter] = useState('');
   const [updatingPackages, setUpdatingPackages] = useState<Set<string>>(new Set());
   const [selectedPackages, setSelectedPackages] = useState<Set<string>>(new Set());
+  const [showIgnored, setShowIgnored] = useState(false);
 
   const handleSort = (column: SortColumn) => {
     if (sortColumn === column) {
@@ -138,31 +139,14 @@ export const DependencyTable = ({
     onUpdateAll(packagesToUpdate);
   };
 
-  const sortedAndFilteredDeps = useMemo(() => {
-    let result = [...dependencies];
-
-    // Filter by update availability (unless showing all)
-    if (!showAllPackages) {
-      result = result.filter(d => d.updateAvailable);
-    }
-
-    // Filter by search text
-    if (filter.trim()) {
-      const filterLower = filter.toLowerCase();
-      result = result.filter(d => 
-        d.name.toLowerCase().includes(filterLower) ||
-        d.declaredVersion.toLowerCase().includes(filterLower)
-      );
-    }
-
-    // Sort
-    result.sort((a, b) => {
+  const sortDeps = (result: Dependency[]) => {
+    return result.sort((a, b) => {
       // If showing all packages, always show updates at the top
       if (showAllPackages) {
         const aUpdate = a.updateAvailable ? 1 : 0;
         const bUpdate = b.updateAvailable ? 1 : 0;
         if (aUpdate !== bUpdate) {
-          return bUpdate - aUpdate; // Updates (1) before no-updates (0)
+          return bUpdate - aUpdate;
         }
       }
 
@@ -189,8 +173,33 @@ export const DependencyTable = ({
       }
       return sortDirection === 'asc' ? comparison : -comparison;
     });
+  };
 
-    return result;
+  const { sortedAndFilteredDeps, ignoredDeps } = useMemo(() => {
+    let result = [...dependencies];
+
+    // Filter by update availability (unless showing all)
+    if (!showAllPackages) {
+      result = result.filter(d => d.updateAvailable);
+    }
+
+    // Filter by search text
+    if (filter.trim()) {
+      const filterLower = filter.toLowerCase();
+      result = result.filter(d =>
+        d.name.toLowerCase().includes(filterLower) ||
+        d.declaredVersion.toLowerCase().includes(filterLower)
+      );
+    }
+
+    // Separate ignored from active
+    const active = result.filter(d => !d.isIgnored);
+    const ignored = result.filter(d => d.isIgnored);
+
+    return {
+      sortedAndFilteredDeps: sortDeps(active),
+      ignoredDeps: sortDeps(ignored)
+    };
   }, [dependencies, sortColumn, sortDirection, filter, showAllPackages]);
 
   const updateCount = dependencies.filter(d => d.updateAvailable && !d.isIgnored).length;
@@ -313,138 +322,127 @@ export const DependencyTable = ({
             </tr>
           </thead>
           <tbody>
-            {sortedAndFilteredDeps.length === 0 ? (
+            {sortedAndFilteredDeps.length === 0 && ignoredDeps.length === 0 ? (
               <tr>
                 <td colSpan={visibleColumnCount} className="empty-state">
-                  {dependencies.length === 0 
+                  {dependencies.length === 0
                     ? 'No dependencies found in package.json'
-                    : !showAllPackages 
+                    : !showAllPackages
                       ? 'All packages are up to date! Click "Show All Packages" to see everything.'
                       : 'No packages match the current filter'
                   }
                 </td>
               </tr>
             ) : (
-              sortedAndFilteredDeps.map((dep) => (
-                <tr 
-                  key={dep.name} 
-                  className={dep.updateAvailable ? 'has-update' : ''}
-                >
-                  <td className="checkbox-cell">
-                    <input
-                      type="checkbox"
-                      checked={selectedPackages.has(dep.name)}
-                      onChange={(e) => handleSelectPackage(dep.name, e.target.checked)}
-                      disabled={!dep.updateAvailable}
-                      title={dep.updateAvailable ? 'Select for update' : 'No update available'}
-                    />
-                  </td>
-                  <td className="package-name">
-                    <div className="package-info">
-                      <Tooltip text="View on npm">
-                        <a
-                          href={`https://www.npmjs.com/package/${dep.name}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="package-link"
-                        >
-                          {dep.name}
-                        </a>
-                      </Tooltip>
-                      {dep.isDeprecated && (
-                        <Tooltip text="Deprecated">
-                          <span className="status-badge status-deprecated">
-                            <i className="codicon codicon-error" />
-                          </span>
-                        </Tooltip>
-                      )}
-                      {dep.hasVulnerabilities ? (
-                        <Tooltip text={`${dep.vulnerabilityCount || 1} vulnerabilities found`}>
-                          <span className="status-badge status-danger">
-                            <i className="codicon codicon-warning" /> {dep.vulnerabilityCount || 1}
-                          </span>
-                        </Tooltip>
-                      ) : (
-                        <span className="status-badge status-safe"><i className="codicon codicon-shield" /></span>
-                      )}
-                    </div>
-                  </td>
-                  {columnConfig.type && (
-                    <td className="type-cell">
-                      <span className={`type-badge type-${dep.type}`}>
-                        {dep.type === 'dependencies' ? 'Prod' : dep.type === 'devDependencies' ? 'Dev' : 'Peer'}
-                      </span>
+              <>
+                {sortedAndFilteredDeps.map((dep) => (
+                  <tr
+                    key={dep.name}
+                    className={dep.updateAvailable ? 'has-update' : ''}
+                  >
+                    <td className="checkbox-cell">
+                      <input
+                        type="checkbox"
+                        checked={selectedPackages.has(dep.name)}
+                        onChange={(e) => handleSelectPackage(dep.name, e.target.checked)}
+                        disabled={!dep.updateAvailable}
+                        title={dep.updateAvailable ? 'Select for update' : 'No update available'}
+                      />
                     </td>
-                  )}
-                  <td className="version-cell">
-                    <code>{dep.declaredVersion}</code>
-                  </td>
-                  <td className="version-cell">
-                    {dep.latestVersion ? (
-                      <code className={dep.updateAvailable ? 'latest-version' : ''}>
-                        {dep.latestVersion}
-                      </code>
-                    ) : (
-                      <span className="checking">checking...</span>
+                    <td className="package-name">
+                      <div className="package-info">
+                        <Tooltip text="View on npm">
+                          <a
+                            href={`https://www.npmjs.com/package/${dep.name}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="package-link"
+                          >
+                            {dep.name}
+                          </a>
+                        </Tooltip>
+                        {dep.isDeprecated && (
+                          <Tooltip text="Deprecated">
+                            <span className="status-badge status-deprecated">
+                              <i className="codicon codicon-error" />
+                            </span>
+                          </Tooltip>
+                        )}
+                        {dep.hasVulnerabilities ? (
+                          <Tooltip text={`${dep.vulnerabilityCount || 1} vulnerabilities found`}>
+                            <span className="status-badge status-danger">
+                              <i className="codicon codicon-warning" /> {dep.vulnerabilityCount || 1}
+                            </span>
+                          </Tooltip>
+                        ) : (
+                          <span className="status-badge status-safe"><i className="codicon codicon-shield" /></span>
+                        )}
+                      </div>
+                    </td>
+                    {columnConfig.type && (
+                      <td className="type-cell">
+                        <span className={`type-badge type-${dep.type}`}>
+                          {dep.type === 'dependencies' ? 'Prod' : dep.type === 'devDependencies' ? 'Dev' : 'Peer'}
+                        </span>
+                      </td>
                     )}
-                  </td>
-                  {columnConfig.size && (
-                    <td className="size-cell">
-                      <span className="size-text">{dep.size || '-'}</span>
+                    <td className="version-cell">
+                      <code>{dep.declaredVersion}</code>
                     </td>
-                  )}
-                  {columnConfig.semverUpdate && (
-                    <td className="update-type-cell">
-                      {dep.updateAvailable && dep.semverUpdateType && dep.semverUpdateType !== 'none' && (
-                        <Tooltip text={`${getSemverLabel(dep.semverUpdateType)} update available`}>
-                          <span
-                            className={`semver-badge semver-${dep.semverUpdateType}`}
-                          >
-                            {getSemverLabel(dep.semverUpdateType)}
-                          </span>
-                        </Tooltip>
-                      )}
-                    </td>
-                  )}
-                  {columnConfig.lastUpdate && (
-                    <td className="date-cell">
-                      {dep.lastPublishDate ? (
-                        <Tooltip text={new Date(dep.lastPublishDate).toLocaleDateString('en-GB')}>
-                          <span className="date-text">
-                            {formatDate(dep.lastPublishDate)}
-                          </span>
-                        </Tooltip>
+                    <td className="version-cell">
+                      {dep.latestVersion ? (
+                        <code className={dep.updateAvailable ? 'latest-version' : ''}>
+                          {dep.latestVersion}
+                        </code>
                       ) : (
-                        <span className="checking">-</span>
+                        <span className="checking">checking...</span>
                       )}
                     </td>
-                  )}
+                    {columnConfig.size && (
+                      <td className="size-cell">
+                        <span className="size-text">{dep.size || '-'}</span>
+                      </td>
+                    )}
+                    {columnConfig.semverUpdate && (
+                      <td className="update-type-cell">
+                        {dep.updateAvailable && dep.semverUpdateType && dep.semverUpdateType !== 'none' && (
+                          <Tooltip text={`${getSemverLabel(dep.semverUpdateType)} update available`}>
+                            <span
+                              className={`semver-badge semver-${dep.semverUpdateType}`}
+                            >
+                              {getSemverLabel(dep.semverUpdateType)}
+                            </span>
+                          </Tooltip>
+                        )}
+                      </td>
+                    )}
+                    {columnConfig.lastUpdate && (
+                      <td className="date-cell">
+                        {dep.lastPublishDate ? (
+                          <Tooltip text={new Date(dep.lastPublishDate).toLocaleDateString('en-GB')}>
+                            <span className="date-text">
+                              {formatDate(dep.lastPublishDate)}
+                            </span>
+                          </Tooltip>
+                        ) : (
+                          <span className="checking">-</span>
+                        )}
+                      </td>
+                    )}
 
-                  <td className="action-cell">
-                    <div className="action-buttons">
-                      {dep.isIgnored ? (
-                        <Tooltip text={dep.ignoreReason || 'Ignored'}>
+                    <td className="action-cell">
+                      <div className="action-buttons">
+                        {dep.updateAvailable && dep.latestVersion ? (
                           <button
-                            className="pin-btn pinned"
-                            onClick={() => onToggleIgnore?.(dep.name, dep.installedVersion)}
-                            disabled={isLoading}
-                            title="Unignore package"
+                            className="update-btn"
+                            onClick={() => handleUpdate(dep)}
+                            disabled={updatingPackages.has(dep.name) || isLoading}
                           >
-                            <i className="codicon codicon-eye-closed" />
+                            {updatingPackages.has(dep.name) ? '...' : 'Update'}
                           </button>
-                        </Tooltip>
-                      ) : dep.updateAvailable && dep.latestVersion ? (
-                        <button
-                          className="update-btn"
-                          onClick={() => handleUpdate(dep)}
-                          disabled={updatingPackages.has(dep.name) || isLoading}
-                        >
-                          {updatingPackages.has(dep.name) ? '...' : 'Update'}
-                        </button>
-                      ) : (
-                        <span className="up-to-date"><i className="codicon codicon-check" /></span>
-                      )}
-                      {!dep.isIgnored && (
+                        ) : (
+                          <span className="up-to-date"><i className="codicon codicon-check" /></span>
+                        )}
                         <button
                           className="ignore-btn"
                           onClick={() => onToggleIgnore?.(dep.name, dep.installedVersion)}
@@ -453,18 +451,85 @@ export const DependencyTable = ({
                         >
                           <i className="codicon codicon-eye-closed" />
                         </button>
-                      )}
-                    </div>
-                  </td>
-                </tr>
-              ))
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+
+                {ignoredDeps.length > 0 && (
+                  <>
+                    <tr
+                      className="ignored-separator"
+                      onClick={() => setShowIgnored(!showIgnored)}
+                    >
+                      <td colSpan={visibleColumnCount}>
+                        <i className={`codicon codicon-chevron-${showIgnored ? 'down' : 'right'}`} />
+                        {' '}Ignored ({ignoredDeps.length})
+                      </td>
+                    </tr>
+                    {showIgnored && ignoredDeps.map((dep) => (
+                      <tr key={dep.name} className="ignored-row">
+                        <td className="checkbox-cell">
+                          <input type="checkbox" disabled title="Ignored" />
+                        </td>
+                        <td className="package-name">
+                          <div className="package-info">
+                            <span className="package-link-disabled">{dep.name}</span>
+                          </div>
+                        </td>
+                        {columnConfig.type && (
+                          <td className="type-cell">
+                            <span className={`type-badge type-${dep.type}`}>
+                              {dep.type === 'dependencies' ? 'Prod' : dep.type === 'devDependencies' ? 'Dev' : 'Peer'}
+                            </span>
+                          </td>
+                        )}
+                        <td className="version-cell">
+                          <code>{dep.declaredVersion}</code>
+                        </td>
+                        <td className="version-cell">
+                          {dep.latestVersion ? (
+                            <code>{dep.latestVersion}</code>
+                          ) : (
+                            <span className="checking">-</span>
+                          )}
+                        </td>
+                        {columnConfig.size && (
+                          <td className="size-cell">
+                            <span className="size-text">{dep.size || '-'}</span>
+                          </td>
+                        )}
+                        {columnConfig.semverUpdate && <td className="update-type-cell" />}
+                        {columnConfig.lastUpdate && (
+                          <td className="date-cell">
+                            <span className="date-text">{formatDate(dep.lastPublishDate)}</span>
+                          </td>
+                        )}
+                        <td className="action-cell">
+                          <div className="action-buttons">
+                            <Tooltip text="Unignore package">
+                              <button
+                                className="unignore-btn"
+                                onClick={() => onToggleIgnore?.(dep.name, dep.installedVersion)}
+                                disabled={isLoading}
+                              >
+                                <i className="codicon codicon-eye" />
+                              </button>
+                            </Tooltip>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </>
+                )}
+              </>
             )}
           </tbody>
         </table>
       </div>
 
       <div className="footer">
-        <span>Showing {sortedAndFilteredDeps.length} of {dependencies.length} packages</span>
+        <span>Showing {sortedAndFilteredDeps.length} of {dependencies.length} packages{ignoredDeps.length > 0 ? ` (${ignoredDeps.length} ignored)` : ''}</span>
         {rollbackMessage && (
           <span className="rollback-message">
             <i className="codicon codicon-history" /> {rollbackMessage}
