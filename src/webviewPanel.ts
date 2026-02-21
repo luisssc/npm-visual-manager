@@ -293,7 +293,9 @@ export class NpmGuiManagerPanel {
             semverUpdateType,
             lastPublishDate: details.lastPublishDate,
             fromCache: details.fromCache,
-            cacheAge: details.cacheAge
+            cacheAge: details.cacheAge,
+            isDeprecated: details.isDeprecated,
+            deprecationMessage: details.deprecationMessage
           });
         } catch (error) {
           console.warn(`Failed to check version for ${dep.name}:`, error);

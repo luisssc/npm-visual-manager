@@ -11,6 +11,8 @@ interface CacheEntry {
   lastPublishDate?: string;
   etag?: string;
   timestamp: number;
+  isDeprecated?: boolean;
+  deprecationMessage?: string;
 }
 
 interface CacheData {

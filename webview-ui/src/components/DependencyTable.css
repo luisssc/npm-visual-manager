@@ -371,14 +371,39 @@
 }
 
 .package-icon {
-  width: 16px;
-  height: 16px;
-  opacity: 0.7;
+  font-size: 14px;
+  color: var(--vscode-symbolIcon-packageForeground, #cb3837);
+  opacity: 0.8;
   flex-shrink: 0;
 }
 
 .package-name .name {
   font-weight: 500;
+}
+
+.status-badge {
+  margin-left: 8px;
+  font-size: 11px;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 2px 6px;
+  border-radius: 10px;
+}
+
+.status-danger {
+  background: var(--vscode-errorForeground, #f44336);
+  color: white;
+}
+
+.status-safe {
+  color: var(--vscode-testing-iconPassed, #4caf50);
+  opacity: 0.7;
+}
+
+.status-deprecated {
+  background: var(--vscode-editorWarning-foreground, #ff9800);
+  color: var(--vscode-editor-background);
 }
 
 .update-badge {

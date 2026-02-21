@@ -25,6 +25,8 @@ export interface PackageDetails {
   lastPublishDate?: string;
   fromCache?: boolean;
   cacheAge?: number;
+  isDeprecated?: boolean;
+  deprecationMessage?: string;
 }
 
 export type SemverUpdateType = 'major' | 'minor' | 'patch' | 'none' | 'unknown';
@@ -147,10 +149,23 @@ export async function getPackageDetails(
       lastPublishDate = info.time.modified;
     }
 
+    // Check if package is deprecated
+    let isDeprecated = false;
+    let deprecationMessage: string | undefined;
+    
+    // Check latest version deprecation
+    const latestVersionInfo = info.versions[latestVersion] as { deprecated?: string } | undefined;
+    if (latestVersionInfo?.deprecated) {
+      isDeprecated = true;
+      deprecationMessage = latestVersionInfo.deprecated;
+    }
+
     return {
       latestVersion,
       lastPublishDate,
-      fromCache: false
+      fromCache: false,
+      isDeprecated,
+      deprecationMessage
     };
   } catch (error) {
     // If network fails, try to return stale cache as fallback

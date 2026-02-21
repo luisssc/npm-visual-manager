@@ -13,7 +13,6 @@ interface DependencyTableProps {
   dependencies: Dependency[];
   onUpdatePackage: (packageName: string, version: string, currentVersion?: string) => void;
   onUpdateAll: (packages: { name: string; version: string; currentVersion?: string }[]) => void;
-  onRefresh?: () => void;
   isLoading: boolean;
   columnConfig: ColumnConfig;
   showAllPackages: boolean;
@@ -66,7 +65,6 @@ export const DependencyTable = ({
   dependencies,
   onUpdatePackage,
   onUpdateAll,
-  onRefresh,
   isLoading,
   columnConfig,
   showAllPackages,
@@ -229,16 +227,6 @@ export const DependencyTable = ({
             onChange={(e) => setFilter(e.target.value)}
             className="filter-input"
           />
-          {onRefresh && (
-            <button 
-              className="refresh-btn"
-              onClick={onRefresh}
-              disabled={isLoading}
-              title="Refresh dependencies"
-            >
-              <span>↻</span>
-            </button>
-          )}
           {(nodeVersion || packageManager) && (
             <div className="env-info">
               {nodeVersion && (
@@ -360,13 +348,6 @@ export const DependencyTable = ({
                   </td>
                   <td className="package-name">
                     <div className="package-info">
-                      <img 
-                        src={`https://www.google.com/s2/favicons?domain=npmjs.com&size=16`}
-                        alt=""
-                        className="package-icon"
-                        width="16"
-                        height="16"
-                      />
                       <Tooltip text="View on npm">
                         <a
                           href={`https://www.npmjs.com/package/${dep.name}`}
@@ -377,6 +358,22 @@ export const DependencyTable = ({
                           {dep.name}
                         </a>
                       </Tooltip>
+                      {dep.isDeprecated && (
+                        <Tooltip text={dep.deprecationMessage || 'This package is deprecated'}>
+                          <span className="status-badge status-deprecated">
+                            <i className="codicon codicon-error" />
+                          </span>
+                        </Tooltip>
+                      )}
+                      {dep.hasVulnerabilities ? (
+                        <Tooltip text={`${dep.vulnerabilityCount || 1} vulnerabilities found`}>
+                          <span className="status-badge status-danger">
+                            <i className="codicon codicon-warning" /> {dep.vulnerabilityCount || 1}
+                          </span>
+                        </Tooltip>
+                      ) : (
+                        <span className="status-badge status-safe"><i className="codicon codicon-shield" /></span>
+                      )}
                     </div>
                   </td>
                   {columnConfig.type && (

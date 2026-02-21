@@ -16,6 +16,8 @@ export interface Dependency {
   lastPublishDate?: string;
   hasVulnerabilities?: boolean;
   vulnerabilityCount?: number;
+  isDeprecated?: boolean;
+  deprecationMessage?: string;
 }
 
 export interface ColumnConfig {
@@ -72,7 +74,7 @@ export type HostToWebviewMessage =
   | { type: 'DEPENDENCIES_DATA'; dependencies: Dependency[]; packageName: string; columnConfig: ColumnConfig; projects?: ProjectInfo[]; currentProjectPath?: string; packageManager?: PackageManager; versions?: VersionInfo; lastUpdate?: UpdateHistory | null }
   | { type: 'UPDATE_RESULT'; success: boolean; packageName: string; message: string }
   | { type: 'ROLLBACK_RESULT'; success: boolean; message: string; rolledBackPackages?: string[] }
-  | { type: 'VERSION_CHECK_RESULT'; dependency: Dependency; latestVersion: string; semverUpdateType?: SemverUpdateType; lastPublishDate?: string; fromCache?: boolean; cacheAge?: number }
+  | { type: 'VERSION_CHECK_RESULT'; dependency: Dependency; latestVersion: string; semverUpdateType?: SemverUpdateType; lastPublishDate?: string; fromCache?: boolean; cacheAge?: number; isDeprecated?: boolean; deprecationMessage?: string }
   | { type: 'CACHE_CLEARED'; message: string }
   | { type: 'COLUMN_CONFIG'; config: ColumnConfig }
   | { type: 'ERROR'; message: string }

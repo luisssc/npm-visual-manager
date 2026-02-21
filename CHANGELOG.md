@@ -2,6 +2,18 @@
 
 All notable changes to the "npm-visual-manager" extension will be documented in this file.
 
+## [0.2.2] - 2026-02-21
+
+### Added
+- **Deprecation warnings**: Packages marked as deprecated by NPM now show a warning icon
+  - Orange warning icon for deprecated packages
+  - Tooltip shows deprecation message
+  - Works alongside security vulnerability indicators
+
+### Changed
+- Removed duplicate refresh button from header
+- Security and deprecation icons now appear inline with package name
+
 ## [0.2.1] - 2026-02-21
 
 ### Changed

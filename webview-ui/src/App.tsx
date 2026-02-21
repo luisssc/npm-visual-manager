@@ -67,7 +67,9 @@ function App() {
                   latestVersion: message.latestVersion,
                   updateAvailable: isUpdateAvailable(dep.installedVersion, message.latestVersion),
                   semverUpdateType: message.semverUpdateType,
-                  lastPublishDate: message.lastPublishDate
+                  lastPublishDate: message.lastPublishDate,
+                  isDeprecated: message.isDeprecated,
+                  deprecationMessage: message.deprecationMessage
                 }
               : dep
           )
@@ -235,11 +237,6 @@ function App() {
           >
             <i className="codicon codicon-refresh" /> Refresh
           </button>
-          {cacheInfo?.fromCache && (
-            <span className="cache-indicator" title={`Using cached data (${cacheInfo.age?.toFixed(1)}h old)`}>
-              💾 {cacheInfo.age?.toFixed(0)}h
-            </span>
-          )}
         </div>
       </header>
 
@@ -248,7 +245,6 @@ function App() {
           dependencies={dependencies}
           onUpdatePackage={handleUpdatePackage}
           onUpdateAll={handleUpdateAll}
-          onRefresh={handleRetry}
           isLoading={isLoading}
           columnConfig={columnConfig}
           showAllPackages={showAllPackages}
