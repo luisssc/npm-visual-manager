@@ -90,7 +90,17 @@ export async function getPackageInfo(
             if (globalCache) {
               const latestVersion = packageInfo['dist-tags'].latest;
               const lastPublishDate = packageInfo.time?.[latestVersion] || packageInfo.time?.modified;
-              globalCache.set(packageName, { latestVersion, lastPublishDate });
+              
+              // Check deprecation for caching
+              let isDeprecated = false;
+              let deprecationMessage: string | undefined;
+              const latestVersionInfo = packageInfo.versions[latestVersion] as { deprecated?: string } | undefined;
+              if (latestVersionInfo?.deprecated) {
+                isDeprecated = true;
+                deprecationMessage = latestVersionInfo.deprecated;
+              }
+              
+              globalCache.set(packageName, { latestVersion, lastPublishDate, isDeprecated, deprecationMessage });
             }
             
             resolve(packageInfo);
@@ -132,7 +142,9 @@ export async function getPackageDetails(
         latestVersion: cached.latestVersion,
         lastPublishDate: cached.lastPublishDate,
         fromCache: true,
-        cacheAge: globalCache.getAgeHours(packageName) || 0
+        cacheAge: globalCache.getAgeHours(packageName) || 0,
+        isDeprecated: cached.isDeprecated,
+        deprecationMessage: cached.deprecationMessage
       };
     }
   }

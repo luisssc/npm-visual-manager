@@ -359,7 +359,7 @@ export const DependencyTable = ({
                         </a>
                       </Tooltip>
                       {dep.isDeprecated && (
-                        <Tooltip text="⚠️ Deprecated - Consider finding an alternative">
+                        <Tooltip text="Deprecated">
                           <span className="status-badge status-deprecated">
                             <i className="codicon codicon-error" />
                           </span>
