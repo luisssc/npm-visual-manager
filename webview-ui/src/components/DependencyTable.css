@@ -147,7 +147,7 @@
 
 .rollback-btn {
   background: var(--vscode-errorForeground);
-  color: white;
+  color: var(--vscode-editor-background);
   border: none;
   padding: 6px 14px;
   border-radius: 2px;
@@ -393,7 +393,7 @@
 
 .status-danger {
   background: var(--vscode-errorForeground, #f44336);
-  color: white;
+  color: var(--vscode-editor-background);
 }
 
 .status-safe {
@@ -463,6 +463,19 @@
   text-transform: uppercase;
   letter-spacing: 0.5px;
   animation: fadeIn 0.2s ease-out;
+  color: var(--vscode-editor-background);
+}
+
+.semver-major {
+  background: var(--vscode-errorForeground, #f44336);
+}
+
+.semver-minor {
+  background: var(--vscode-warningForeground, #ff9800);
+}
+
+.semver-patch {
+  background: var(--vscode-testing-iconPassed, #4caf50);
 }
 
 /* Tooltip - VS Code native style */
@@ -569,7 +582,7 @@
   align-items: center;
 }
 
-.pin-btn {
+.ignore-btn {
   background: transparent;
   border: none;
   color: var(--vscode-descriptionForeground, #888);
@@ -581,21 +594,25 @@
   transition: opacity 0.2s, background 0.2s;
 }
 
-tr:hover .pin-btn {
+tr:hover .ignore-btn {
   opacity: 1;
 }
 
-.pin-btn:hover:not(:disabled) {
+.ignore-btn:hover:not(:disabled) {
   background: var(--row-hover-bg);
   color: var(--vscode-foreground);
 }
 
-.pin-btn.pinned {
-  opacity: 1;
+.ignore-btn.ignored {
+  opacity: 0;
   color: var(--vscode-warningForeground, #ff9800);
 }
 
-.pin-btn:disabled {
+tr:hover .ignore-btn.ignored {
+  opacity: 1;
+}
+
+.ignore-btn:disabled {
   opacity: 0.3;
   cursor: not-allowed;
 }

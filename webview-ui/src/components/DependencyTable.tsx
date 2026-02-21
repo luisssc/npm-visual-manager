@@ -28,15 +28,6 @@ interface DependencyTableProps {
 type SortColumn = 'name' | 'installedVersion' | 'latestVersion' | 'type' | 'size' | 'lastPublishDate';
 type SortDirection = 'asc' | 'desc';
 
-const getSemverColor = (type: SemverUpdateType | undefined): string => {
-  switch (type) {
-    case 'major': return 'var(--vscode-errorForeground, #f44336)';
-    case 'minor': return 'var(--vscode-warningForeground, #ff9800)';
-    case 'patch': return 'var(--vscode-testing-iconPassed, #4caf50)';
-    default: return 'var(--vscode-descriptionForeground, #888)';
-  }
-};
-
 const getSemverLabel = (type: SemverUpdateType | undefined): string => {
   switch (type) {
     case 'major': return 'MAJOR';
@@ -407,11 +398,7 @@ export const DependencyTable = ({
                       {dep.updateAvailable && dep.semverUpdateType && dep.semverUpdateType !== 'none' && (
                         <Tooltip text={`${getSemverLabel(dep.semverUpdateType)} update available`}>
                           <span
-                            className="semver-badge"
-                            style={{
-                              backgroundColor: getSemverColor(dep.semverUpdateType),
-                              color: '#fff'
-                            }}
+                            className={`semver-badge semver-${dep.semverUpdateType}`}
                           >
                             {getSemverLabel(dep.semverUpdateType)}
                           </span>
@@ -443,7 +430,7 @@ export const DependencyTable = ({
                             disabled={isLoading}
                             title="Unignore package"
                           >
-                            <i className="codicon codicon-pin" />
+                            <i className="codicon codicon-eye-closed" />
                           </button>
                         </Tooltip>
                       ) : dep.updateAvailable && dep.latestVersion ? (
@@ -459,12 +446,12 @@ export const DependencyTable = ({
                       )}
                       {!dep.isIgnored && (
                         <button
-                          className="pin-btn"
+                          className="ignore-btn"
                           onClick={() => onToggleIgnore?.(dep.name, dep.installedVersion)}
                           disabled={isLoading}
                           title="Ignore this package"
                         >
-                          <i className="codicon codicon-pin" />
+                          <i className="codicon codicon-eye-closed" />
                         </button>
                       )}
                     </div>
