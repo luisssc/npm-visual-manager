@@ -17,7 +17,7 @@ export const ScriptsPanel = ({
   isScriptsLoaded = false,
   projectPath
 }: ScriptsPanelProps) => {
-  const [isCollapsed, setIsCollapsed] = useState(false);
+  const [isCollapsed, setIsCollapsed] = useState(true);
   if (!isScriptsLoaded) {
     return (
       <div className="scripts-panel">

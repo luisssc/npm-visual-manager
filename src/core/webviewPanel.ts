@@ -17,6 +17,7 @@ import { getVersions } from '../services/nodeVersionService';
 import { getInstalledVersion, getInstalledVersions } from '../services/installedVersionService';
 import { readScripts, sortScripts, extractScriptsFromPackageJson } from '../services/scriptService';
 import { clearPackageSizeCache } from '../services/sizeService';
+import { searchPackages, SearchResult } from '../services/searchService';
 
 export class NpmGuiManagerPanel {
   public static currentPanel: NpmGuiManagerPanel | undefined;
@@ -273,6 +274,14 @@ export class NpmGuiManagerPanel {
 
       case 'RUN_SCRIPT':
         await this._runScript(message.scriptName);
+        break;
+
+      case 'SEARCH_PACKAGES':
+        await this._searchPackages(message.query);
+        break;
+
+      case 'INSTALL_NEW_PACKAGE':
+        await this._installNewPackage(message.packageName, message.version, message.isDev);
         break;
     }
   }
@@ -552,7 +561,7 @@ export class NpmGuiManagerPanel {
       // Wait for npm to finish and reload dependencies
       setTimeout(async () => {
         clearAuditCache(this._currentProjectPath);
-        clearPackageSizeCache(this._currentProjectPath);
+
         await this._loadDependencies();
       }, 5000);
 
@@ -619,7 +628,7 @@ export class NpmGuiManagerPanel {
 
       setTimeout(async () => {
         clearAuditCache(this._currentProjectPath);
-        clearPackageSizeCache(this._currentProjectPath);
+
         await this._loadDependencies();
       }, 8000);
 
@@ -668,6 +677,70 @@ export class NpmGuiManagerPanel {
       terminal.sendText(`${info.runCommand} ${scriptName}`, true);
     } catch (error) {
       vscode.window.showErrorMessage(`Failed to run script: ${error instanceof Error ? error.message : String(error)}`);
+    }
+  }
+
+  /**
+   * Search packages in npm registry
+   */
+  private async _searchPackages(query: string): Promise<void> {
+    try {
+      this._sendMessage({
+        type: 'PROGRESS',
+        message: `Searching for "${query}"...`
+      });
+      
+      const results = await searchPackages(query, 20);
+      
+      this._sendMessage({
+        type: 'SEARCH_RESULTS',
+        results
+      });
+      
+      this._sendMessage({
+        type: 'PROGRESS',
+        message: null as any
+      });
+    } catch (error) {
+      console.error('Search failed:', error);
+      this._sendMessage({
+        type: 'SEARCH_RESULTS',
+        results: []
+      });
+      vscode.window.showErrorMessage(`Search failed: ${error instanceof Error ? error.message : String(error)}`);
+    }
+  }
+
+  /**
+   * Install a new package
+   */
+  private async _installNewPackage(packageName: string, version: string, isDev: boolean): Promise<void> {
+    try {
+      const info = getPackageManagerInfo(this._currentPackageManager);
+      const terminal = this._getOrCreateTerminal();
+      terminal.show();
+      
+      const devFlag = isDev ? info.devFlag || '--save-dev' : '';
+      const versionSuffix = version ? `@${version}` : '';
+      
+      // Send cd command first
+      terminal.sendText(`cd "${this._currentProjectPath}"`, true);
+      // Then send install command
+      terminal.sendText(`${info.addCommand} ${packageName}${versionSuffix} ${devFlag}`.trim(), true);
+
+      this._sendMessage({
+        type: 'UPDATE_RESULT',
+        success: true,
+        packageName,
+        message: `Started installation of ${packageName}`
+      });
+
+      // Wait and reload
+      setTimeout(async () => {
+        await this._loadDependencies();
+      }, 5000);
+    } catch (error) {
+      vscode.window.showErrorMessage(`Failed to install package: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
 
@@ -722,7 +795,7 @@ export class NpmGuiManagerPanel {
       // Wait for npm to finish, then restore package.json with declared versions
       setTimeout(async () => {
         clearAuditCache(this._currentProjectPath);
-        clearPackageSizeCache(this._currentProjectPath);
+
         await this._restorePackageJsonVersions(packagesToRollback);
         await this._loadDependencies();
       }, 5000);

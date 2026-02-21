@@ -2,6 +2,16 @@
 
 All notable changes to the "npm-visual-manager" extension will be documented in this file.
 
+## [0.4.0] - 2026-02-21
+
+### Added
+- **Package Search & Install**: Search and install new packages directly from the UI
+  - Real-time search with debouncing against NPM registry
+  - Shows package info: description, version, downloads, score
+  - Install as dependency or devDependency
+  - Supports npm, yarn, pnpm, and bun
+  - New "Search Packages" tab in the UI
+
 ## [0.3.0] - 2026-02-21
 
 ### Added

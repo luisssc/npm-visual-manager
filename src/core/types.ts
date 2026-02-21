@@ -51,6 +51,9 @@ export type WebviewToHostMessage =
   | { type: 'TOGGLE_IGNORE_PACKAGE'; packageName: string; currentVersion?: string }
   | { type: 'GET_SCRIPTS' }
   | { type: 'RUN_SCRIPT'; scriptName: string }
+  | { type: 'SEARCH_PACKAGES'; query: string }
+  | { type: 'INSTALL_NEW_PACKAGE'; packageName: string; version: string; isDev: boolean }
+  | { type: 'GET_AUDIT' };
 
 // Mensajes desde Extension Host al Webview
 export interface ProjectInfo {
@@ -67,6 +70,18 @@ export interface VersionInfo {
 export interface NpmScript {
   name: string;
   command: string;
+}
+
+export interface SearchResult {
+  name: string;
+  version: string;
+  description: string;
+  keywords?: string[];
+  date: string;
+  author?: { name?: string; email?: string };
+  publisher?: { username?: string; email?: string };
+  downloads?: { weekly?: number };
+  score?: { final: number; quality: number; popularity: number; maintenance: number };
 }
 
 export interface UpdateHistory {
@@ -89,6 +104,7 @@ export type HostToWebviewMessage =
   | { type: 'CACHE_CLEARED'; message: string }
   | { type: 'IGNORE_TOGGLED'; packageName: string; isIgnored: boolean }
   | { type: 'SCRIPTS_DATA'; scripts: NpmScript[]; projectPath: string }
+  | { type: 'SEARCH_RESULTS'; results: SearchResult[] }
   | { type: 'COLUMN_CONFIG'; config: ColumnConfig }
   | { type: 'ERROR'; message: string }
   | { type: 'PROGRESS'; message: string };

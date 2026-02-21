@@ -1,12 +1,13 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { DependencyTable } from './components/DependencyTable';
 import { ScriptsPanel } from './components/ScriptsPanel';
+import { SearchPanel } from './components/SearchPanel';
 import { useVsCodeApi, useVsCodeMessages } from './hooks/useVsCodeApi';
 import { Dependency, HostToWebviewMessage, ColumnConfig, ProjectInfo, PackageManager, VersionInfo, UpdateHistory, NpmScript } from './types';
 import './App.css';
 
 function App() {
-  const { requestDependencies, updatePackage, updateAllPackages, selectProject, rollbackLast, toggleIgnorePackage, refreshCache, runScript, isReady } = useVsCodeApi();
+  const { requestDependencies, updatePackage, updateAllPackages, selectProject, rollbackLast, toggleIgnorePackage, refreshCache, runScript, searchPackages, installNewPackage, isReady } = useVsCodeApi();
 
   const [dependencies, setDependencies] = useState<Dependency[]>([]);
   const [packageName, setPackageName] = useState<string>('');
@@ -30,6 +31,8 @@ function App() {
   const cacheInfoRef = useRef<{ fromCache: boolean; age?: number } | null>(null);
   const [scripts, setScripts] = useState<NpmScript[]>([]);
   const [scriptsLoaded, setScriptsLoaded] = useState(false);
+  const [searchResults, setSearchResults] = useState<any[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
 
   // Manejar mensajes del Extension Host
   const handleMessage = useCallback((message: HostToWebviewMessage) => {
@@ -93,6 +96,11 @@ function App() {
       case 'SCRIPTS_DATA':
         setScripts(message.scripts);
         setScriptsLoaded(true);
+        break;
+
+      case 'SEARCH_RESULTS':
+        setSearchResults(message.results);
+        setIsSearching(false);
         break;
 
       case 'IGNORE_TOGGLED':
@@ -192,6 +200,16 @@ function App() {
     refreshCache();
   };
 
+  const handleSearch = useCallback((query: string) => {
+    setIsSearching(true);
+    searchPackages(query);
+  }, [searchPackages]);
+
+  const handleInstallNew = useCallback((packageName: string, version: string, isDev: boolean) => {
+    installNewPackage(packageName, version, isDev);
+    setSearchResults([]);
+  }, [installNewPackage]);
+
   if (isLoading) {
     return (
       <div className="loading-container">
@@ -276,6 +294,12 @@ function App() {
           onRollback={handleRollback}
           rollbackMessage={rollbackMessage}
           onToggleIgnore={toggleIgnorePackage}
+        />
+        <SearchPanel
+          results={searchResults}
+          onSearch={handleSearch}
+          onInstall={handleInstallNew}
+          isLoading={isSearching}
         />
         <ScriptsPanel
           scripts={scripts}

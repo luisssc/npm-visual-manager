@@ -73,6 +73,18 @@ export function useVsCodeApi() {
     postMessage({ type: 'RUN_SCRIPT', scriptName });
   }, [postMessage]);
 
+  const searchPackages = useCallback((query: string) => {
+    postMessage({ type: 'SEARCH_PACKAGES', query });
+  }, [postMessage]);
+
+  const installNewPackage = useCallback((packageName: string, version: string, isDev: boolean) => {
+    postMessage({ type: 'INSTALL_NEW_PACKAGE', packageName, version, isDev });
+  }, [postMessage]);
+
+  const runAudit = useCallback(() => {
+    postMessage({ type: 'GET_AUDIT' });
+  }, [postMessage]);
+
   return {
     vscode: vscodeRef.current,
     isReady,
@@ -86,7 +98,10 @@ export function useVsCodeApi() {
     toggleIgnorePackage,
     refreshCache,
     getScripts,
-    runScript
+    runScript,
+    searchPackages,
+    installNewPackage,
+    runAudit
   };
 }
 

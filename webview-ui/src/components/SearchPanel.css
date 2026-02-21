@@ -1,0 +1,239 @@
+.search-panel {
+  padding: 12px 16px;
+  border-top: 1px solid var(--vscode-panel-border);
+  background: var(--vscode-editor-background);
+}
+
+.search-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--vscode-foreground);
+  margin-bottom: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.search-header-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.search-header-left i {
+  font-size: 14px;
+  color: var(--vscode-symbolIcon-methodForeground);
+}
+
+.search-toggle-btn {
+  background: transparent;
+  border: none;
+  color: var(--vscode-foreground);
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  font-size: 12px;
+  opacity: 0.7;
+  transition: opacity 0.2s;
+}
+
+.search-toggle-btn:hover {
+  opacity: 1;
+  background: var(--vscode-button-secondaryBackground);
+}
+
+.search-input-container {
+  position: relative;
+  margin-bottom: 12px;
+}
+
+.search-icon {
+  position: absolute;
+  left: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--vscode-descriptionForeground);
+  font-size: 14px;
+}
+
+.search-input {
+  width: 100%;
+  padding: 8px 12px 8px 36px;
+  background: var(--vscode-input-background);
+  color: var(--vscode-input-foreground);
+  border: 1px solid var(--vscode-input-border);
+  border-radius: 4px;
+  font-size: 13px;
+  outline: none;
+}
+
+.search-input:focus {
+  border-color: var(--vscode-focusBorder);
+}
+
+.search-loading {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 11px;
+  color: var(--vscode-descriptionForeground);
+}
+
+.search-results {
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.search-no-results {
+  color: var(--vscode-descriptionForeground);
+  font-size: 13px;
+  font-style: italic;
+  padding: 16px;
+  text-align: center;
+}
+
+.search-result-item {
+  padding: 12px;
+  border-bottom: 1px solid var(--vscode-panel-border);
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.search-result-item:hover {
+  background: var(--vscode-list-hoverBackground);
+}
+
+.search-result-item:last-child {
+  border-bottom: none;
+}
+
+.result-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.result-name {
+  font-weight: 600;
+  color: var(--vscode-foreground);
+  font-size: 14px;
+}
+
+.result-version {
+  color: var(--vscode-descriptionForeground);
+  font-size: 12px;
+}
+
+.result-downloads {
+  margin-left: auto;
+  color: var(--vscode-descriptionForeground);
+  font-size: 11px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.result-description {
+  color: var(--vscode-descriptionForeground);
+  font-size: 12px;
+  line-height: 1.4;
+  margin-bottom: 8px;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.result-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.result-keyword {
+  background: var(--vscode-badge-background);
+  color: var(--vscode-badge-foreground);
+  padding: 2px 6px;
+  border-radius: 3px;
+  font-size: 10px;
+}
+
+.result-date {
+  color: var(--vscode-descriptionForeground);
+  font-size: 11px;
+  margin-left: auto;
+}
+
+.install-confirmation {
+  background: var(--vscode-editor-inactiveSelectionBackground);
+  padding: 16px;
+  border-radius: 6px;
+}
+
+.install-confirmation h4 {
+  margin: 0 0 8px 0;
+  font-size: 16px;
+  color: var(--vscode-foreground);
+}
+
+.install-description {
+  color: var(--vscode-descriptionForeground);
+  font-size: 13px;
+  margin-bottom: 12px;
+}
+
+.install-options {
+  margin-bottom: 16px;
+}
+
+.dev-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--vscode-foreground);
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.dev-checkbox input {
+  cursor: pointer;
+}
+
+.install-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.install-btn {
+  background: var(--vscode-button-background);
+  color: var(--vscode-button-foreground);
+  border: none;
+  padding: 8px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.install-btn:hover {
+  background: var(--vscode-button-hoverBackground);
+}
+
+.cancel-btn {
+  background: transparent;
+  color: var(--vscode-foreground);
+  border: 1px solid var(--vscode-button-secondaryBackground);
+  padding: 8px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.cancel-btn:hover {
+  background: var(--vscode-button-secondaryHoverBackground);
+}
