@@ -235,7 +235,7 @@ function App() {
             disabled={isLoading}
             title="Refresh dependencies (clears cache)"
           >
-            <i className="codicon codicon-refresh" /> Refresh
+            <i className="codicon codicon-refresh" />
           </button>
         </div>
       </header>

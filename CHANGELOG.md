@@ -2,25 +2,6 @@
 
 All notable changes to the "npm-visual-manager" extension will be documented in this file.
 
-## [0.2.2] - 2026-02-21
-
-### Added
-- **Deprecation warnings**: Packages marked as deprecated by NPM now show a warning icon
-  - Orange warning icon for deprecated packages
-  - Tooltip shows deprecation message
-  - Works alongside security vulnerability indicators
-
-### Changed
-- Removed duplicate refresh button from header
-- Security and deprecation icons now appear inline with package name
-
-## [0.2.1] - 2026-02-21
-
-### Changed
-- Unified refresh button (now clears cache automatically)
-- Removed Security column from table
-- Added package icon next to package name
-
 ## [0.2.0] - 2026-02-21
 
 ### Added
@@ -28,9 +9,17 @@ All notable changes to the "npm-visual-manager" extension will be documented in 
   - Instant loading on subsequent opens
   - Works without internet connection (uses cached data)
   - Reduces NPM API calls and avoids rate limiting
-  - Visual indicator showing cache age
+  - Refresh button clears cache and fetches fresh data
+- **Deprecation warnings**: Packages marked as deprecated by NPM now show a warning icon
+  - Orange warning icon (⚠️) for deprecated packages
+  - Tooltip shows deprecation message
+- Multi-project support (monorepo detection)
+- Support for npm, yarn, pnpm, and bun
 
 ### Changed
+- Removed Security column from table
+- Security and deprecation icons now appear inline with package name
+- Refresh button now shows only icon (no text)
 - Improved loading performance through intelligent caching
 
 ## [0.1.1] - 2026-02-20
@@ -50,9 +39,7 @@ All notable changes to the "npm-visual-manager" extension will be documented in 
 - Bulk update all outdated packages
 - Security audit integration (vulnerability detection)
 - Rollback functionality with version history
-- Multi-project support (monorepo detection)
 - Cross-platform support (Windows, macOS, Linux)
-- Support for npm, yarn, pnpm, and bun
 - Package size estimation
 - Semver update type badges (MAJOR, MINOR, PATCH)
 - Theme-aware UI using VS Code CSS variables
