@@ -25,7 +25,7 @@ interface DependencyTableProps {
   rollbackMessage?: string | null;
 }
 
-type SortColumn = 'name' | 'installedVersion' | 'latestVersion' | 'type' | 'size' | 'lastPublishDate' | 'hasVulnerabilities';
+type SortColumn = 'name' | 'installedVersion' | 'latestVersion' | 'type' | 'size' | 'lastPublishDate';
 type SortDirection = 'asc' | 'desc';
 
 const getSemverColor = (type: SemverUpdateType | undefined): string => {
@@ -195,9 +195,6 @@ export const DependencyTable = ({
         case 'lastPublishDate':
           comparison = (a.lastPublishDate || '').localeCompare(b.lastPublishDate || '');
           break;
-        case 'hasVulnerabilities':
-          comparison = (a.hasVulnerabilities ? 1 : 0) - (b.hasVulnerabilities ? 1 : 0);
-          break;
       }
       return sortDirection === 'asc' ? comparison : -comparison;
     });
@@ -219,8 +216,7 @@ export const DependencyTable = ({
     (columnConfig.type ? 1 : 0) +
     (columnConfig.size ? 1 : 0) +
     (columnConfig.semverUpdate ? 1 : 0) +
-    (columnConfig.lastUpdate ? 1 : 0) +
-    (columnConfig.security ? 1 : 0);
+    (columnConfig.lastUpdate ? 1 : 0);
 
   return (
     <div className="dependency-table-container">
@@ -331,11 +327,7 @@ export const DependencyTable = ({
                   Last Update {getSortIndicator('lastPublishDate')}
                 </th>
               )}
-              {columnConfig.security && (
-                <th className="sortable security-col">
-                  Security
-                </th>
-              )}
+
               <th className="action-col">Action</th>
             </tr>
           </thead>
@@ -367,16 +359,25 @@ export const DependencyTable = ({
                     />
                   </td>
                   <td className="package-name">
-                    <Tooltip text="View on npm">
-                      <a
-                        href={`https://www.npmjs.com/package/${dep.name}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="package-link"
-                      >
-                        {dep.name}
-                      </a>
-                    </Tooltip>
+                    <div className="package-info">
+                      <img 
+                        src={`https://www.google.com/s2/favicons?domain=npmjs.com&size=16`}
+                        alt=""
+                        className="package-icon"
+                        width="16"
+                        height="16"
+                      />
+                      <Tooltip text="View on npm">
+                        <a
+                          href={`https://www.npmjs.com/package/${dep.name}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="package-link"
+                        >
+                          {dep.name}
+                        </a>
+                      </Tooltip>
+                    </div>
                   </td>
                   {columnConfig.type && (
                     <td className="type-cell">
@@ -432,19 +433,7 @@ export const DependencyTable = ({
                       )}
                     </td>
                   )}
-                  {columnConfig.security && (
-                    <td className="security-cell">
-                      {dep.hasVulnerabilities ? (
-                        <Tooltip text={`${dep.vulnerabilityCount || 1} vulnerabilities found`}>
-                          <span className="security-badge security-danger">
-                            <i className="codicon codicon-warning" /> {dep.vulnerabilityCount || 1}
-                          </span>
-                        </Tooltip>
-                      ) : (
-                        <span className="security-badge security-safe"><i className="codicon codicon-shield" /></span>
-                      )}
-                    </td>
-                  )}
+
                   <td className="action-cell">
                     {dep.updateAvailable && dep.latestVersion ? (
                       <button

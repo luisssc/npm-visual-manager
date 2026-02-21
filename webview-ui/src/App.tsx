@@ -165,7 +165,8 @@ function App() {
   const handleRetry = () => {
     setError(null);
     setIsLoading(true);
-    requestDependencies();
+    setCacheInfo(null);
+    refreshCache(); // Clears cache and reloads dependencies
   };
 
   if (isLoading) {
@@ -227,15 +228,12 @@ function App() {
             }
           </button>
           <button
-            className="refresh-cache-btn"
-            onClick={() => {
-              setProgressMessage('Refreshing cache...');
-              refreshCache();
-            }}
-            title="Clear cache and fetch fresh data from NPM"
+            className="refresh-btn"
+            onClick={handleRetry}
             disabled={isLoading}
+            title="Refresh dependencies (clears cache)"
           >
-            <i className="codicon codicon-refresh" /> Refresh Cache
+            <i className="codicon codicon-refresh" /> Refresh
           </button>
           {cacheInfo?.fromCache && (
             <span className="cache-indicator" title={`Using cached data (${cacheInfo.age?.toFixed(1)}h old)`}>

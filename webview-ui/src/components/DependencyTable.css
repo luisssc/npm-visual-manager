@@ -361,9 +361,20 @@
 
 /* Package name cell */
 .package-name {
+  padding: 8px;
+}
+
+.package-info {
   display: flex;
   align-items: center;
   gap: 8px;
+}
+
+.package-icon {
+  width: 16px;
+  height: 16px;
+  opacity: 0.7;
+  flex-shrink: 0;
 }
 
 .package-name .name {

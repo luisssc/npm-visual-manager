@@ -2,6 +2,13 @@
 
 All notable changes to the "npm-visual-manager" extension will be documented in this file.
 
+## [0.2.1] - 2026-02-21
+
+### Changed
+- Unified refresh button (now clears cache automatically)
+- Removed Security column from table
+- Added package icon next to package name
+
 ## [0.2.0] - 2026-02-21
 
 ### Added
@@ -9,7 +16,6 @@ All notable changes to the "npm-visual-manager" extension will be documented in 
   - Instant loading on subsequent opens
   - Works without internet connection (uses cached data)
   - Reduces NPM API calls and avoids rate limiting
-  - "Refresh Cache" button to force fresh data fetch
   - Visual indicator showing cache age
 
 ### Changed
