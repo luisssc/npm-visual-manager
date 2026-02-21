@@ -201,6 +201,11 @@ function App() {
   };
 
   const handleSearch = useCallback((query: string) => {
+    if (query.trim().length < 2) {
+      setSearchResults([]);
+      setIsSearching(false);
+      return;
+    }
     setIsSearching(true);
     searchPackages(query);
   }, [searchPackages]);

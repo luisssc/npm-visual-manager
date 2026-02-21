@@ -23,7 +23,8 @@ export const SearchPanel = ({ results, onSearch, onInstall, isLoading }: SearchP
       clearTimeout(debounceRef.current);
     }
     
-    if (value.trim()) {
+    // NPM search requires at least 2 characters
+    if (value.trim().length >= 2) {
       debounceRef.current = setTimeout(() => {
         onSearch(value);
       }, 300);

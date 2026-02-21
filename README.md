@@ -6,24 +6,27 @@ A Visual Studio Code extension that provides a visual interface for managing NPM
 
 ## Screenshots
 
-### Dependency Table
-View all your dependencies with installed versions, latest versions, update availability, and security status.
+### Ignore Packages & Show All Packages
+Click the eye icon 👁️ to ignore packages from update checks. Use "Show All Packages" to toggle between outdated-only and all packages view.
 
-![Dependency Table](screenshots/dependency-table.png)
+![Ignore Packages](screenshots/ignore_package-show_all_packages.gif)
 
-### Bulk Updates
-Select multiple packages and update them all at once with a single click.
+### Search & Install Packages
+Search for new packages in the NPM registry and install them directly from the UI.
 
-![Bulk Updates](screenshots/bulk-updates.png)
+![Install Package](screenshots/install_package.gif)
 
-### Security Audit
-See vulnerability counts directly in the dependency list.
+### Update Packages
+One-click updates for individual packages with automatic version checking.
 
-![Security Audit](screenshots/security-audit.png)
+![Update Package](screenshots/update_package.gif)
 
 ## Features
 
 - 📊 **Visual Dependency Table**: View all dependencies (production, development, and peer) in a clean, sortable table
+- 🔍 **Search & Install Packages**: Search NPM registry and install new packages directly from the UI
+- 👁️ **Ignore Packages**: Exclude packages from update checks with a click
+- ▶️ **Scripts Runner**: Execute npm scripts from the UI (dev, build, test, etc.)
 - 🔄 **Version Checking**: Automatically checks for latest versions from the NPM registry
 - ⬆️ **One-Click Updates**: Update individual packages or all outdated packages at once
 - 🛡️ **Security Audit**: Shows vulnerability counts from `npm audit`
@@ -83,11 +86,17 @@ npm run vscode:prepublish
 ```
 npm-visual-manager/
 ├── src/                          # Extension Host (Node.js)
-│   ├── extension.ts              # Entry point
-│   ├── webviewPanel.ts           # Webview panel management
-│   ├── npmService.ts             # NPM registry API
-│   ├── packageService.ts         # package.json operations
-│   └── types.ts                  # Shared types
+│   ├── core/                     # Core functionality
+│   │   ├── extension.ts          # Entry point
+│   │   ├── webviewPanel.ts       # Webview panel management
+│   │   └── types.ts              # Shared types
+│   ├── services/                 # Business logic
+│   │   ├── npmService.ts         # NPM registry API
+│   │   ├── searchService.ts      # Package search API
+│   │   ├── packageService.ts     # package.json operations
+│   │   └── packageManagerService.ts  # Package manager commands
+│   └── utils/                    # Utilities
+│       └── cache.ts              # Version caching
 ├── webview-ui/                   # React Application
 │   ├── src/
 │   │   ├── components/           # React components
@@ -162,7 +171,7 @@ This extension contributes the following settings:
 
 ## Roadmap
 
-- [ ] Install new packages via search interface
+- [x] ~~Install new packages via search interface~~ ✅ Added in v0.4.0
 - [ ] Export dependency report
 - [ ] Dependency usage analysis (find unused packages)
 - [ ] Changelog preview before updating
