@@ -149,22 +149,16 @@ export async function getPackageDetails(
       lastPublishDate = info.time.modified;
     }
 
-    // Check if installed version is deprecated
-    // Note: We check all versions since the installed version might not be the latest
+    // Check if package is deprecated
+    // Note: In NPM, deprecation is per-version
     let isDeprecated = false;
     let deprecationMessage: string | undefined;
     
-    // Check if any version in the package has deprecation info
-    // The deprecation warning is per-version in NPM
-    for (const [version, versionData] of Object.entries(info.versions)) {
-      const data = versionData as { deprecated?: string };
-      if (data.deprecated) {
-        // Mark as deprecated if ANY version is deprecated
-        // In a real scenario, we'd check specifically the installed version
-        isDeprecated = true;
-        deprecationMessage = data.deprecated;
-        break;
-      }
+    // Check if latest version is deprecated
+    const latestVersionInfo = info.versions[latestVersion] as { deprecated?: string } | undefined;
+    if (latestVersionInfo?.deprecated) {
+      isDeprecated = true;
+      deprecationMessage = latestVersionInfo.deprecated;
     }
 
     return {
