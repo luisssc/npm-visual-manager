@@ -9,6 +9,7 @@ import { Dependency, WebviewToHostMessage, HostToWebviewMessage, ColumnConfig, U
 import { findPackageJson, readPackageJson, extractDependencies } from './packageService';
 import { getPackageDetails, isUpdateAvailable, getSemverUpdateType, setGlobalCache } from './npmService';
 import { getCache, VersionCache } from './cacheService';
+import { getIgnoreService, IgnoreService } from './ignoreService';
 import { findAllProjects, Project } from './workspaceService';
 import { runAudit, hasVulnerabilities, getPackageVulnerabilityCount, detectPackageManager } from './auditService';
 import { getInstallCommand, getPackageManagerInfo, PackageManager } from './packageManagerService';
@@ -126,6 +127,10 @@ export class NpmGuiManagerPanel {
         await this._refreshCache();
         break;
 
+      case 'TOGGLE_IGNORE_PACKAGE':
+        await this._toggleIgnorePackage(message.packageName, message.currentVersion);
+        break;
+
       case 'UPDATE_PACKAGE':
         await this._updatePackage(message.packageName, message.version, message.currentVersion);
         break;
@@ -168,6 +173,23 @@ export class NpmGuiManagerPanel {
       type: 'CACHE_CLEARED',
       message: 'Cache refreshed successfully'
     });
+  }
+
+  /**
+   * Toggle ignore status for a package
+   */
+  private async _toggleIgnorePackage(packageName: string, currentVersion?: string): Promise<void> {
+    const ignoreService = getIgnoreService();
+    const isIgnored = await ignoreService.toggleIgnore(packageName, currentVersion);
+    
+    this._sendMessage({
+      type: 'IGNORE_TOGGLED',
+      packageName,
+      isIgnored
+    });
+    
+    // Reload to update UI
+    await this._loadDependencies();
   }
 
   /**
@@ -226,6 +248,14 @@ export class NpmGuiManagerPanel {
         // Continue without audit data
       }
 
+      // Load ignored packages status
+      try {
+        dependencies = await this._loadIgnoredStatus(dependencies);
+      } catch (ignoreError) {
+        console.warn('Failed to load ignored status:', ignoreError);
+        // Continue without ignore data
+      }
+
       // Get current project name - show only project name, not path
       const currentProject = this._projects.find(p => p.path === this._currentProjectPath);
       const displayName = currentProject ? currentProject.name : (packageJson.name || 'Unnamed Package');
@@ -276,6 +306,15 @@ export class NpmGuiManagerPanel {
   /**
    * Verifica las actualizaciones disponibles para las dependencias
    */
+  private async _loadIgnoredStatus(dependencies: Dependency[]): Promise<Dependency[]> {
+    const ignoreService = getIgnoreService();
+    return dependencies.map(dep => ({
+      ...dep,
+      isIgnored: ignoreService.isIgnored(dep.name),
+      ignoreReason: ignoreService.getIgnoreReason(dep.name)
+    }));
+  }
+
   private async _checkUpdates(dependencies: Dependency[], forceRefresh: boolean = false): Promise<void> {
     const batchSize = 5; // Procesar en lotes para no saturar
 

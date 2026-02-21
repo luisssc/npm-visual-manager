@@ -19,6 +19,8 @@ export interface Dependency {
   vulnerabilityCount?: number;
   isDeprecated?: boolean;
   deprecationMessage?: string;
+  isIgnored?: boolean;
+  ignoreReason?: string;
 }
 
 export interface ColumnConfig {
@@ -66,7 +68,8 @@ export type WebviewToHostMessage =
   | { type: 'UPDATE_ALL_PACKAGES'; packages: { name: string; version: string; currentVersion?: string }[] }
   | { type: 'ROLLBACK_LAST' }
   | { type: 'CHECK_UPDATES'; dependencies: Dependency[]; forceRefresh?: boolean }
-  | { type: 'REFRESH_CACHE' };
+  | { type: 'REFRESH_CACHE' }
+  | { type: 'TOGGLE_IGNORE_PACKAGE'; packageName: string; currentVersion?: string };
 
 export type PackageManager = 'npm' | 'yarn' | 'pnpm' | 'bun';
 
@@ -77,6 +80,7 @@ export type HostToWebviewMessage =
   | { type: 'ROLLBACK_RESULT'; success: boolean; message: string; rolledBackPackages?: string[] }
   | { type: 'VERSION_CHECK_RESULT'; dependency: Dependency; latestVersion: string; semverUpdateType?: SemverUpdateType; lastPublishDate?: string; fromCache?: boolean; cacheAge?: number; isDeprecated?: boolean; deprecationMessage?: string }
   | { type: 'CACHE_CLEARED'; message: string }
+  | { type: 'IGNORE_TOGGLED'; packageName: string; isIgnored: boolean }
   | { type: 'COLUMN_CONFIG'; config: ColumnConfig }
   | { type: 'ERROR'; message: string }
   | { type: 'PROGRESS'; message: string };

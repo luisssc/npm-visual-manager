@@ -57,12 +57,12 @@ export function useVsCodeApi() {
     postMessage({ type: 'ROLLBACK_LAST' });
   }, [postMessage]);
 
-  const refreshCache = useCallback(() => {
-    postMessage({ type: 'REFRESH_CACHE' });
+  const toggleIgnorePackage = useCallback((packageName: string, currentVersion?: string) => {
+    postMessage({ type: 'TOGGLE_IGNORE_PACKAGE', packageName, currentVersion });
   }, [postMessage]);
 
-  const forceRefreshUpdates = useCallback((dependencies: Dependency[]) => {
-    postMessage({ type: 'CHECK_UPDATES', dependencies, forceRefresh: true });
+  const refreshCache = useCallback(() => {
+    postMessage({ type: 'REFRESH_CACHE' });
   }, [postMessage]);
 
   return {
@@ -75,8 +75,8 @@ export function useVsCodeApi() {
     checkUpdates,
     selectProject,
     rollbackLast,
-    refreshCache,
-    forceRefreshUpdates
+    toggleIgnorePackage,
+    refreshCache
   };
 }
 

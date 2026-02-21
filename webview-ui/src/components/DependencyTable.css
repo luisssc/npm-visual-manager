@@ -562,6 +562,44 @@
   font-size: 14px;
 }
 
+/* Pin/Ignore buttons */
+.action-buttons {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+}
+
+.pin-btn {
+  background: transparent;
+  border: none;
+  color: var(--vscode-descriptionForeground, #888);
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 3px;
+  font-size: 12px;
+  opacity: 0;
+  transition: opacity 0.2s, background 0.2s;
+}
+
+tr:hover .pin-btn {
+  opacity: 1;
+}
+
+.pin-btn:hover:not(:disabled) {
+  background: var(--row-hover-bg);
+  color: var(--vscode-foreground);
+}
+
+.pin-btn.pinned {
+  opacity: 1;
+  color: var(--vscode-warningForeground, #ff9800);
+}
+
+.pin-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
 /* Empty state */
 .empty-state {
   text-align: center;

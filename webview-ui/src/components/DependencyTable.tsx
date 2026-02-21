@@ -22,6 +22,7 @@ interface DependencyTableProps {
   lastUpdate?: UpdateHistory | null;
   onRollback?: () => void;
   rollbackMessage?: string | null;
+  onToggleIgnore?: (packageName: string, currentVersion?: string) => void;
 }
 
 type SortColumn = 'name' | 'installedVersion' | 'latestVersion' | 'type' | 'size' | 'lastPublishDate';
@@ -73,7 +74,8 @@ export const DependencyTable = ({
   packageManagerVersion,
   lastUpdate,
   onRollback,
-  rollbackMessage
+  rollbackMessage,
+  onToggleIgnore
 }: DependencyTableProps) => {
   const [sortColumn, setSortColumn] = useState<SortColumn>('name');
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
@@ -117,9 +119,9 @@ export const DependencyTable = ({
 
   const handleSelectAll = (checked: boolean) => {
     if (checked) {
-      // Only select packages with updates
+      // Only select packages with updates (excluding ignored)
       const updatable = sortedAndFilteredDeps
-        .filter(d => d.updateAvailable)
+        .filter(d => d.updateAvailable && !d.isIgnored)
         .map(d => d.name);
       setSelectedPackages(new Set(updatable));
     } else {
@@ -129,7 +131,7 @@ export const DependencyTable = ({
 
   const handleUpdateSelected = () => {
     const packagesToUpdate = sortedAndFilteredDeps
-      .filter(d => selectedPackages.has(d.name) && d.updateAvailable && d.latestVersion)
+      .filter(d => selectedPackages.has(d.name) && d.updateAvailable && !d.isIgnored && d.latestVersion)
       .map(d => ({ name: d.name, version: 'latest', currentVersion: d.declaredVersion }));
     
     if (packagesToUpdate.length > 0) {
@@ -140,7 +142,7 @@ export const DependencyTable = ({
 
   const handleUpdateAll = () => {
     const packagesToUpdate = sortedAndFilteredDeps
-      .filter(d => d.updateAvailable && d.latestVersion)
+      .filter(d => d.updateAvailable && !d.isIgnored && d.latestVersion)
       .map(d => ({ name: d.name, version: 'latest', currentVersion: d.declaredVersion }));
     onUpdateAll(packagesToUpdate);
   };
@@ -200,7 +202,7 @@ export const DependencyTable = ({
     return result;
   }, [dependencies, sortColumn, sortDirection, filter, showAllPackages]);
 
-  const updateCount = dependencies.filter(d => d.updateAvailable).length;
+  const updateCount = dependencies.filter(d => d.updateAvailable && !d.isIgnored).length;
 
   const getSortIndicator = (column: SortColumn) => {
     if (sortColumn !== column) {return <i className="codicon codicon-arrow-swap" />;}
@@ -281,7 +283,7 @@ export const DependencyTable = ({
               <th className="checkbox-col">
                 <input
                   type="checkbox"
-                  checked={selectedPackages.size > 0 && selectedPackages.size === sortedAndFilteredDeps.filter(d => d.updateAvailable).length}
+                  checked={selectedPackages.size > 0 && selectedPackages.size === sortedAndFilteredDeps.filter(d => d.updateAvailable && !d.isIgnored).length}
                   onChange={(e) => handleSelectAll(e.target.checked)}
                   title="Select all packages with updates"
                 />
@@ -432,17 +434,40 @@ export const DependencyTable = ({
                   )}
 
                   <td className="action-cell">
-                    {dep.updateAvailable && dep.latestVersion ? (
-                      <button
-                        className="update-btn"
-                        onClick={() => handleUpdate(dep)}
-                        disabled={updatingPackages.has(dep.name) || isLoading}
-                      >
-                        {updatingPackages.has(dep.name) ? '...' : 'Update'}
-                      </button>
-                    ) : (
-                      <span className="up-to-date"><i className="codicon codicon-check" /></span>
-                    )}
+                    <div className="action-buttons">
+                      {dep.isIgnored ? (
+                        <Tooltip text={dep.ignoreReason || 'Ignored'}>
+                          <button
+                            className="pin-btn pinned"
+                            onClick={() => onToggleIgnore?.(dep.name, dep.installedVersion)}
+                            disabled={isLoading}
+                            title="Unignore package"
+                          >
+                            <i className="codicon codicon-pin" />
+                          </button>
+                        </Tooltip>
+                      ) : dep.updateAvailable && dep.latestVersion ? (
+                        <button
+                          className="update-btn"
+                          onClick={() => handleUpdate(dep)}
+                          disabled={updatingPackages.has(dep.name) || isLoading}
+                        >
+                          {updatingPackages.has(dep.name) ? '...' : 'Update'}
+                        </button>
+                      ) : (
+                        <span className="up-to-date"><i className="codicon codicon-check" /></span>
+                      )}
+                      {!dep.isIgnored && (
+                        <button
+                          className="pin-btn"
+                          onClick={() => onToggleIgnore?.(dep.name, dep.installedVersion)}
+                          disabled={isLoading}
+                          title="Ignore this package"
+                        >
+                          <i className="codicon codicon-pin" />
+                        </button>
+                      )}
+                    </div>
                   </td>
                 </tr>
               ))

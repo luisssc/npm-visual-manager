@@ -2,6 +2,17 @@
 
 All notable changes to the "npm-visual-manager" extension will be documented in this file.
 
+## [0.3.0] - 2026-02-21
+
+### Added
+- **Ignore/Pin Packages**: Ability to ignore specific packages from update checks
+  - Pin packages to stay on specific versions (e.g., React 18 when 19 is available)
+  - Persisted in `.vscode/settings.json`
+  - Hover over pin icon shows reason for ignoring
+  - Ignored packages don't count in "updates available" counter
+  - Pin button appears on hover for each package
+  - Orange pinned icon 📌 for ignored packages
+
 ## [0.2.0] - 2026-02-21
 
 ### Added

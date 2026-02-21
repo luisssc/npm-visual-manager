@@ -5,7 +5,7 @@ import { Dependency, HostToWebviewMessage, ColumnConfig, ProjectInfo, PackageMan
 import './App.css';
 
 function App() {
-  const { requestDependencies, updatePackage, updateAllPackages, selectProject, rollbackLast, refreshCache, isReady } = useVsCodeApi();
+  const { requestDependencies, updatePackage, updateAllPackages, selectProject, rollbackLast, toggleIgnorePackage, refreshCache, isReady } = useVsCodeApi();
   
   const [dependencies, setDependencies] = useState<Dependency[]>([]);
   const [packageName, setPackageName] = useState<string>('');
@@ -83,6 +83,17 @@ function App() {
       case 'CACHE_CLEARED':
         setCacheInfo(null);
         setProgressMessage(null);
+        break;
+
+      case 'IGNORE_TOGGLED':
+        // Update local state for immediate feedback
+        setDependencies(prev =>
+          prev.map(dep =>
+            dep.name === message.packageName
+              ? { ...dep, isIgnored: message.isIgnored }
+              : dep
+          )
+        );
         break;
 
       case 'UPDATE_RESULT':
@@ -254,6 +265,7 @@ function App() {
           lastUpdate={lastUpdate}
           onRollback={handleRollback}
           rollbackMessage={rollbackMessage}
+          onToggleIgnore={toggleIgnorePackage}
         />
       </main>
     </div>
