@@ -5,7 +5,7 @@ import { Dependency, HostToWebviewMessage, ColumnConfig, ProjectInfo, PackageMan
 import './App.css';
 
 function App() {
-  const { requestDependencies, updatePackage, updateAllPackages, selectProject, rollbackLast, isReady } = useVsCodeApi();
+  const { requestDependencies, updatePackage, updateAllPackages, selectProject, rollbackLast, refreshCache, isReady } = useVsCodeApi();
   
   const [dependencies, setDependencies] = useState<Dependency[]>([]);
   const [packageName, setPackageName] = useState<string>('');
@@ -26,6 +26,7 @@ function App() {
   const [versions, setVersions] = useState<VersionInfo | null>(null);
   const [lastUpdate, setLastUpdate] = useState<UpdateHistory | null>(null);
   const [rollbackMessage, setRollbackMessage] = useState<string | null>(null);
+  const [cacheInfo, setCacheInfo] = useState<{ fromCache: boolean; age?: number } | null>(null);
 
   // Manejar mensajes del Extension Host
   const handleMessage = useCallback((message: HostToWebviewMessage) => {
@@ -71,6 +72,15 @@ function App() {
               : dep
           )
         );
+        // Track cache status from first package
+        if (message.fromCache !== undefined && !cacheInfo) {
+          setCacheInfo({ fromCache: message.fromCache, age: message.cacheAge });
+        }
+        break;
+
+      case 'CACHE_CLEARED':
+        setCacheInfo(null);
+        setProgressMessage(null);
         break;
 
       case 'UPDATE_RESULT':
@@ -216,6 +226,22 @@ function App() {
               : <><i className="codicon codicon-list-flat" /> Show All Packages</>
             }
           </button>
+          <button
+            className="refresh-cache-btn"
+            onClick={() => {
+              setProgressMessage('Refreshing cache...');
+              refreshCache();
+            }}
+            title="Clear cache and fetch fresh data from NPM"
+            disabled={isLoading}
+          >
+            <i className="codicon codicon-refresh" /> Refresh Cache
+          </button>
+          {cacheInfo?.fromCache && (
+            <span className="cache-indicator" title={`Using cached data (${cacheInfo.age?.toFixed(1)}h old)`}>
+              💾 {cacheInfo.age?.toFixed(0)}h
+            </span>
+          )}
         </div>
       </header>
 

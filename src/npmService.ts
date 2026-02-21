@@ -1,8 +1,10 @@
 /**
  * Servicio para interactuar con el registro de NPM
+ * Con soporte de caché para modo offline
  */
 
 import * as https from 'https';
+import { VersionCache } from './cacheService';
 
 export interface NpmPackageInfo {
   name: string;
@@ -21,14 +23,45 @@ export interface NpmPackageInfo {
 export interface PackageDetails {
   latestVersion: string;
   lastPublishDate?: string;
+  fromCache?: boolean;
+  cacheAge?: number;
 }
 
 export type SemverUpdateType = 'major' | 'minor' | 'patch' | 'none' | 'unknown';
 
+// Global cache instance (set externally)
+let globalCache: VersionCache | null = null;
+
+export function setGlobalCache(cache: VersionCache): void {
+  globalCache = cache;
+}
+
 /**
  * Obtiene la información de un paquete desde el registro de NPM
+ * Con soporte de caché
  */
-export function getPackageInfo(packageName: string): Promise<NpmPackageInfo> {
+export async function getPackageInfo(
+  packageName: string,
+  forceRefresh: boolean = false
+): Promise<NpmPackageInfo> {
+  // Check cache first if not forcing refresh
+  if (!forceRefresh && globalCache) {
+    const cached = globalCache.get(packageName);
+    if (cached) {
+      // Return cached data as mock NpmPackageInfo
+      return {
+        name: packageName,
+        'dist-tags': { latest: cached.latestVersion },
+        versions: {},
+        time: cached.lastPublishDate ? {
+          created: cached.lastPublishDate,
+          modified: cached.lastPublishDate,
+          [cached.latestVersion]: cached.lastPublishDate
+        } : undefined
+      };
+    }
+  }
+
   return new Promise((resolve, reject) => {
     const encodedName = encodeURIComponent(packageName).replace('%40', '@');
     const url = `https://registry.npmjs.org/${encodedName}`;
@@ -50,6 +83,14 @@ export function getPackageInfo(packageName: string): Promise<NpmPackageInfo> {
         try {
           if (res.statusCode === 200) {
             const packageInfo: NpmPackageInfo = JSON.parse(data);
+            
+            // Save to cache
+            if (globalCache) {
+              const latestVersion = packageInfo['dist-tags'].latest;
+              const lastPublishDate = packageInfo.time?.[latestVersion] || packageInfo.time?.modified;
+              globalCache.set(packageName, { latestVersion, lastPublishDate });
+            }
+            
             resolve(packageInfo);
           } else if (res.statusCode === 404) {
             reject(new Error(`Package "${packageName}" not found in npm registry`));
@@ -75,31 +116,72 @@ export function getPackageInfo(packageName: string): Promise<NpmPackageInfo> {
 
 /**
  * Obtiene los detalles de un paquete (versión y fecha)
+ * Con soporte de caché
  */
-export async function getPackageDetails(packageName: string): Promise<PackageDetails> {
-  const info = await getPackageInfo(packageName);
-  const latestVersion = info['dist-tags'].latest;
-  
-  // Get the publish date for the latest version
-  let lastPublishDate: string | undefined;
-  if (info.time && info.time[latestVersion]) {
-    lastPublishDate = info.time[latestVersion];
-  } else if (info.time?.modified) {
-    lastPublishDate = info.time.modified;
+export async function getPackageDetails(
+  packageName: string,
+  forceRefresh: boolean = false
+): Promise<PackageDetails> {
+  // Check cache first
+  if (!forceRefresh && globalCache) {
+    const cached = globalCache.get(packageName);
+    if (cached) {
+      return {
+        latestVersion: cached.latestVersion,
+        lastPublishDate: cached.lastPublishDate,
+        fromCache: true,
+        cacheAge: globalCache.getAgeHours(packageName) || 0
+      };
+    }
   }
 
-  return {
-    latestVersion,
-    lastPublishDate
-  };
+  try {
+    const info = await getPackageInfo(packageName, forceRefresh);
+    const latestVersion = info['dist-tags'].latest;
+    
+    // Get the publish date for the latest version
+    let lastPublishDate: string | undefined;
+    if (info.time && info.time[latestVersion]) {
+      lastPublishDate = info.time[latestVersion];
+    } else if (info.time?.modified) {
+      lastPublishDate = info.time.modified;
+    }
+
+    return {
+      latestVersion,
+      lastPublishDate,
+      fromCache: false
+    };
+  } catch (error) {
+    // If network fails, try to return stale cache as fallback
+    if (globalCache) {
+      const staleEntry = globalCache.get(packageName) || 
+                         (forceRefresh ? null : Object.values(globalCache['cache'].entries).find(e => e)); // Hack to get any entry
+      
+      // Actually, let's just check if we have ANY data for this package
+      const anyCached = globalCache['cache'].entries[packageName];
+      if (anyCached) {
+        return {
+          latestVersion: anyCached.latestVersion,
+          lastPublishDate: anyCached.lastPublishDate,
+          fromCache: true,
+          cacheAge: globalCache.getAgeHours(packageName) || 999
+        };
+      }
+    }
+    throw error;
+  }
 }
 
 /**
  * Obtiene la última versión de un paquete
  */
-export async function getLatestVersion(packageName: string): Promise<string> {
-  const info = await getPackageInfo(packageName);
-  return info['dist-tags'].latest;
+export async function getLatestVersion(
+  packageName: string,
+  forceRefresh: boolean = false
+): Promise<string> {
+  const details = await getPackageDetails(packageName, forceRefresh);
+  return details.latestVersion;
 }
 
 /**
@@ -124,8 +206,8 @@ export function compareVersions(v1: string, v2: string): number {
     const p1 = parts1[i] || 0;
     const p2 = parts2[i] || 0;
 
-    if (p1 < p2) {return -1;}
-    if (p1 > p2) {return 1;}
+    if (p1 < p2) return -1;
+    if (p1 > p2) return 1;
   }
 
   return 0;

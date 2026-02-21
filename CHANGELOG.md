@@ -2,6 +2,19 @@
 
 All notable changes to the "npm-visual-manager" extension will be documented in this file.
 
+## [0.2.0] - 2026-02-21
+
+### Added
+- **Offline Mode with Cache**: Version data is now cached locally for 24 hours
+  - Instant loading on subsequent opens
+  - Works without internet connection (uses cached data)
+  - Reduces NPM API calls and avoids rate limiting
+  - "Refresh Cache" button to force fresh data fetch
+  - Visual indicator showing cache age
+
+### Changed
+- Improved loading performance through intelligent caching
+
 ## [0.1.1] - 2026-02-20
 
 ### Added

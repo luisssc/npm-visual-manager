@@ -79,6 +79,40 @@
   background: var(--vscode-button-secondaryHoverBackground);
 }
 
+.refresh-cache-btn {
+  background: var(--vscode-button-secondaryBackground);
+  color: var(--vscode-button-secondaryForeground);
+  border: none;
+  padding: 5px 12px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.refresh-cache-btn:hover:not(:disabled) {
+  background: var(--vscode-button-secondaryHoverBackground);
+}
+
+.refresh-cache-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.cache-indicator {
+  font-size: 11px;
+  color: var(--vscode-descriptionForeground);
+  background: var(--vscode-badge-background);
+  padding: 2px 8px;
+  border-radius: 10px;
+  white-space: nowrap;
+}
+
 .app-content {
   flex: 1;
   overflow: hidden;

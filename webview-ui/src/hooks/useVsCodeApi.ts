@@ -57,6 +57,14 @@ export function useVsCodeApi() {
     postMessage({ type: 'ROLLBACK_LAST' });
   }, [postMessage]);
 
+  const refreshCache = useCallback(() => {
+    postMessage({ type: 'REFRESH_CACHE' });
+  }, [postMessage]);
+
+  const forceRefreshUpdates = useCallback((dependencies: Dependency[]) => {
+    postMessage({ type: 'CHECK_UPDATES', dependencies, forceRefresh: true });
+  }, [postMessage]);
+
   return {
     vscode: vscodeRef.current,
     isReady,
@@ -66,7 +74,9 @@ export function useVsCodeApi() {
     updateAllPackages,
     checkUpdates,
     selectProject,
-    rollbackLast
+    rollbackLast,
+    refreshCache,
+    forceRefreshUpdates
   };
 }
 

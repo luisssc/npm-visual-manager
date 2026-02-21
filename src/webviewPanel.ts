@@ -7,7 +7,8 @@ import * as path from 'path';
 import * as fs from 'fs';
 import { Dependency, WebviewToHostMessage, HostToWebviewMessage, ColumnConfig, UpdateHistory } from './types';
 import { findPackageJson, readPackageJson, extractDependencies } from './packageService';
-import { getPackageDetails, isUpdateAvailable, getSemverUpdateType } from './npmService';
+import { getPackageDetails, isUpdateAvailable, getSemverUpdateType, setGlobalCache } from './npmService';
+import { getCache, VersionCache } from './cacheService';
 import { findAllProjects, Project } from './workspaceService';
 import { runAudit, hasVulnerabilities, getPackageVulnerabilityCount, detectPackageManager } from './auditService';
 import { getInstallCommand, getPackageManagerInfo, PackageManager } from './packageManagerService';
@@ -24,6 +25,7 @@ export class NpmGuiManagerPanel {
   private _currentProjectPath: string;
   private _currentPackageManager: PackageManager = 'npm';
   private _updateHistory: UpdateHistory | null = null;
+  private _cache: VersionCache | null = null;
 
   public static async createOrShow(extensionUri: vscode.Uri, workspaceRoot: string): Promise<void> {
     const column = vscode.window.activeTextEditor
@@ -79,8 +81,11 @@ export class NpmGuiManagerPanel {
     this._workspaceRoot = workspaceRoot;
     this._projects = projects;
     this._currentProjectPath = projects[0].path;
+    
+    // Initialize cache for this project
+    this._initializeCache();
 
-    // Configurar contenido HTML inicial
+    // Configurar contenion HTML inicial
     this._update();
 
     // Escuchar mensajes del webview
@@ -114,7 +119,11 @@ export class NpmGuiManagerPanel {
         break;
 
       case 'CHECK_UPDATES':
-        await this._checkUpdates(message.dependencies);
+        await this._checkUpdates(message.dependencies, message.forceRefresh);
+        break;
+
+      case 'REFRESH_CACHE':
+        await this._refreshCache();
         break;
 
       case 'UPDATE_PACKAGE':
@@ -134,9 +143,31 @@ export class NpmGuiManagerPanel {
   /**
    * Cambia el proyecto actual
    */
+  private async _initializeCache(): Promise<void> {
+    this._cache = getCache(this._currentProjectPath);
+    await this._cache.load();
+    setGlobalCache(this._cache);
+  }
+
   private async _selectProject(projectPath: string): Promise<void> {
     this._currentProjectPath = projectPath;
+    await this._initializeCache();
     await this._loadDependencies();
+  }
+
+  private async _refreshCache(): Promise<void> {
+    if (this._cache) {
+      this._cache.clear();
+      await this._cache.save();
+    }
+    
+    // Reload dependencies with fresh cache
+    await this._loadDependencies();
+    
+    this._sendMessage({
+      type: 'CACHE_CLEARED',
+      message: 'Cache refreshed successfully'
+    });
   }
 
   /**
@@ -245,14 +276,14 @@ export class NpmGuiManagerPanel {
   /**
    * Verifica las actualizaciones disponibles para las dependencias
    */
-  private async _checkUpdates(dependencies: Dependency[]): Promise<void> {
+  private async _checkUpdates(dependencies: Dependency[], forceRefresh: boolean = false): Promise<void> {
     const batchSize = 5; // Procesar en lotes para no saturar
 
     for (let i = 0; i < dependencies.length; i += batchSize) {
       const batch = dependencies.slice(i, i + batchSize);
       const promises = batch.map(async (dep) => {
         try {
-          const details = await getPackageDetails(dep.name);
+          const details = await getPackageDetails(dep.name, forceRefresh);
           const semverUpdateType = getSemverUpdateType(dep.installedVersion, details.latestVersion);
           
           this._sendMessage({
@@ -260,7 +291,9 @@ export class NpmGuiManagerPanel {
             dependency: dep,
             latestVersion: details.latestVersion,
             semverUpdateType,
-            lastPublishDate: details.lastPublishDate
+            lastPublishDate: details.lastPublishDate,
+            fromCache: details.fromCache,
+            cacheAge: details.cacheAge
           });
         } catch (error) {
           console.warn(`Failed to check version for ${dep.name}:`, error);
@@ -268,6 +301,11 @@ export class NpmGuiManagerPanel {
       });
 
       await Promise.all(promises);
+    }
+
+    // Save cache after batch processing
+    if (this._cache) {
+      await this._cache.save();
     }
   }
 

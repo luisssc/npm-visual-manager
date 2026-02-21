@@ -2,7 +2,7 @@
   "name": "npm-visual-manager",
   "displayName": "NPM Visual Manager",
   "description": "Visual package manager for NPM dependencies with update checking, security audit, and bulk operations",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "publisher": "LuisClementDev",
   "author": {
     "name": "Luis Clement Cremades"
@@ -37,7 +37,7 @@
     "onView:npm-visual-manager.sidebar"
   ],
   "main": "./out/extension.js",
-  "icon": "resources/icon.png",
+  "icon": "resources/icon-marketplace.png",
   "galleryBanner": {
     "color": "#CB3837",
     "theme": "dark"
