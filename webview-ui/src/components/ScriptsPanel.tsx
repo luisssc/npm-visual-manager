@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { NpmScript } from '../types';
 import './ScriptsPanel.css';
 
@@ -5,9 +6,30 @@ interface ScriptsPanelProps {
   scripts: NpmScript[];
   onRunScript: (scriptName: string) => void;
   isLoading?: boolean;
+  isScriptsLoaded?: boolean;
+  projectPath?: string;
 }
 
-export const ScriptsPanel = ({ scripts, onRunScript, isLoading }: ScriptsPanelProps) => {
+export const ScriptsPanel = ({
+  scripts,
+  onRunScript,
+  isLoading,
+  isScriptsLoaded = false,
+  projectPath
+}: ScriptsPanelProps) => {
+  const [isCollapsed, setIsCollapsed] = useState(false);
+  if (!isScriptsLoaded) {
+    return (
+      <div className="scripts-panel">
+        <div className="scripts-header">
+          <i className="codicon codicon-terminal" />
+          <span>Scripts</span>
+        </div>
+        <div className="scripts-empty">Loading scripts...</div>
+      </div>
+    );
+  }
+
   if (scripts.length === 0) {
     return (
       <div className="scripts-panel">
@@ -16,6 +38,9 @@ export const ScriptsPanel = ({ scripts, onRunScript, isLoading }: ScriptsPanelPr
           <span>Scripts</span>
         </div>
         <div className="scripts-empty">No scripts found in package.json</div>
+        {projectPath && (
+          <div className="scripts-empty">Checked: {projectPath}</div>
+        )}
       </div>
     );
   }
@@ -50,10 +75,20 @@ export const ScriptsPanel = ({ scripts, onRunScript, isLoading }: ScriptsPanelPr
   return (
     <div className="scripts-panel">
       <div className="scripts-header">
-        <i className="codicon codicon-terminal" />
-        <span>Scripts ({scripts.length})</span>
+        <div className="scripts-header-left">
+          <i className="codicon codicon-terminal" />
+          <span>Scripts ({scripts.length})</span>
+        </div>
+        <button
+          className="scripts-toggle-btn"
+          onClick={() => setIsCollapsed(!isCollapsed)}
+          title={isCollapsed ? 'Show scripts' : 'Hide scripts'}
+        >
+          <i className={`codicon codicon-chevron-${isCollapsed ? 'up' : 'down'}`} />
+        </button>
       </div>
-      <div className="scripts-grid">
+      {!isCollapsed && (
+        <div className="scripts-grid">
         {sortedScripts.map((script) => (
           <button
             key={script.name}
@@ -69,6 +104,7 @@ export const ScriptsPanel = ({ scripts, onRunScript, isLoading }: ScriptsPanelPr
           </button>
         ))}
       </div>
+      )}
     </div>
   );
 };

@@ -4,10 +4,19 @@
 
 import * as fs from 'fs';
 import * as path from 'path';
+import { PackageJson } from '../core/types';
 
 export interface NpmScript {
   name: string;
   command: string;
+}
+
+export function extractScriptsFromPackageJson(packageJson: PackageJson): NpmScript[] {
+  const scripts = packageJson.scripts || {};
+  return Object.entries(scripts).map(([name, command]) => ({
+    name,
+    command
+  }));
 }
 
 /**
@@ -17,14 +26,8 @@ export async function readScripts(projectPath: string): Promise<NpmScript[]> {
   try {
     const packageJsonPath = path.join(projectPath, 'package.json');
     const content = await fs.promises.readFile(packageJsonPath, 'utf-8');
-    const pkg = JSON.parse(content);
-    
-    const scripts = pkg.scripts || {};
-    
-    return Object.entries(scripts).map(([name, command]) => ({
-      name,
-      command: command as string
-    }));
+    const packageJson = JSON.parse(content) as PackageJson;
+    return extractScriptsFromPackageJson(packageJson);
   } catch {
     return [];
   }

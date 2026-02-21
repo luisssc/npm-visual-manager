@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { DependencyTable } from './components/DependencyTable';
 import { ScriptsPanel } from './components/ScriptsPanel';
 import { useVsCodeApi, useVsCodeMessages } from './hooks/useVsCodeApi';
@@ -6,8 +6,8 @@ import { Dependency, HostToWebviewMessage, ColumnConfig, ProjectInfo, PackageMan
 import './App.css';
 
 function App() {
-  const { requestDependencies, updatePackage, updateAllPackages, selectProject, rollbackLast, toggleIgnorePackage, refreshCache, getScripts, runScript, isReady } = useVsCodeApi();
-  
+  const { requestDependencies, updatePackage, updateAllPackages, selectProject, rollbackLast, toggleIgnorePackage, refreshCache, runScript, isReady } = useVsCodeApi();
+
   const [dependencies, setDependencies] = useState<Dependency[]>([]);
   const [packageName, setPackageName] = useState<string>('');
   const [isLoading, setIsLoading] = useState(true);
@@ -27,8 +27,9 @@ function App() {
   const [versions, setVersions] = useState<VersionInfo | null>(null);
   const [lastUpdate, setLastUpdate] = useState<UpdateHistory | null>(null);
   const [rollbackMessage, setRollbackMessage] = useState<string | null>(null);
-  const [cacheInfo, setCacheInfo] = useState<{ fromCache: boolean; age?: number } | null>(null);
+  const cacheInfoRef = useRef<{ fromCache: boolean; age?: number } | null>(null);
   const [scripts, setScripts] = useState<NpmScript[]>([]);
+  const [scriptsLoaded, setScriptsLoaded] = useState(false);
 
   // Manejar mensajes del Extension Host
   const handleMessage = useCallback((message: HostToWebviewMessage) => {
@@ -36,6 +37,8 @@ function App() {
       case 'DEPENDENCIES_DATA':
         setDependencies(message.dependencies);
         setPackageName(message.packageName);
+        setScripts(message.scripts ?? []);
+        setScriptsLoaded(true);
         setColumnConfig(message.columnConfig);
         if (message.projects) {
           setProjects(message.projects);
@@ -61,8 +64,8 @@ function App() {
         break;
 
       case 'VERSION_CHECK_RESULT':
-        setDependencies(prev => 
-          prev.map(dep => 
+        setDependencies(prev =>
+          prev.map(dep =>
             dep.name === message.dependency.name
               ? {
                   ...dep,
@@ -77,22 +80,22 @@ function App() {
           )
         );
         // Track cache status from first package
-        if (message.fromCache !== undefined && !cacheInfo) {
-          setCacheInfo({ fromCache: message.fromCache, age: message.cacheAge });
+        if (message.fromCache !== undefined && !cacheInfoRef.current) {
+          cacheInfoRef.current = { fromCache: message.fromCache, age: message.cacheAge };
         }
         break;
 
       case 'CACHE_CLEARED':
-        setCacheInfo(null);
+        cacheInfoRef.current = null;
         setProgressMessage(null);
         break;
 
       case 'SCRIPTS_DATA':
         setScripts(message.scripts);
+        setScriptsLoaded(true);
         break;
 
       case 'IGNORE_TOGGLED':
-        // Update local state for immediate feedback
         setDependencies(prev =>
           prev.map(dep =>
             dep.name === message.packageName
@@ -103,7 +106,6 @@ function App() {
         break;
 
       case 'UPDATE_RESULT':
-        // Always clear progress message on update result
         setProgressMessage(null);
         if (!message.success) {
           setError(message.message);
@@ -111,13 +113,11 @@ function App() {
         break;
 
       case 'ROLLBACK_RESULT':
-        // Clear progress message first
         setProgressMessage(null);
         if (!message.success) {
           setError(message.message);
         } else {
           setLastUpdate(null);
-          // Show rollback success in footer instead of progress
           setRollbackMessage(message.message);
           setTimeout(() => setRollbackMessage(null), 5000);
         }
@@ -140,9 +140,8 @@ function App() {
   useEffect(() => {
     if (isReady) {
       requestDependencies();
-      getScripts();
     }
-  }, [isReady, requestDependencies, getScripts]);
+  }, [isReady, requestDependencies]);
 
   // Función auxiliar para comparar versiones semver
   function isUpdateAvailable(installed: string, latest: string): boolean {
@@ -175,6 +174,8 @@ function App() {
   const handleSelectProject = (path: string) => {
     setCurrentProjectPath(path);
     setIsLoading(true);
+    setScripts([]);
+    setScriptsLoaded(false);
     selectProject(path);
   };
 
@@ -185,8 +186,10 @@ function App() {
   const handleRetry = () => {
     setError(null);
     setIsLoading(true);
-    setCacheInfo(null);
-    refreshCache(); // Clears cache and reloads dependencies
+    cacheInfoRef.current = null;
+    setScripts([]);
+    setScriptsLoaded(false);
+    refreshCache();
   };
 
   if (isLoading) {
@@ -278,6 +281,8 @@ function App() {
           scripts={scripts}
           onRunScript={runScript}
           isLoading={isLoading}
+          isScriptsLoaded={scriptsLoaded}
+          projectPath={currentProjectPath}
         />
       </main>
     </div>

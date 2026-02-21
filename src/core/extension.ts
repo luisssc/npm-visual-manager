@@ -3,6 +3,7 @@
  */
 
 import * as vscode from 'vscode';
+import * as path from 'path';
 import { NpmGuiManagerPanel } from './webviewPanel';
 import { NpmDependenciesProvider } from './sidebarProvider';
 
@@ -12,7 +13,7 @@ export function activate(context: vscode.ExtensionContext): void {
   // Register the main command (opens in panel)
   const openManagerCommand = vscode.commands.registerCommand(
     'npm-visual-manager.openManager',
-    async () => {
+    async (resource?: vscode.Uri) => {
       const workspaceFolders = vscode.workspace.workspaceFolders;
 
       if (!workspaceFolders || workspaceFolders.length === 0) {
@@ -22,10 +23,28 @@ export function activate(context: vscode.ExtensionContext): void {
         return;
       }
 
-      const workspaceRoot = workspaceFolders[0].uri.fsPath;
+      let workspaceRoot = workspaceFolders[0].uri.fsPath;
+      let preferredProjectPath: string | undefined;
+
+      const activeUri = resource || vscode.window.activeTextEditor?.document.uri;
+      if (activeUri && activeUri.scheme === 'file') {
+        const folder = vscode.workspace.getWorkspaceFolder(activeUri);
+        if (folder) {
+          workspaceRoot = folder.uri.fsPath;
+        }
+
+        const isPackageJson = path.basename(activeUri.fsPath).toLowerCase() === 'package.json';
+        preferredProjectPath = isPackageJson
+          ? path.dirname(activeUri.fsPath)
+          : activeUri.fsPath;
+      }
 
       try {
-        await NpmGuiManagerPanel.createOrShow(context.extensionUri, workspaceRoot);
+        await NpmGuiManagerPanel.createOrShow(
+          context.extensionUri,
+          workspaceRoot,
+          preferredProjectPath
+        );
       } catch (error) {
         vscode.window.showErrorMessage(
           `npm-visual-manager: Failed to open manager - ${error instanceof Error ? error.message : String(error)}`

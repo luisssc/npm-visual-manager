@@ -7,7 +7,7 @@
 .scripts-header {
   display: flex;
   align-items: center;
-  gap: 8px;
+  justify-content: space-between;
   font-size: 13px;
   font-weight: 600;
   color: var(--vscode-foreground);
@@ -16,9 +16,32 @@
   letter-spacing: 0.5px;
 }
 
-.scripts-header i {
+.scripts-header-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.scripts-header-left i {
   font-size: 14px;
   color: var(--vscode-symbolIcon-methodForeground);
+}
+
+.scripts-toggle-btn {
+  background: transparent;
+  border: none;
+  color: var(--vscode-foreground);
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  font-size: 12px;
+  opacity: 0.7;
+  transition: opacity 0.2s;
+}
+
+.scripts-toggle-btn:hover {
+  opacity: 1;
+  background: var(--vscode-button-secondaryBackground);
 }
 
 .scripts-grid {

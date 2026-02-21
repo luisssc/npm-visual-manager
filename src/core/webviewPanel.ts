@@ -15,7 +15,7 @@ import { runAudit, hasVulnerabilities, getPackageVulnerabilityCount, detectPacka
 import { getInstallCommand, getPackageManagerInfo, PackageManager } from '../services/packageManagerService';
 import { getVersions } from '../services/nodeVersionService';
 import { getInstalledVersion, getInstalledVersions } from '../services/installedVersionService';
-import { readScripts, sortScripts, NpmScript } from '../services/scriptService';
+import { readScripts, sortScripts, extractScriptsFromPackageJson } from '../services/scriptService';
 import { clearPackageSizeCache } from '../services/sizeService';
 
 export class NpmGuiManagerPanel {
@@ -30,13 +30,22 @@ export class NpmGuiManagerPanel {
   private _updateHistory: UpdateHistory | null = null;
   private _cache: VersionCache | null = null;
 
-  public static async createOrShow(extensionUri: vscode.Uri, workspaceRoot: string): Promise<void> {
+  public static async createOrShow(
+    extensionUri: vscode.Uri,
+    workspaceRoot: string,
+    preferredProjectPath?: string
+  ): Promise<void> {
     const column = vscode.window.activeTextEditor
       ? vscode.window.activeTextEditor.viewColumn
       : undefined;
 
     // Find all projects in workspace
-    const projects = await findAllProjects(workspaceRoot);
+    const discoveredProjects = await findAllProjects(workspaceRoot);
+    const projects = await NpmGuiManagerPanel._withPreferredProject(
+      discoveredProjects,
+      workspaceRoot,
+      preferredProjectPath
+    );
     if (projects.length === 0) {
       vscode.window.showErrorMessage('npm-visual-manager: No package.json found in workspace');
       return;
@@ -46,7 +55,22 @@ export class NpmGuiManagerPanel {
     if (NpmGuiManagerPanel.currentPanel) {
       NpmGuiManagerPanel.currentPanel._panel.reveal(column);
       NpmGuiManagerPanel.currentPanel._projects = projects;
-      await NpmGuiManagerPanel.currentPanel._loadDependencies();
+      // Force refresh HTML to avoid stale cached webview assets.
+      NpmGuiManagerPanel.currentPanel._update();
+      const currentPath = NpmGuiManagerPanel.currentPanel._currentProjectPath;
+      const keepCurrent = projects.some(
+        (project) =>
+          NpmGuiManagerPanel._normalizePath(project.path) ===
+          NpmGuiManagerPanel._normalizePath(currentPath)
+      );
+      const resolvedProjectPath = preferredProjectPath
+        ? NpmGuiManagerPanel._resolveProjectPath(projects, preferredProjectPath)
+        : (keepCurrent ? currentPath : projects[0].path);
+      if (NpmGuiManagerPanel.currentPanel._currentProjectPath !== resolvedProjectPath) {
+        await NpmGuiManagerPanel.currentPanel._selectProject(resolvedProjectPath);
+      } else {
+        await NpmGuiManagerPanel.currentPanel._loadDependencies();
+      }
       return;
     }
 
@@ -69,27 +93,122 @@ export class NpmGuiManagerPanel {
       dark: vscode.Uri.joinPath(extensionUri, 'resources', 'icon-dark.svg')
     };
 
-    NpmGuiManagerPanel.currentPanel = new NpmGuiManagerPanel(panel, extensionUri, workspaceRoot, projects);
+    NpmGuiManagerPanel.currentPanel = new NpmGuiManagerPanel(
+      panel,
+      extensionUri,
+      workspaceRoot,
+      projects,
+      preferredProjectPath
+    );
     await NpmGuiManagerPanel.currentPanel._loadDependencies();
+  }
+
+  private static _normalizePath(inputPath: string): string {
+    return path.resolve(inputPath).replace(/[\\/]+$/, '').toLowerCase();
+  }
+
+  private static async _withPreferredProject(
+    projects: Project[],
+    workspaceRoot: string,
+    preferredProjectPath?: string
+  ): Promise<Project[]> {
+    if (!preferredProjectPath) {
+      return projects;
+    }
+
+    let candidatePath = preferredProjectPath;
+    try {
+      const stat = await fs.promises.stat(preferredProjectPath);
+      if (stat.isFile()) {
+        candidatePath = path.dirname(preferredProjectPath);
+      }
+    } catch {
+      return projects;
+    }
+
+    const normalizedCandidate = this._normalizePath(candidatePath);
+    const alreadyIncluded = projects.some(
+      (project) => this._normalizePath(project.path) === normalizedCandidate
+    );
+    if (alreadyIncluded) {
+      return projects;
+    }
+
+    const packageJsonPath = path.join(candidatePath, 'package.json');
+    try {
+      await fs.promises.access(packageJsonPath, fs.constants.F_OK);
+    } catch {
+      return projects;
+    }
+
+    let name = path.basename(candidatePath);
+    try {
+      const packageJson = await readPackageJson(packageJsonPath);
+      if (packageJson.name) {
+        name = packageJson.name;
+      }
+    } catch {
+      // Keep folder name fallback
+    }
+
+    const relativePath = path.relative(workspaceRoot, candidatePath) || '.';
+    return [
+      ...projects,
+      {
+        name,
+        path: candidatePath,
+        relativePath
+      }
+    ];
+  }
+
+  private static _resolveProjectPath(projects: Project[], preferredProjectPath?: string): string {
+    if (!preferredProjectPath) {
+      return projects[0].path;
+    }
+
+    const normalizedPreferred = this._normalizePath(preferredProjectPath);
+    const exactMatch = projects.find(
+      (project) => this._normalizePath(project.path) === normalizedPreferred
+    );
+    if (exactMatch) {
+      return exactMatch.path;
+    }
+
+    const containerMatch = projects
+      .filter((project) => {
+        const normalizedProject = this._normalizePath(project.path);
+        return (
+          normalizedPreferred === normalizedProject ||
+          normalizedPreferred.startsWith(`${normalizedProject}${path.sep}`) ||
+          normalizedPreferred.startsWith(`${normalizedProject}/`) ||
+          normalizedPreferred.startsWith(`${normalizedProject}\\`)
+        );
+      })
+      .sort((a, b) => b.path.length - a.path.length)[0];
+
+    if (containerMatch) {
+      return containerMatch.path;
+    }
+
+    return projects[0].path;
   }
 
   private constructor(
     panel: vscode.WebviewPanel,
     extensionUri: vscode.Uri,
     workspaceRoot: string,
-    projects: Project[]
+    projects: Project[],
+    preferredProjectPath?: string
   ) {
     this._panel = panel;
     this._extensionUri = extensionUri;
     this._workspaceRoot = workspaceRoot;
     this._projects = projects;
-    this._currentProjectPath = projects[0].path;
+    this._currentProjectPath = NpmGuiManagerPanel._resolveProjectPath(projects, preferredProjectPath);
     
     // Initialize cache for this project
     this._initializeCache();
-
-    // Configurar contenido HTML inicial
-    this._update();
 
     // Escuchar mensajes del webview
     this._panel.webview.onDidReceiveMessage(
@@ -99,6 +218,9 @@ export class NpmGuiManagerPanel {
       null,
       this._disposables
     );
+
+    // Configurar contenido HTML inicial
+    this._update();
 
     // Limpiar cuando se cierra
     this._panel.onDidDispose(
@@ -112,7 +234,6 @@ export class NpmGuiManagerPanel {
    * Maneja los mensajes recibidos del Webview
    */
   private async _handleMessage(message: WebviewToHostMessage): Promise<void> {
-    console.log(`[npm-visual-manager] Received message: ${message.type}`);
     switch (message.type) {
       case 'GET_DEPENDENCIES':
         await this._loadDependencies();
@@ -279,6 +400,7 @@ export class NpmGuiManagerPanel {
 
       // Get Node and package manager versions
       const versions = await getVersions(this._currentPackageManager);
+      const scripts = sortScripts(extractScriptsFromPackageJson(packageJson));
 
       this._sendMessage({
         type: 'DEPENDENCIES_DATA',
@@ -289,7 +411,8 @@ export class NpmGuiManagerPanel {
         currentProjectPath: this._currentProjectPath,
         packageManager: this._currentPackageManager,
         versions,
-        lastUpdate: this._updateHistory
+        lastUpdate: this._updateHistory,
+        scripts
       });
 
       // Update panel title with project name
@@ -511,21 +634,21 @@ export class NpmGuiManagerPanel {
    * Load npm scripts from package.json
    */
   private async _loadScripts(): Promise<void> {
-    console.log(`[npm-visual-manager] Loading scripts for project: ${this._currentProjectPath}`);
     try {
       const scripts = await readScripts(this._currentProjectPath);
-      console.log(`[npm-visual-manager] Loaded ${scripts.length} scripts`);
       const sortedScripts = sortScripts(scripts);
       
       this._sendMessage({
         type: 'SCRIPTS_DATA',
-        scripts: sortedScripts
+        scripts: sortedScripts,
+        projectPath: this._currentProjectPath
       });
     } catch (error) {
       console.warn('Failed to load scripts:', error);
       this._sendMessage({
         type: 'SCRIPTS_DATA',
-        scripts: []
+        scripts: [],
+        projectPath: this._currentProjectPath
       });
     }
   }
@@ -687,6 +810,7 @@ export class NpmGuiManagerPanel {
 
     const scriptUri = webview.asWebviewUri(scriptPath);
     const cssUri = webview.asWebviewUri(cssPath);
+    const cacheBuster = Date.now();
 
     const nonce = getNonce();
 
@@ -697,11 +821,11 @@ export class NpmGuiManagerPanel {
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'nonce-${nonce}'; style-src ${webview.cspSource} 'unsafe-inline'; font-src ${webview.cspSource}; connect-src https:;">
   <title>NPM Package Manager</title>
-  <link rel="stylesheet" href="${cssUri}">
+  <link rel="stylesheet" href="${cssUri}?v=${cacheBuster}">
 </head>
 <body>
   <div id="root"></div>
-  <script nonce="${nonce}" src="${scriptUri}"></script>
+  <script nonce="${nonce}" src="${scriptUri}?v=${cacheBuster}"></script>
 </body>
 </html>`;
   }
