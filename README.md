@@ -2,8 +2,6 @@
 
 A Visual Studio Code extension that provides a visual interface for managing NPM dependencies, inspired by the NuGet Package Manager in Visual Studio.
 
-![NPM Visual Manager - Main Interface](screenshots/main-interface.png)
-
 ## Screenshots
 
 ### Ignore Packages & Show All Packages
@@ -81,6 +79,18 @@ npm run vscode:prepublish
 - **Search**: Type in the filter box to search by package name
 - **Type Filter**: Use the dropdown to show only Production, Development, or Peer dependencies
 
+### Search & Install Packages
+
+Expand the "INSTALL PACKAGES" section, type a package name (min. 2 characters), and click on a result to install it. You can choose to install as a regular dependency or dev dependency.
+
+### Scripts Runner
+
+Expand the "SCRIPTS" section to see all npm scripts from your package.json. Click any script to run it in the integrated terminal. Supports npm, yarn, pnpm, and bun.
+
+### Ignore Packages
+
+Click the eye icon 👁️ next to any package to ignore it from update checks. Ignored packages won't appear in the "updates available" counter. Click "Show All Packages" to toggle between viewing only outdated packages or all packages.
+
 ## Architecture
 
 ```
@@ -146,11 +156,21 @@ npm run watch
 - `CHECK_UPDATES`: Request version check for dependencies
 - `UPDATE_PACKAGE`: Request single package update
 - `UPDATE_ALL_PACKAGES`: Request batch update
+- `SEARCH_PACKAGES`: Search NPM registry for packages
+- `INSTALL_NEW_PACKAGE`: Install a new dependency
+- `GET_SCRIPTS`: Request npm scripts list
+- `RUN_SCRIPT`: Execute an npm script
+- `TOGGLE_IGNORE_PACKAGE`: Toggle ignore status for a package
+- `REFRESH_CACHE`: Clear version cache
 
 **Host → Webview:**
 - `DEPENDENCIES_DATA`: Send dependency list
 - `VERSION_CHECK_RESULT`: Send latest version for a package
 - `UPDATE_RESULT`: Confirm update initiation
+- `SEARCH_RESULTS`: Send package search results
+- `SCRIPTS_DATA`: Send npm scripts list
+- `IGNORE_TOGGLED`: Confirm ignore status change
+- `CACHE_CLEARED`: Confirm cache cleared
 - `PROGRESS`: Show progress message
 - `ERROR`: Report errors
 
