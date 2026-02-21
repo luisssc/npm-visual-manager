@@ -95,6 +95,13 @@ export class VersionCache {
   }
 
   /**
+   * Get cached data regardless of TTL (useful as offline fallback)
+   */
+  getStale(packageName: string): CacheEntry | null {
+    return this.cache.entries[packageName] || null;
+  }
+
+  /**
    * Check if cache entry is stale (exists but expired)
    */
   isStale(packageName: string): boolean {

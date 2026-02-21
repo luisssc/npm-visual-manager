@@ -181,19 +181,17 @@ export async function getPackageDetails(
       deprecationMessage
     };
   } catch (error) {
-    // If network fails, try to return stale cache as fallback
+    // If network fails, return stale cache as fallback for this package
     if (globalCache) {
-      const staleEntry = globalCache.get(packageName) || 
-                         (forceRefresh ? null : Object.values(globalCache['cache'].entries).find(e => e)); // Hack to get any entry
-      
-      // Actually, let's just check if we have ANY data for this package
-      const anyCached = globalCache['cache'].entries[packageName];
-      if (anyCached) {
+      const staleEntry = globalCache.getStale(packageName);
+      if (staleEntry) {
         return {
-          latestVersion: anyCached.latestVersion,
-          lastPublishDate: anyCached.lastPublishDate,
+          latestVersion: staleEntry.latestVersion,
+          lastPublishDate: staleEntry.lastPublishDate,
           fromCache: true,
-          cacheAge: globalCache.getAgeHours(packageName) || 999
+          cacheAge: globalCache.getAgeHours(packageName) || 999,
+          isDeprecated: staleEntry.isDeprecated,
+          deprecationMessage: staleEntry.deprecationMessage
         };
       }
     }

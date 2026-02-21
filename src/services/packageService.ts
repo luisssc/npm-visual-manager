@@ -8,6 +8,11 @@ import { PackageJson, Dependency } from '../core/types';
 import { getPackageSize } from './sizeService';
 import { getInstalledVersion } from './installedVersionService';
 
+interface ExtractDependenciesOptions {
+  includeSize?: boolean;
+  concurrency?: number;
+}
+
 /**
  * Busca el package.json en el workspace
  */
@@ -35,46 +40,80 @@ export async function readPackageJson(packageJsonPath: string): Promise<PackageJ
  */
 export async function extractDependencies(
   packageJson: PackageJson, 
-  workspaceRoot?: string
+  workspaceRoot?: string,
+  options: ExtractDependenciesOptions = {}
 ): Promise<Dependency[]> {
-  const dependencies: Dependency[] = [];
+  const includeSize = options.includeSize ?? true;
+  const concurrency = Math.max(1, options.concurrency ?? 12);
 
-  const extractDeps = async (
-    deps: Record<string, string>, 
+  const depEntries: Array<{
+    name: string;
+    version: string;
+    type: 'dependencies' | 'devDependencies' | 'peerDependencies';
+  }> = [];
+
+  const collectDeps = (
+    deps: Record<string, string>,
     type: 'dependencies' | 'devDependencies' | 'peerDependencies'
   ) => {
     for (const [name, version] of Object.entries(deps)) {
-      let installedVersion: string | null = null;
-      
-      if (workspaceRoot) {
-        try {
-          installedVersion = await getInstalledVersion(workspaceRoot, name);
-        } catch {
-          // Ignore errors - will use declared version as fallback
-        }
-      }
-      
-      dependencies.push({
-        name,
-        declaredVersion: version,                       // ej: "^5"
-        installedVersion: installedVersion || version,  // ej: "5.9.3" o fallback a declarada
-        type,
-        size: workspaceRoot ? getPackageSize(workspaceRoot, name) : undefined
-      });
+      depEntries.push({ name, version, type });
     }
   };
 
   if (packageJson.dependencies) {
-    await extractDeps(packageJson.dependencies, 'dependencies');
+    collectDeps(packageJson.dependencies, 'dependencies');
   }
 
   if (packageJson.devDependencies) {
-    await extractDeps(packageJson.devDependencies, 'devDependencies');
+    collectDeps(packageJson.devDependencies, 'devDependencies');
   }
 
   if (packageJson.peerDependencies) {
-    await extractDeps(packageJson.peerDependencies, 'peerDependencies');
+    collectDeps(packageJson.peerDependencies, 'peerDependencies');
   }
 
+  const dependencies = await mapWithConcurrency(depEntries, concurrency, async ({ name, version, type }) => {
+    const installedVersionPromise = workspaceRoot
+      ? getInstalledVersion(workspaceRoot, name).catch(() => null)
+      : Promise.resolve<string | null>(null);
+
+    const sizePromise = (workspaceRoot && includeSize)
+      ? getPackageSize(workspaceRoot, name).catch(() => '-')
+      : Promise.resolve<string | undefined>(undefined);
+
+    const [installedVersion, size] = await Promise.all([installedVersionPromise, sizePromise]);
+
+    return {
+      name,
+      declaredVersion: version,                        // ej: "^5"
+      installedVersion: installedVersion || version,   // ej: "5.9.3" o fallback a declarada
+      type,
+      size
+    };
+  });
+
   return dependencies.sort((a, b) => a.name.localeCompare(b.name));
+}
+
+async function mapWithConcurrency<T, R>(
+  items: T[],
+  limit: number,
+  mapper: (item: T) => Promise<R>
+): Promise<R[]> {
+  const results: R[] = new Array(items.length);
+  let currentIndex = 0;
+
+  const workers = Array.from({ length: Math.min(limit, items.length) }, async () => {
+    while (true) {
+      const index = currentIndex++;
+      if (index >= items.length) {
+        return;
+      }
+      results[index] = await mapper(items[index]);
+    }
+  });
+
+  await Promise.all(workers);
+  return results;
 }

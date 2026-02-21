@@ -11,11 +11,12 @@ import { getPackageDetails, isUpdateAvailable, getSemverUpdateType, setGlobalCac
 import { getCache, VersionCache } from '../services/cacheService';
 import { getIgnoreService, IgnoreService } from '../services/ignoreService';
 import { findAllProjects, Project } from '../services/workspaceService';
-import { runAudit, hasVulnerabilities, getPackageVulnerabilityCount, detectPackageManager } from '../services/auditService';
+import { runAudit, hasVulnerabilities, getPackageVulnerabilityCount, detectPackageManager, clearAuditCache } from '../services/auditService';
 import { getInstallCommand, getPackageManagerInfo, PackageManager } from '../services/packageManagerService';
 import { getVersions } from '../services/nodeVersionService';
 import { getInstalledVersion, getInstalledVersions } from '../services/installedVersionService';
 import { readScripts, sortScripts, NpmScript } from '../services/scriptService';
+import { clearPackageSizeCache } from '../services/sizeService';
 
 export class NpmGuiManagerPanel {
   public static currentPanel: NpmGuiManagerPanel | undefined;
@@ -111,6 +112,7 @@ export class NpmGuiManagerPanel {
    * Maneja los mensajes recibidos del Webview
    */
   private async _handleMessage(message: WebviewToHostMessage): Promise<void> {
+    console.log(`[npm-visual-manager] Received message: ${message.type}`);
     switch (message.type) {
       case 'GET_DEPENDENCIES':
         await this._loadDependencies();
@@ -174,6 +176,9 @@ export class NpmGuiManagerPanel {
       this._cache.clear();
       await this._cache.save();
     }
+
+    clearAuditCache(this._currentProjectPath);
+    clearPackageSizeCache(this._currentProjectPath);
     
     // Reload dependencies with fresh cache
     await this._loadDependencies();
@@ -236,8 +241,11 @@ export class NpmGuiManagerPanel {
       }
 
       const packageJson = await readPackageJson(packageJsonPath);
-      let dependencies = await extractDependencies(packageJson, this._currentProjectPath);
       const columnConfig = this._getColumnConfig();
+      let dependencies = await extractDependencies(packageJson, this._currentProjectPath, {
+        includeSize: columnConfig.size,
+        concurrency: 10
+      });
       
       // Detect package manager for this project
       this._currentPackageManager = await detectPackageManager(this._currentProjectPath);
@@ -326,9 +334,16 @@ export class NpmGuiManagerPanel {
    */
   private async _checkUpdates(dependencies: Dependency[], forceRefresh: boolean = false): Promise<void> {
     const batchSize = 5; // Procesar en lotes para no saturar
+    const dependenciesToCheck = Array.from(
+      new Map(
+        dependencies
+          .filter(dep => !dep.isIgnored)
+          .map(dep => [dep.name, dep] as const)
+      ).values()
+    );
 
-    for (let i = 0; i < dependencies.length; i += batchSize) {
-      const batch = dependencies.slice(i, i + batchSize);
+    for (let i = 0; i < dependenciesToCheck.length; i += batchSize) {
+      const batch = dependenciesToCheck.slice(i, i + batchSize);
       const promises = batch.map(async (dep) => {
         try {
           const details = await getPackageDetails(dep.name, forceRefresh);
@@ -413,6 +428,8 @@ export class NpmGuiManagerPanel {
 
       // Wait for npm to finish and reload dependencies
       setTimeout(async () => {
+        clearAuditCache(this._currentProjectPath);
+        clearPackageSizeCache(this._currentProjectPath);
         await this._loadDependencies();
       }, 5000);
 
@@ -478,6 +495,8 @@ export class NpmGuiManagerPanel {
       terminal.sendText(`${info.addCommand} ${packageList}`, true);
 
       setTimeout(async () => {
+        clearAuditCache(this._currentProjectPath);
+        clearPackageSizeCache(this._currentProjectPath);
         await this._loadDependencies();
       }, 8000);
 
@@ -492,8 +511,10 @@ export class NpmGuiManagerPanel {
    * Load npm scripts from package.json
    */
   private async _loadScripts(): Promise<void> {
+    console.log(`[npm-visual-manager] Loading scripts for project: ${this._currentProjectPath}`);
     try {
       const scripts = await readScripts(this._currentProjectPath);
+      console.log(`[npm-visual-manager] Loaded ${scripts.length} scripts`);
       const sortedScripts = sortScripts(scripts);
       
       this._sendMessage({
@@ -577,6 +598,8 @@ export class NpmGuiManagerPanel {
 
       // Wait for npm to finish, then restore package.json with declared versions
       setTimeout(async () => {
+        clearAuditCache(this._currentProjectPath);
+        clearPackageSizeCache(this._currentProjectPath);
         await this._restorePackageJsonVersions(packagesToRollback);
         await this._loadDependencies();
       }, 5000);
