@@ -6,15 +6,15 @@ import * as vscode from 'vscode';
 import * as path from 'path';
 import * as fs from 'fs';
 import { Dependency, WebviewToHostMessage, HostToWebviewMessage, ColumnConfig, UpdateHistory } from './types';
-import { findPackageJson, readPackageJson, extractDependencies } from './packageService';
-import { getPackageDetails, isUpdateAvailable, getSemverUpdateType, setGlobalCache } from './npmService';
-import { getCache, VersionCache } from './cacheService';
-import { getIgnoreService, IgnoreService } from './ignoreService';
-import { findAllProjects, Project } from './workspaceService';
-import { runAudit, hasVulnerabilities, getPackageVulnerabilityCount, detectPackageManager } from './auditService';
-import { getInstallCommand, getPackageManagerInfo, PackageManager } from './packageManagerService';
-import { getVersions } from './nodeVersionService';
-import { getInstalledVersion, getInstalledVersions } from './installedVersionService';
+import { findPackageJson, readPackageJson, extractDependencies } from '../services/packageService';
+import { getPackageDetails, isUpdateAvailable, getSemverUpdateType, setGlobalCache } from '../services/npmService';
+import { getCache, VersionCache } from '../services/cacheService';
+import { getIgnoreService, IgnoreService } from '../services/ignoreService';
+import { findAllProjects, Project } from '../services/workspaceService';
+import { runAudit, hasVulnerabilities, getPackageVulnerabilityCount, detectPackageManager } from '../services/auditService';
+import { getInstallCommand, getPackageManagerInfo, PackageManager } from '../services/packageManagerService';
+import { getVersions } from '../services/nodeVersionService';
+import { getInstalledVersion, getInstalledVersions } from '../services/installedVersionService';
 
 export class NpmGuiManagerPanel {
   public static currentPanel: NpmGuiManagerPanel | undefined;
@@ -86,7 +86,7 @@ export class NpmGuiManagerPanel {
     // Initialize cache for this project
     this._initializeCache();
 
-    // Configurar contenion HTML inicial
+    // Configurar contenido HTML inicial
     this._update();
 
     // Escuchar mensajes del webview
@@ -179,25 +179,17 @@ export class NpmGuiManagerPanel {
    * Toggle ignore status for a package
    */
   private async _toggleIgnorePackage(packageName: string, currentVersion?: string): Promise<void> {
-    try {
-      const ignoreService = getIgnoreService();
-      const isIgnored = await ignoreService.toggleIgnore(packageName, currentVersion);
-
-      this._sendMessage({
-        type: 'IGNORE_TOGGLED',
-        packageName,
-        isIgnored
-      });
-
-      // Reload to update UI
-      await this._loadDependencies();
-    } catch (error) {
-      console.error('[npm-visual-manager] Failed to toggle ignore:', error);
-      this._sendMessage({
-        type: 'ERROR',
-        message: `Failed to toggle ignore for ${packageName}: ${error instanceof Error ? error.message : String(error)}`
-      });
-    }
+    const ignoreService = getIgnoreService();
+    const isIgnored = await ignoreService.toggleIgnore(packageName, currentVersion);
+    
+    this._sendMessage({
+      type: 'IGNORE_TOGGLED',
+      packageName,
+      isIgnored
+    });
+    
+    // Reload to update UI
+    await this._loadDependencies();
   }
 
   /**
@@ -297,6 +289,15 @@ export class NpmGuiManagerPanel {
     }
   }
 
+  private async _loadIgnoredStatus(dependencies: Dependency[]): Promise<Dependency[]> {
+    const ignoreService = getIgnoreService();
+    return dependencies.map(dep => ({
+      ...dep,
+      isIgnored: ignoreService.isIgnored(dep.name),
+      ignoreReason: ignoreService.getIgnoreReason(dep.name)
+    }));
+  }
+
   /**
    * Get column visibility configuration
    */
@@ -314,15 +315,6 @@ export class NpmGuiManagerPanel {
   /**
    * Verifica las actualizaciones disponibles para las dependencias
    */
-  private async _loadIgnoredStatus(dependencies: Dependency[]): Promise<Dependency[]> {
-    const ignoreService = getIgnoreService();
-    return dependencies.map(dep => ({
-      ...dep,
-      isIgnored: ignoreService.isIgnored(dep.name),
-      ignoreReason: ignoreService.getIgnoreReason(dep.name)
-    }));
-  }
-
   private async _checkUpdates(dependencies: Dependency[], forceRefresh: boolean = false): Promise<void> {
     const batchSize = 5; // Procesar en lotes para no saturar
 
@@ -410,7 +402,7 @@ export class NpmGuiManagerPanel {
       // Then send install command
       terminal.sendText(installCmd, true);
 
-      // Esperar a que npm termine y recargar dependencias
+      // Wait for npm to finish and reload dependencies
       setTimeout(async () => {
         await this._loadDependencies();
       }, 5000);
@@ -479,6 +471,8 @@ export class NpmGuiManagerPanel {
       setTimeout(async () => {
         await this._loadDependencies();
       }, 8000);
+
+      vscode.window.showInformationMessage(`Updating ${packages.length} package(s)...`);
     } catch (error) {
       this._updateHistory = null; // Clear history on error
       vscode.window.showErrorMessage(`Failed to update packages: ${error instanceof Error ? error.message : String(error)}`);

@@ -4,7 +4,7 @@
 
 import * as fs from 'fs';
 import * as path from 'path';
-import { PackageJson, Dependency } from './types';
+import { PackageJson, Dependency } from '../core/types';
 import { getPackageSize } from './sizeService';
 import { getInstalledVersion } from './installedVersionService';
 
