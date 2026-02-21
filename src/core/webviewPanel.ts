@@ -15,6 +15,7 @@ import { runAudit, hasVulnerabilities, getPackageVulnerabilityCount, detectPacka
 import { getInstallCommand, getPackageManagerInfo, PackageManager } from '../services/packageManagerService';
 import { getVersions } from '../services/nodeVersionService';
 import { getInstalledVersion, getInstalledVersions } from '../services/installedVersionService';
+import { readScripts, sortScripts, NpmScript } from '../services/scriptService';
 
 export class NpmGuiManagerPanel {
   public static currentPanel: NpmGuiManagerPanel | undefined;
@@ -141,6 +142,14 @@ export class NpmGuiManagerPanel {
 
       case 'ROLLBACK_LAST':
         await this._rollbackLastUpdate();
+        break;
+
+      case 'GET_SCRIPTS':
+        await this._loadScripts();
+        break;
+
+      case 'RUN_SCRIPT':
+        await this._runScript(message.scriptName);
         break;
     }
   }
@@ -476,6 +485,45 @@ export class NpmGuiManagerPanel {
     } catch (error) {
       this._updateHistory = null; // Clear history on error
       vscode.window.showErrorMessage(`Failed to update packages: ${error instanceof Error ? error.message : String(error)}`);
+    }
+  }
+
+  /**
+   * Load npm scripts from package.json
+   */
+  private async _loadScripts(): Promise<void> {
+    try {
+      const scripts = await readScripts(this._currentProjectPath);
+      const sortedScripts = sortScripts(scripts);
+      
+      this._sendMessage({
+        type: 'SCRIPTS_DATA',
+        scripts: sortedScripts
+      });
+    } catch (error) {
+      console.warn('Failed to load scripts:', error);
+      this._sendMessage({
+        type: 'SCRIPTS_DATA',
+        scripts: []
+      });
+    }
+  }
+
+  /**
+   * Run an npm script in the terminal
+   */
+  private async _runScript(scriptName: string): Promise<void> {
+    try {
+      const info = getPackageManagerInfo(this._currentPackageManager);
+      const terminal = this._getOrCreateTerminal();
+      terminal.show();
+      
+      // Send cd command first
+      terminal.sendText(`cd "${this._currentProjectPath}"`, true);
+      // Then send the script command
+      terminal.sendText(`${info.runCommand} ${scriptName}`, true);
+    } catch (error) {
+      vscode.window.showErrorMessage(`Failed to run script: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
 

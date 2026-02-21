@@ -14,6 +14,7 @@ export interface PackageManagerInfo {
   addCommand: string;
   auditCommand: string;
   lockFile: string;
+  runCommand: string;
 }
 
 const PACKAGE_MANAGERS: Record<PackageManager, PackageManagerInfo> = {
@@ -23,7 +24,8 @@ const PACKAGE_MANAGERS: Record<PackageManager, PackageManagerInfo> = {
     installCommand: 'npm install',
     addCommand: 'npm install',
     auditCommand: 'npm audit --json',
-    lockFile: 'package-lock.json'
+    lockFile: 'package-lock.json',
+    runCommand: 'npm run'
   },
   yarn: {
     name: 'yarn',
@@ -31,7 +33,8 @@ const PACKAGE_MANAGERS: Record<PackageManager, PackageManagerInfo> = {
     installCommand: 'yarn install',
     addCommand: 'yarn add',
     auditCommand: 'yarn audit --json',
-    lockFile: 'yarn.lock'
+    lockFile: 'yarn.lock',
+    runCommand: 'yarn'
   },
   pnpm: {
     name: 'pnpm',
@@ -39,7 +42,8 @@ const PACKAGE_MANAGERS: Record<PackageManager, PackageManagerInfo> = {
     installCommand: 'pnpm install',
     addCommand: 'pnpm add',
     auditCommand: 'pnpm audit --json',
-    lockFile: 'pnpm-lock.yaml'
+    lockFile: 'pnpm-lock.yaml',
+    runCommand: 'pnpm run'
   },
   bun: {
     name: 'bun',
@@ -47,7 +51,8 @@ const PACKAGE_MANAGERS: Record<PackageManager, PackageManagerInfo> = {
     installCommand: 'bun install',
     addCommand: 'bun add',
     auditCommand: 'bun audit', // Bun may not support --json flag yet
-    lockFile: 'bun.lockb'
+    lockFile: 'bun.lockb',
+    runCommand: 'bun run'
   }
 };
 

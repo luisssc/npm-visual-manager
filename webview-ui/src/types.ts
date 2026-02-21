@@ -5,6 +5,11 @@
 
 export type SemverUpdateType = 'major' | 'minor' | 'patch' | 'none' | 'unknown';
 
+export interface NpmScript {
+  name: string;
+  command: string;
+}
+
 export interface Dependency {
   name: string;
   installedVersion: string;
@@ -69,7 +74,9 @@ export type WebviewToHostMessage =
   | { type: 'ROLLBACK_LAST' }
   | { type: 'CHECK_UPDATES'; dependencies: Dependency[]; forceRefresh?: boolean }
   | { type: 'REFRESH_CACHE' }
-  | { type: 'TOGGLE_IGNORE_PACKAGE'; packageName: string; currentVersion?: string };
+  | { type: 'TOGGLE_IGNORE_PACKAGE'; packageName: string; currentVersion?: string }
+  | { type: 'GET_SCRIPTS' }
+  | { type: 'RUN_SCRIPT'; scriptName: string };
 
 export type PackageManager = 'npm' | 'yarn' | 'pnpm' | 'bun';
 
@@ -81,6 +88,7 @@ export type HostToWebviewMessage =
   | { type: 'VERSION_CHECK_RESULT'; dependency: Dependency; latestVersion: string; semverUpdateType?: SemverUpdateType; lastPublishDate?: string; fromCache?: boolean; cacheAge?: number; isDeprecated?: boolean; deprecationMessage?: string }
   | { type: 'CACHE_CLEARED'; message: string }
   | { type: 'IGNORE_TOGGLED'; packageName: string; isIgnored: boolean }
+  | { type: 'SCRIPTS_DATA'; scripts: NpmScript[] }
   | { type: 'COLUMN_CONFIG'; config: ColumnConfig }
   | { type: 'ERROR'; message: string }
   | { type: 'PROGRESS'; message: string };

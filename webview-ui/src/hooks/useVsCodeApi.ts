@@ -65,6 +65,14 @@ export function useVsCodeApi() {
     postMessage({ type: 'REFRESH_CACHE' });
   }, [postMessage]);
 
+  const getScripts = useCallback(() => {
+    postMessage({ type: 'GET_SCRIPTS' });
+  }, [postMessage]);
+
+  const runScript = useCallback((scriptName: string) => {
+    postMessage({ type: 'RUN_SCRIPT', scriptName });
+  }, [postMessage]);
+
   return {
     vscode: vscodeRef.current,
     isReady,
@@ -76,7 +84,9 @@ export function useVsCodeApi() {
     selectProject,
     rollbackLast,
     toggleIgnorePackage,
-    refreshCache
+    refreshCache,
+    getScripts,
+    runScript
   };
 }
 

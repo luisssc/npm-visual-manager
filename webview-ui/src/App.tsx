@@ -1,11 +1,12 @@
 import { useState, useCallback, useEffect } from 'react';
 import { DependencyTable } from './components/DependencyTable';
+import { ScriptsPanel } from './components/ScriptsPanel';
 import { useVsCodeApi, useVsCodeMessages } from './hooks/useVsCodeApi';
-import { Dependency, HostToWebviewMessage, ColumnConfig, ProjectInfo, PackageManager, VersionInfo, UpdateHistory } from './types';
+import { Dependency, HostToWebviewMessage, ColumnConfig, ProjectInfo, PackageManager, VersionInfo, UpdateHistory, NpmScript } from './types';
 import './App.css';
 
 function App() {
-  const { requestDependencies, updatePackage, updateAllPackages, selectProject, rollbackLast, toggleIgnorePackage, refreshCache, isReady } = useVsCodeApi();
+  const { requestDependencies, updatePackage, updateAllPackages, selectProject, rollbackLast, toggleIgnorePackage, refreshCache, getScripts, runScript, isReady } = useVsCodeApi();
   
   const [dependencies, setDependencies] = useState<Dependency[]>([]);
   const [packageName, setPackageName] = useState<string>('');
@@ -27,6 +28,7 @@ function App() {
   const [lastUpdate, setLastUpdate] = useState<UpdateHistory | null>(null);
   const [rollbackMessage, setRollbackMessage] = useState<string | null>(null);
   const [cacheInfo, setCacheInfo] = useState<{ fromCache: boolean; age?: number } | null>(null);
+  const [scripts, setScripts] = useState<NpmScript[]>([]);
 
   // Manejar mensajes del Extension Host
   const handleMessage = useCallback((message: HostToWebviewMessage) => {
@@ -85,6 +87,10 @@ function App() {
         setProgressMessage(null);
         break;
 
+      case 'SCRIPTS_DATA':
+        setScripts(message.scripts);
+        break;
+
       case 'IGNORE_TOGGLED':
         // Update local state for immediate feedback
         setDependencies(prev =>
@@ -134,8 +140,9 @@ function App() {
   useEffect(() => {
     if (isReady) {
       requestDependencies();
+      getScripts();
     }
-  }, [isReady, requestDependencies]);
+  }, [isReady, requestDependencies, getScripts]);
 
   // Función auxiliar para comparar versiones semver
   function isUpdateAvailable(installed: string, latest: string): boolean {
@@ -266,6 +273,11 @@ function App() {
           onRollback={handleRollback}
           rollbackMessage={rollbackMessage}
           onToggleIgnore={toggleIgnorePackage}
+        />
+        <ScriptsPanel
+          scripts={scripts}
+          onRunScript={runScript}
+          isLoading={isLoading}
         />
       </main>
     </div>

@@ -5,6 +5,11 @@ All notable changes to the "npm-visual-manager" extension will be documented in 
 ## [0.3.0] - 2026-02-21
 
 ### Added
+- **Scripts Runner**: Execute npm scripts directly from the UI
+  - Displays all scripts from package.json as clickable buttons
+  - Color-coded buttons for common scripts (dev, build, test, etc.)
+  - Runs scripts in integrated terminal
+  - Supports npm, yarn, pnpm, and bun
 - **Ignore Packages**: Click the eye icon 👁️‍🗨️ to ignore packages from update checks
   - Ignored packages are excluded from the "updates available" counter
   - Persisted in `.vscode/settings.json`
