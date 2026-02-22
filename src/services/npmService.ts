@@ -27,6 +27,7 @@ export interface PackageDetails {
   cacheAge?: number;
   isDeprecated?: boolean;
   deprecationMessage?: string;
+  repositoryUrl?: string;
 }
 
 export type SemverUpdateType = 'major' | 'minor' | 'patch' | 'none' | 'unknown';
@@ -91,16 +92,17 @@ export async function getPackageInfo(
               const latestVersion = packageInfo['dist-tags'].latest;
               const lastPublishDate = packageInfo.time?.[latestVersion] || packageInfo.time?.modified;
               
-              // Check deprecation for caching
+              // Check deprecation and repository for caching
               let isDeprecated = false;
               let deprecationMessage: string | undefined;
-              const latestVersionInfo = packageInfo.versions[latestVersion] as { deprecated?: string } | undefined;
+              const latestVersionInfo = packageInfo.versions[latestVersion] as { deprecated?: string; repository?: { url?: string } | string } | undefined;
               if (latestVersionInfo?.deprecated) {
                 isDeprecated = true;
                 deprecationMessage = latestVersionInfo.deprecated;
               }
+              const repositoryUrl = extractRepositoryUrl(latestVersionInfo?.repository);
               
-              globalCache.set(packageName, { latestVersion, lastPublishDate, isDeprecated, deprecationMessage });
+              globalCache.set(packageName, { latestVersion, lastPublishDate, isDeprecated, deprecationMessage, repositoryUrl });
             }
             
             resolve(packageInfo);
@@ -144,7 +146,8 @@ export async function getPackageDetails(
         fromCache: true,
         cacheAge: globalCache.getAgeHours(packageName) || 0,
         isDeprecated: cached.isDeprecated,
-        deprecationMessage: cached.deprecationMessage
+        deprecationMessage: cached.deprecationMessage,
+        repositoryUrl: cached.repositoryUrl
       };
     }
   }
@@ -167,18 +170,22 @@ export async function getPackageDetails(
     let deprecationMessage: string | undefined;
     
     // Check if latest version is deprecated
-    const latestVersionInfo = info.versions[latestVersion] as { deprecated?: string } | undefined;
+    const latestVersionInfo = info.versions[latestVersion] as { deprecated?: string; repository?: { url?: string } | string } | undefined;
     if (latestVersionInfo?.deprecated) {
       isDeprecated = true;
       deprecationMessage = latestVersionInfo.deprecated;
     }
+
+    // Extract repository URL for changelog
+    const repositoryUrl = extractRepositoryUrl(latestVersionInfo?.repository);
 
     return {
       latestVersion,
       lastPublishDate,
       fromCache: false,
       isDeprecated,
-      deprecationMessage
+      deprecationMessage,
+      repositoryUrl
     };
   } catch (error) {
     // If network fails, return stale cache as fallback for this package
@@ -191,7 +198,8 @@ export async function getPackageDetails(
           fromCache: true,
           cacheAge: globalCache.getAgeHours(packageName) || 999,
           isDeprecated: staleEntry.isDeprecated,
-          deprecationMessage: staleEntry.deprecationMessage
+          deprecationMessage: staleEntry.deprecationMessage,
+          repositoryUrl: staleEntry.repositoryUrl
         };
       }
     }
@@ -208,6 +216,22 @@ export async function getLatestVersion(
 ): Promise<string> {
   const details = await getPackageDetails(packageName, forceRefresh);
   return details.latestVersion;
+}
+
+/**
+ * Extract clean repository URL from NPM package info
+ */
+function extractRepositoryUrl(repository?: { url?: string } | string): string | undefined {
+  if (!repository) return undefined;
+  
+  const url = typeof repository === 'string' ? repository : repository.url;
+  if (!url) return undefined;
+  
+  // Clean up git+ prefix and .git suffix
+  return url
+    .replace(/^git\+/, '')
+    .replace(/\.git$/, '')
+    .replace(/^github:/, 'https://github.com/');
 }
 
 /**

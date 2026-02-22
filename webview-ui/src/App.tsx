@@ -7,7 +7,7 @@ import { Dependency, HostToWebviewMessage, ColumnConfig, ProjectInfo, PackageMan
 import './App.css';
 
 function App() {
-  const { requestDependencies, updatePackage, updateAllPackages, selectProject, rollbackLast, toggleIgnorePackage, refreshCache, runScript, searchPackages, installNewPackage, isReady } = useVsCodeApi();
+  const { requestDependencies, updatePackage, updateAllPackages, selectProject, rollbackLast, toggleIgnorePackage, refreshCache, runScript, searchPackages, installNewPackage, openExternal, isReady } = useVsCodeApi();
 
   const [dependencies, setDependencies] = useState<Dependency[]>([]);
   const [packageName, setPackageName] = useState<string>('');
@@ -73,11 +73,12 @@ function App() {
               ? {
                   ...dep,
                   latestVersion: message.latestVersion,
-                  updateAvailable: isUpdateAvailable(dep.installedVersion, message.latestVersion),
+                  updateAvailable: isUpdateAvailable(dep.declaredVersion, message.latestVersion),
                   semverUpdateType: message.semverUpdateType,
                   lastPublishDate: message.lastPublishDate,
                   isDeprecated: message.isDeprecated,
-                  deprecationMessage: message.deprecationMessage
+                  deprecationMessage: message.deprecationMessage,
+                  repositoryUrl: message.repositoryUrl
                 }
               : dep
           )
@@ -117,6 +118,11 @@ function App() {
         setProgressMessage(null);
         if (!message.success) {
           setError(message.message);
+        } else {
+          // Reload dependencies after successful update
+          setTimeout(() => {
+            requestDependencies();
+          }, 2000);
         }
         break;
 
@@ -215,6 +221,10 @@ function App() {
     setSearchResults([]);
   }, [installNewPackage]);
 
+  const handleOpenExternal = useCallback((url: string) => {
+    openExternal(url);
+  }, [openExternal]);
+
   if (isLoading) {
     return (
       <div className="loading-container">
@@ -299,6 +309,7 @@ function App() {
           onRollback={handleRollback}
           rollbackMessage={rollbackMessage}
           onToggleIgnore={toggleIgnorePackage}
+          onOpenExternal={handleOpenExternal}
         />
         <SearchPanel
           results={searchResults}

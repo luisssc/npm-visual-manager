@@ -4,8 +4,22 @@ All notable changes to the "npm-visual-manager" extension will be documented in 
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-02-21
+
+### Added
+- **Changelog Viewer**: Click the book icon 📖 to view package releases on GitHub
+  - Opens in VS Code's built-in browser
+  - Only shown when repository URL is available
+  - Appears on hover in the Action column
+- **Version Mismatch Indicator**: Asterisk (*) shows when installed version differs from package.json
+  - Hover over the asterisk to see the actual installed version
+  - Helps detect manual edits or partial installs
+
 ### Fixed
-- Clear search results when query is emptied
+- **Version Comparison**: Now correctly compares declared version (from package.json) with latest
+  - Previously compared installed version, causing missed updates
+- **Auto-refresh**: Table automatically reloads after successful package update
+- **Clear Search**: Search results are cleared when search query is emptied
 
 ## [0.4.0] - 2026-02-21
 

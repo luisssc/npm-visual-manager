@@ -38,6 +38,7 @@ export interface Dependency {
   deprecationMessage?: string;
   isIgnored?: boolean;
   ignoreReason?: string;
+  repositoryUrl?: string;
 }
 
 export interface ColumnConfig {
@@ -92,7 +93,8 @@ export type WebviewToHostMessage =
   | { type: 'RUN_SCRIPT'; scriptName: string }
   | { type: 'SEARCH_PACKAGES'; query: string }
   | { type: 'INSTALL_NEW_PACKAGE'; packageName: string; version: string; isDev: boolean }
-  | { type: 'GET_AUDIT' };
+  | { type: 'GET_AUDIT' }
+  | { type: 'OPEN_EXTERNAL'; url: string };
 
 export type PackageManager = 'npm' | 'yarn' | 'pnpm' | 'bun';
 
@@ -101,7 +103,7 @@ export type HostToWebviewMessage =
   | { type: 'DEPENDENCIES_DATA'; dependencies: Dependency[]; packageName: string; columnConfig: ColumnConfig; projects?: ProjectInfo[]; currentProjectPath?: string; packageManager?: PackageManager; versions?: VersionInfo; lastUpdate?: UpdateHistory | null; scripts?: NpmScript[] }
   | { type: 'UPDATE_RESULT'; success: boolean; packageName: string; message: string }
   | { type: 'ROLLBACK_RESULT'; success: boolean; message: string; rolledBackPackages?: string[] }
-  | { type: 'VERSION_CHECK_RESULT'; dependency: Dependency; latestVersion: string; semverUpdateType?: SemverUpdateType; lastPublishDate?: string; fromCache?: boolean; cacheAge?: number; isDeprecated?: boolean; deprecationMessage?: string }
+  | { type: 'VERSION_CHECK_RESULT'; dependency: Dependency; latestVersion: string; semverUpdateType?: SemverUpdateType; lastPublishDate?: string; fromCache?: boolean; cacheAge?: number; isDeprecated?: boolean; deprecationMessage?: string; repositoryUrl?: string }
   | { type: 'CACHE_CLEARED'; message: string }
   | { type: 'IGNORE_TOGGLED'; packageName: string; isIgnored: boolean }
   | { type: 'SCRIPTS_DATA'; scripts: NpmScript[]; projectPath: string }

@@ -23,6 +23,7 @@ interface DependencyTableProps {
   onRollback?: () => void;
   rollbackMessage?: string | null;
   onToggleIgnore?: (packageName: string, currentVersion?: string) => void;
+  onOpenExternal?: (url: string) => void;
 }
 
 type SortColumn = 'name' | 'installedVersion' | 'latestVersion' | 'type' | 'size' | 'lastPublishDate';
@@ -66,7 +67,8 @@ export const DependencyTable = ({
   lastUpdate,
   onRollback,
   rollbackMessage,
-  onToggleIgnore
+  onToggleIgnore,
+  onOpenExternal
 }: DependencyTableProps) => {
   const [sortColumn, setSortColumn] = useState<SortColumn>('name');
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
@@ -388,6 +390,11 @@ export const DependencyTable = ({
                     )}
                     <td className="version-cell">
                       <code>{dep.declaredVersion}</code>
+                      {dep.declaredVersion !== dep.installedVersion && (
+                        <Tooltip text={`Installed: ${dep.installedVersion}`}>
+                          <span className="version-mismatch-icon">*</span>
+                        </Tooltip>
+                      )}
                     </td>
                     <td className="version-cell">
                       {dep.latestVersion ? (
@@ -442,6 +449,17 @@ export const DependencyTable = ({
                           </button>
                         ) : (
                           <span className="up-to-date"><i className="codicon codicon-check" /></span>
+                        )}
+                        {dep.repositoryUrl && (
+                          <Tooltip text="View changelog">
+                            <button
+                              className="changelog-btn"
+                              onClick={() => onOpenExternal?.(`${dep.repositoryUrl}/releases`)}
+                              title="Changelog"
+                            >
+                              <i className="codicon codicon-book" />
+                            </button>
+                          </Tooltip>
                         )}
                         <button
                           className="ignore-btn"

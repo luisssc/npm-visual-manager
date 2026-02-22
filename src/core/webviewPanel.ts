@@ -283,6 +283,11 @@ export class NpmGuiManagerPanel {
       case 'INSTALL_NEW_PACKAGE':
         await this._installNewPackage(message.packageName, message.version, message.isDev);
         break;
+
+      case 'OPEN_EXTERNAL':
+        // Open in VS Code's simple browser (built-in)
+        await vscode.commands.executeCommand('simpleBrowser.show', message.url);
+        break;
     }
   }
 
@@ -479,7 +484,8 @@ export class NpmGuiManagerPanel {
       const promises = batch.map(async (dep) => {
         try {
           const details = await getPackageDetails(dep.name, forceRefresh);
-          const semverUpdateType = getSemverUpdateType(dep.installedVersion, details.latestVersion);
+          // Compare declared version (from package.json) with latest, not installed version
+          const semverUpdateType = getSemverUpdateType(dep.declaredVersion, details.latestVersion);
           
           this._sendMessage({
             type: 'VERSION_CHECK_RESULT',
@@ -490,7 +496,8 @@ export class NpmGuiManagerPanel {
             fromCache: details.fromCache,
             cacheAge: details.cacheAge,
             isDeprecated: details.isDeprecated,
-            deprecationMessage: details.deprecationMessage
+            deprecationMessage: details.deprecationMessage,
+            repositoryUrl: details.repositoryUrl
           });
         } catch (error) {
           console.warn(`Failed to check version for ${dep.name}:`, error);

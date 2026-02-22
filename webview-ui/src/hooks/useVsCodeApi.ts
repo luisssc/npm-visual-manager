@@ -85,6 +85,10 @@ export function useVsCodeApi() {
     postMessage({ type: 'GET_AUDIT' });
   }, [postMessage]);
 
+  const openExternal = useCallback((url: string) => {
+    postMessage({ type: 'OPEN_EXTERNAL', url });
+  }, [postMessage]);
+
   return {
     vscode: vscodeRef.current,
     isReady,
@@ -101,7 +105,8 @@ export function useVsCodeApi() {
     runScript,
     searchPackages,
     installNewPackage,
-    runAudit
+    runAudit,
+    openExternal
   };
 }
 

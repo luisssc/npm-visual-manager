@@ -25,6 +25,8 @@ One-click updates for individual packages with automatic version checking.
 - 🔍 **Search & Install Packages**: Search NPM registry and install new packages directly from the UI
 - 👁️ **Ignore Packages**: Exclude packages from update checks with a click
 - ▶️ **Scripts Runner**: Execute npm scripts from the UI (dev, build, test, etc.)
+- 📖 **Changelog Viewer**: Click the book icon to view package releases on GitHub
+- ⚠️ **Version Mismatch Detection**: Visual indicator when installed version differs from package.json
 - 🔄 **Version Checking**: Automatically checks for latest versions from the NPM registry
 - ⬆️ **One-Click Updates**: Update individual packages or all outdated packages at once
 - 🛡️ **Security Audit**: Shows vulnerability counts from `npm audit`
@@ -90,6 +92,10 @@ Expand the "SCRIPTS" section to see all npm scripts from your package.json. Clic
 ### Ignore Packages
 
 Click the eye icon 👁️ next to any package to ignore it from update checks. Ignored packages won't appear in the "updates available" counter. Click "Show All Packages" to toggle between viewing only outdated packages or all packages.
+
+### Changelog Viewer
+
+Hover over any package row and click the book icon 📖 to open the package's GitHub releases page. This helps you review what changed before updating.
 
 ## Architecture
 

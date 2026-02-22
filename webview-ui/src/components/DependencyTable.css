@@ -448,6 +448,19 @@
   font-size: 12px;
 }
 
+.version-mismatch-icon {
+  color: var(--warning-fg);
+  font-size: 14px;
+  margin-left: 4px;
+  cursor: help;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.version-cell:hover .version-mismatch-icon {
+  opacity: 1;
+}
+
 @keyframes fadeIn {
   from { opacity: 0; transform: translateY(-2px); }
   to { opacity: 1; transform: translateY(0); }
@@ -607,6 +620,39 @@ tr:hover .ignore-btn {
 .ignore-btn:disabled {
   opacity: 0.3;
   cursor: not-allowed;
+}
+
+.changelog-btn {
+  background: transparent;
+  border: none;
+  color: var(--vscode-descriptionForeground, #888);
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 3px;
+  font-size: 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.2s, background 0.2s;
+  width: 24px;
+  height: 24px;
+}
+
+tr:hover .changelog-btn,
+.action-cell:hover .changelog-btn {
+  opacity: 1;
+}
+
+.changelog-btn:hover {
+  background: var(--row-hover-bg);
+  color: var(--vscode-foreground);
+}
+
+/* Also show ignore button on row hover */
+tr:hover .ignore-btn,
+.action-cell:hover .ignore-btn {
+  opacity: 1;
 }
 
 /* Ignored section */

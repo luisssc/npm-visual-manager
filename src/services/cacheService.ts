@@ -13,6 +13,7 @@ interface CacheEntry {
   timestamp: number;
   isDeprecated?: boolean;
   deprecationMessage?: string;
+  repositoryUrl?: string;
 }
 
 interface CacheData {
@@ -20,7 +21,7 @@ interface CacheData {
   entries: Record<string, CacheEntry>;
 }
 
-const CACHE_VERSION = '1.1';
+const CACHE_VERSION = '1.2';  // Bumped for repositoryUrl support
 const DEFAULT_TTL_HOURS = 24; // Cache valid for 24 hours
 const CACHE_FILENAME = '.npm-visual-manager-cache.json';
 
