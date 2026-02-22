@@ -28,6 +28,9 @@ export const SearchPanel = ({ results, onSearch, onInstall, isLoading }: SearchP
       debounceRef.current = setTimeout(() => {
         onSearch(value);
       }, 300);
+    } else if (value.trim().length === 0) {
+      // Clear results when search is empty
+      onSearch('');
     }
   }, [onSearch]);
 
