@@ -2,6 +2,11 @@
 
 All notable changes to the "npm-visual-manager" extension will be documented in this file.
 
+## [Unreleased]
+
+### Fixed
+- Clear search results when query is emptied
+
 ## [0.4.0] - 2026-02-21
 
 ### Added
@@ -11,9 +16,6 @@ All notable changes to the "npm-visual-manager" extension will be documented in 
   - Install as dependency or devDependency
   - Supports npm, yarn, pnpm, and bun
   - New "Search Packages" tab in the UI
-
-### Fixed
-- Clear search results when query is emptied
 
 ## [0.3.0] - 2026-02-21
 
