@@ -1,13 +1,12 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { DependencyTable } from './components/DependencyTable';
-import { ScriptsPanel } from './components/ScriptsPanel';
 import { SearchPanel } from './components/SearchPanel';
 import { useVsCodeApi, useVsCodeMessages } from './hooks/useVsCodeApi';
-import { Dependency, HostToWebviewMessage, ColumnConfig, ProjectInfo, PackageManager, VersionInfo, UpdateHistory, NpmScript } from './types';
+import { Dependency, HostToWebviewMessage, ColumnConfig, ProjectInfo, PackageManager, VersionInfo, UpdateHistory } from './types';
 import './App.css';
 
 function App() {
-  const { requestDependencies, updatePackage, updateAllPackages, selectProject, rollbackLast, toggleIgnorePackage, refreshCache, runScript, searchPackages, installNewPackage, openExternal, isReady } = useVsCodeApi();
+  const { requestDependencies, updatePackage, updateAllPackages, selectProject, rollbackLast, toggleIgnorePackage, refreshCache, searchPackages, installNewPackage, openExternal, isReady } = useVsCodeApi();
 
   const [dependencies, setDependencies] = useState<Dependency[]>([]);
   const [packageName, setPackageName] = useState<string>('');
@@ -29,8 +28,6 @@ function App() {
   const [lastUpdate, setLastUpdate] = useState<UpdateHistory | null>(null);
   const [rollbackMessage, setRollbackMessage] = useState<string | null>(null);
   const cacheInfoRef = useRef<{ fromCache: boolean; age?: number } | null>(null);
-  const [scripts, setScripts] = useState<NpmScript[]>([]);
-  const [scriptsLoaded, setScriptsLoaded] = useState(false);
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [isSearching, setIsSearching] = useState(false);
 
@@ -40,8 +37,6 @@ function App() {
       case 'DEPENDENCIES_DATA':
         setDependencies(message.dependencies);
         setPackageName(message.packageName);
-        setScripts(message.scripts ?? []);
-        setScriptsLoaded(true);
         setColumnConfig(message.columnConfig);
         if (message.projects) {
           setProjects(message.projects);
@@ -92,11 +87,6 @@ function App() {
       case 'CACHE_CLEARED':
         cacheInfoRef.current = null;
         setProgressMessage(null);
-        break;
-
-      case 'SCRIPTS_DATA':
-        setScripts(message.scripts);
-        setScriptsLoaded(true);
         break;
 
       case 'SEARCH_RESULTS':
@@ -188,8 +178,6 @@ function App() {
   const handleSelectProject = (path: string) => {
     setCurrentProjectPath(path);
     setIsLoading(true);
-    setScripts([]);
-    setScriptsLoaded(false);
     selectProject(path);
   };
 
@@ -201,8 +189,6 @@ function App() {
     setError(null);
     setIsLoading(true);
     cacheInfoRef.current = null;
-    setScripts([]);
-    setScriptsLoaded(false);
     refreshCache();
   };
 
@@ -317,13 +303,7 @@ function App() {
           onInstall={handleInstallNew}
           isLoading={isSearching}
         />
-        <ScriptsPanel
-          scripts={scripts}
-          onRunScript={runScript}
-          isLoading={isLoading}
-          isScriptsLoaded={scriptsLoaded}
-          projectPath={currentProjectPath}
-        />
+
       </main>
     </div>
   );

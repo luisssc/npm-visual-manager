@@ -24,7 +24,6 @@ One-click updates for individual packages with automatic version checking.
 - 📊 **Visual Dependency Table**: View all dependencies (production, development, and peer) in a clean, sortable table
 - 🔍 **Search & Install Packages**: Search NPM registry and install new packages directly from the UI
 - 👁️ **Ignore Packages**: Exclude packages from update checks with a click
-- ▶️ **Scripts Runner**: Execute npm scripts from the UI (dev, build, test, etc.)
 - 📖 **Changelog Viewer**: Click the book icon to view package releases on GitHub
 - ⚠️ **Version Mismatch Detection**: Visual indicator when installed version differs from package.json
 - 🔄 **Version Checking**: Automatically checks for latest versions from the NPM registry
@@ -84,10 +83,6 @@ npm run vscode:prepublish
 ### Search & Install Packages
 
 Expand the "INSTALL PACKAGES" section, type a package name (min. 2 characters), and click on a result to install it. You can choose to install as a regular dependency or dev dependency.
-
-### Scripts Runner
-
-Expand the "SCRIPTS" section to see all npm scripts from your package.json. Click any script to run it in the integrated terminal. Supports npm, yarn, pnpm, and bun.
 
 ### Ignore Packages
 
@@ -164,8 +159,6 @@ npm run watch
 - `UPDATE_ALL_PACKAGES`: Request batch update
 - `SEARCH_PACKAGES`: Search NPM registry for packages
 - `INSTALL_NEW_PACKAGE`: Install a new dependency
-- `GET_SCRIPTS`: Request npm scripts list
-- `RUN_SCRIPT`: Execute an npm script
 - `TOGGLE_IGNORE_PACKAGE`: Toggle ignore status for a package
 - `REFRESH_CACHE`: Clear version cache
 
@@ -174,7 +167,6 @@ npm run watch
 - `VERSION_CHECK_RESULT`: Send latest version for a package
 - `UPDATE_RESULT`: Confirm update initiation
 - `SEARCH_RESULTS`: Send package search results
-- `SCRIPTS_DATA`: Send npm scripts list
 - `IGNORE_TOGGLED`: Confirm ignore status change
 - `CACHE_CLEARED`: Confirm cache cleared
 - `PROGRESS`: Show progress message

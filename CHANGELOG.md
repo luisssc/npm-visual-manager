@@ -4,6 +4,12 @@ All notable changes to the "npm-visual-manager" extension will be documented in 
 
 ## [Unreleased]
 
+## [0.5.1] - 2026-02-21
+
+### Removed
+- **Scripts Runner**: Removed the scripts panel feature
+  - Use VS Code's built-in npm scripts view instead (Explorer > NPM Scripts)
+
 ## [0.5.0] - 2026-02-21
 
 ### Added
@@ -20,6 +26,10 @@ All notable changes to the "npm-visual-manager" extension will be documented in 
   - Previously compared installed version, causing missed updates
 - **Auto-refresh**: Table automatically reloads after successful package update
 - **Clear Search**: Search results are cleared when search query is emptied
+
+### Removed
+- **Scripts Runner**: Removed the scripts panel feature
+  - Use VS Code's built-in npm scripts view instead (Explorer > NPM Scripts)
 
 ## [0.4.0] - 2026-02-21
 

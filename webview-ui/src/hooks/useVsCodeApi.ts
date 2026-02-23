@@ -65,14 +65,6 @@ export function useVsCodeApi() {
     postMessage({ type: 'REFRESH_CACHE' });
   }, [postMessage]);
 
-  const getScripts = useCallback(() => {
-    postMessage({ type: 'GET_SCRIPTS' });
-  }, [postMessage]);
-
-  const runScript = useCallback((scriptName: string) => {
-    postMessage({ type: 'RUN_SCRIPT', scriptName });
-  }, [postMessage]);
-
   const searchPackages = useCallback((query: string) => {
     postMessage({ type: 'SEARCH_PACKAGES', query });
   }, [postMessage]);
@@ -101,8 +93,6 @@ export function useVsCodeApi() {
     rollbackLast,
     toggleIgnorePackage,
     refreshCache,
-    getScripts,
-    runScript,
     searchPackages,
     installNewPackage,
     runAudit,

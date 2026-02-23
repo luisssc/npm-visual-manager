@@ -15,7 +15,7 @@ import { runAudit, hasVulnerabilities, getPackageVulnerabilityCount, detectPacka
 import { getInstallCommand, getPackageManagerInfo, PackageManager } from '../services/packageManagerService';
 import { getVersions } from '../services/nodeVersionService';
 import { getInstalledVersion, getInstalledVersions } from '../services/installedVersionService';
-import { readScripts, sortScripts, extractScriptsFromPackageJson } from '../services/scriptService';
+
 import { clearPackageSizeCache } from '../services/sizeService';
 import { searchPackages, SearchResult } from '../services/searchService';
 
@@ -268,13 +268,7 @@ export class NpmGuiManagerPanel {
         await this._rollbackLastUpdate();
         break;
 
-      case 'GET_SCRIPTS':
-        await this._loadScripts();
-        break;
 
-      case 'RUN_SCRIPT':
-        await this._runScript(message.scriptName);
-        break;
 
       case 'SEARCH_PACKAGES':
         await this._searchPackages(message.query);
@@ -414,7 +408,6 @@ export class NpmGuiManagerPanel {
 
       // Get Node and package manager versions
       const versions = await getVersions(this._currentPackageManager);
-      const scripts = sortScripts(extractScriptsFromPackageJson(packageJson));
 
       this._sendMessage({
         type: 'DEPENDENCIES_DATA',
@@ -425,8 +418,7 @@ export class NpmGuiManagerPanel {
         currentProjectPath: this._currentProjectPath,
         packageManager: this._currentPackageManager,
         versions,
-        lastUpdate: this._updateHistory,
-        scripts
+        lastUpdate: this._updateHistory
       });
 
       // Update panel title with project name
@@ -643,47 +635,6 @@ export class NpmGuiManagerPanel {
     } catch (error) {
       this._updateHistory = null; // Clear history on error
       vscode.window.showErrorMessage(`Failed to update packages: ${error instanceof Error ? error.message : String(error)}`);
-    }
-  }
-
-  /**
-   * Load npm scripts from package.json
-   */
-  private async _loadScripts(): Promise<void> {
-    try {
-      const scripts = await readScripts(this._currentProjectPath);
-      const sortedScripts = sortScripts(scripts);
-      
-      this._sendMessage({
-        type: 'SCRIPTS_DATA',
-        scripts: sortedScripts,
-        projectPath: this._currentProjectPath
-      });
-    } catch (error) {
-      console.warn('Failed to load scripts:', error);
-      this._sendMessage({
-        type: 'SCRIPTS_DATA',
-        scripts: [],
-        projectPath: this._currentProjectPath
-      });
-    }
-  }
-
-  /**
-   * Run an npm script in the terminal
-   */
-  private async _runScript(scriptName: string): Promise<void> {
-    try {
-      const info = getPackageManagerInfo(this._currentPackageManager);
-      const terminal = this._getOrCreateTerminal();
-      terminal.show();
-      
-      // Send cd command first
-      terminal.sendText(`cd "${this._currentProjectPath}"`, true);
-      // Then send the script command
-      terminal.sendText(`${info.runCommand} ${scriptName}`, true);
-    } catch (error) {
-      vscode.window.showErrorMessage(`Failed to run script: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
 
