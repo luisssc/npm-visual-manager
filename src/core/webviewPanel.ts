@@ -12,7 +12,7 @@ import { getCache, VersionCache } from '../services/cacheService';
 import { getIgnoreService, IgnoreService } from '../services/ignoreService';
 import { findAllProjects, Project } from '../services/workspaceService';
 import { runAudit, hasVulnerabilities, getPackageVulnerabilityCount, detectPackageManager, clearAuditCache } from '../services/auditService';
-import { getInstallCommand, getPackageManagerInfo, PackageManager } from '../services/packageManagerService';
+import { getInstallCommand, getPackageManagerInfo, getUninstallCommand, PackageManager } from '../services/packageManagerService';
 import { getVersions } from '../services/nodeVersionService';
 import { getInstalledVersion, getInstalledVersions } from '../services/installedVersionService';
 
@@ -281,6 +281,10 @@ export class NpmGuiManagerPanel {
       case 'OPEN_EXTERNAL':
         // Open in VS Code's simple browser (built-in)
         await vscode.commands.executeCommand('simpleBrowser.show', message.url);
+        break;
+
+      case 'UNINSTALL_PACKAGE':
+        await this._uninstallPackage(message.packageName);
         break;
     }
   }
@@ -666,6 +670,43 @@ export class NpmGuiManagerPanel {
         results: []
       });
       vscode.window.showErrorMessage(`Search failed: ${error instanceof Error ? error.message : String(error)}`);
+    }
+  }
+
+  /**
+   * Uninstall a package
+   */
+  private async _uninstallPackage(packageName: string): Promise<void> {
+    try {
+      const terminal = this._getOrCreateTerminal();
+      terminal.show();
+      
+      const uninstallCmd = getUninstallCommand(this._currentPackageManager, packageName);
+      
+      // Send cd command first
+      terminal.sendText(`cd "${this._currentProjectPath}"`, true);
+      // Then send uninstall command
+      terminal.sendText(uninstallCmd, true);
+
+      this._sendMessage({
+        type: 'UNINSTALL_RESULT',
+        packageName,
+        success: true,
+        message: `Started uninstallation of ${packageName}`
+      });
+
+      // Wait and reload
+      setTimeout(async () => {
+        await this._loadDependencies();
+      }, 5000);
+    } catch (error) {
+      this._sendMessage({
+        type: 'UNINSTALL_RESULT',
+        packageName,
+        success: false,
+        message: `Failed to uninstall ${packageName}: ${error instanceof Error ? error.message : String(error)}`
+      });
+      vscode.window.showErrorMessage(`Failed to uninstall package: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
 

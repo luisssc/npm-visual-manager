@@ -81,6 +81,10 @@ export function useVsCodeApi() {
     postMessage({ type: 'OPEN_EXTERNAL', url });
   }, [postMessage]);
 
+  const uninstallPackage = useCallback((packageName: string) => {
+    postMessage({ type: 'UNINSTALL_PACKAGE', packageName });
+  }, [postMessage]);
+
   return {
     vscode: vscodeRef.current,
     isReady,
@@ -96,7 +100,8 @@ export function useVsCodeApi() {
     searchPackages,
     installNewPackage,
     runAudit,
-    openExternal
+    openExternal,
+    uninstallPackage
   };
 }
 

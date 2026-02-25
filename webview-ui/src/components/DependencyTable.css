@@ -649,6 +649,112 @@ tr:hover .changelog-btn,
   color: var(--vscode-foreground);
 }
 
+.uninstall-btn {
+  background: transparent;
+  border: none;
+  color: var(--vscode-errorForeground, #f44336);
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 3px;
+  font-size: 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  opacity: 0;
+  transition: opacity 0.2s, background 0.2s;
+  pointer-events: auto;
+}
+
+tr:hover .uninstall-btn,
+.action-cell:hover .uninstall-btn {
+  opacity: 1;
+}
+
+.uninstall-btn:hover:not(:disabled) {
+  background: var(--vscode-errorBackground, rgba(244, 67, 54, 0.1));
+}
+
+.uninstall-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+/* Modal */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modal-content {
+  background: var(--vscode-editor-background);
+  border: 1px solid var(--vscode-panel-border);
+  border-radius: 6px;
+  padding: 20px;
+  min-width: 300px;
+  max-width: 400px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.modal-content h3 {
+  margin: 0 0 12px 0;
+  font-size: 16px;
+  color: var(--vscode-foreground);
+}
+
+.modal-content p {
+  margin: 0 0 20px 0;
+  font-size: 13px;
+  color: var(--vscode-descriptionForeground);
+  line-height: 1.5;
+}
+
+.modal-content strong {
+  color: var(--vscode-foreground);
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.modal-btn {
+  padding: 6px 16px;
+  border: none;
+  border-radius: 4px;
+  font-size: 13px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.modal-btn.cancel {
+  background: var(--vscode-button-secondaryBackground);
+  color: var(--vscode-button-secondaryForeground);
+}
+
+.modal-btn.cancel:hover {
+  background: var(--vscode-button-secondaryHoverBackground);
+}
+
+.modal-btn.confirm {
+  background: var(--vscode-errorForeground);
+  color: white;
+}
+
+.modal-btn.confirm:hover {
+  background: color-mix(in srgb, var(--vscode-errorForeground) 80%, white);
+}
+
 /* Also show ignore button on row hover */
 tr:hover .ignore-btn,
 .action-cell:hover .ignore-btn {

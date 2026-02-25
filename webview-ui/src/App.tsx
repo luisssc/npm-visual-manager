@@ -6,7 +6,7 @@ import { Dependency, HostToWebviewMessage, ColumnConfig, ProjectInfo, PackageMan
 import './App.css';
 
 function App() {
-  const { requestDependencies, updatePackage, updateAllPackages, selectProject, rollbackLast, toggleIgnorePackage, refreshCache, searchPackages, installNewPackage, openExternal, isReady } = useVsCodeApi();
+  const { requestDependencies, updatePackage, updateAllPackages, selectProject, rollbackLast, toggleIgnorePackage, refreshCache, searchPackages, installNewPackage, openExternal, uninstallPackage, isReady } = useVsCodeApi();
 
   const [dependencies, setDependencies] = useState<Dependency[]>([]);
   const [packageName, setPackageName] = useState<string>('');
@@ -211,6 +211,10 @@ function App() {
     openExternal(url);
   }, [openExternal]);
 
+  const handleUninstall = useCallback((packageName: string) => {
+    uninstallPackage(packageName);
+  }, [uninstallPackage]);
+
   if (isLoading) {
     return (
       <div className="loading-container">
@@ -296,6 +300,7 @@ function App() {
           rollbackMessage={rollbackMessage}
           onToggleIgnore={toggleIgnorePackage}
           onOpenExternal={handleOpenExternal}
+          onUninstall={handleUninstall}
         />
         <SearchPanel
           results={searchResults}

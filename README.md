@@ -28,6 +28,7 @@ One-click updates for individual packages with automatic version checking.
 - ⚠️ **Version Mismatch Detection**: Visual indicator when installed version differs from package.json
 - 🔄 **Version Checking**: Automatically checks for latest versions from the NPM registry
 - ⬆️ **One-Click Updates**: Update individual packages or all outdated packages at once
+- 🗑️ **Uninstall Packages**: Remove packages with one click (with confirmation)
 - 🛡️ **Security Audit**: Shows vulnerability counts from `npm audit`
 - ↩️ **Rollback Support**: Restore previous versions if an update breaks something
 - 🏢 **Multi-Project**: Detects all package.json files in monorepos

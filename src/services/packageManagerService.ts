@@ -115,6 +115,19 @@ export function getAuditCommand(manager: PackageManager): string {
 }
 
 /**
+ * Get the uninstall command for a package
+ */
+export function getUninstallCommand(manager: PackageManager, packageName: string): string {
+  const commands: Record<PackageManager, string> = {
+    npm: `npm uninstall ${packageName}`,
+    yarn: `yarn remove ${packageName}`,
+    pnpm: `pnpm remove ${packageName}`,
+    bun: `bun remove ${packageName}`
+  };
+  return commands[manager];
+}
+
+/**
  * Parse audit output for different package managers
  */
 export function parseAuditOutput(manager: PackageManager, output: string): {

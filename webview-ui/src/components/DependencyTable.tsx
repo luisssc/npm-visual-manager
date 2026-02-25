@@ -24,6 +24,7 @@ interface DependencyTableProps {
   rollbackMessage?: string | null;
   onToggleIgnore?: (packageName: string, currentVersion?: string) => void;
   onOpenExternal?: (url: string) => void;
+  onUninstall?: (packageName: string) => void;
 }
 
 type SortColumn = 'name' | 'installedVersion' | 'latestVersion' | 'type' | 'size' | 'lastPublishDate';
@@ -68,7 +69,8 @@ export const DependencyTable = ({
   onRollback,
   rollbackMessage,
   onToggleIgnore,
-  onOpenExternal
+  onOpenExternal,
+  onUninstall
 }: DependencyTableProps) => {
   const [sortColumn, setSortColumn] = useState<SortColumn>('name');
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
@@ -76,6 +78,7 @@ export const DependencyTable = ({
   const [updatingPackages, setUpdatingPackages] = useState<Set<string>>(new Set());
   const [selectedPackages, setSelectedPackages] = useState<Set<string>>(new Set());
   const [showIgnored, setShowIgnored] = useState(false);
+  const [confirmUninstall, setConfirmUninstall] = useState<string | null>(null);
 
   const handleSort = (column: SortColumn) => {
     if (sortColumn === column) {
@@ -462,6 +465,18 @@ export const DependencyTable = ({
                           </Tooltip>
                         )}
                         <button
+                          className="uninstall-btn"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setConfirmUninstall(dep.name);
+                          }}
+                          disabled={isLoading}
+                          title="Uninstall this package"
+                          type="button"
+                        >
+                          <i className="codicon codicon-trash" />
+                        </button>
+                        <button
                           className="ignore-btn"
                           onClick={() => onToggleIgnore?.(dep.name, dep.installedVersion)}
                           disabled={isLoading}
@@ -559,6 +574,32 @@ export const DependencyTable = ({
           </span>
         )}
       </div>
+
+      {confirmUninstall && (
+        <div className="modal-overlay" onClick={() => setConfirmUninstall(null)}>
+          <div className="modal-content" onClick={e => e.stopPropagation()}>
+            <h3>Uninstall Package</h3>
+            <p>Are you sure you want to uninstall <strong>{confirmUninstall}</strong>?</p>
+            <div className="modal-actions">
+              <button 
+                className="modal-btn cancel" 
+                onClick={() => setConfirmUninstall(null)}
+              >
+                Cancel
+              </button>
+              <button 
+                className="modal-btn confirm" 
+                onClick={() => {
+                  onUninstall?.(confirmUninstall);
+                  setConfirmUninstall(null);
+                }}
+              >
+                Uninstall
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

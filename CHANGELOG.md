@@ -4,6 +4,14 @@ All notable changes to the "npm-visual-manager" extension will be documented in 
 
 ## [Unreleased]
 
+## [0.6.0] - 2026-02-21
+
+### Added
+- **Uninstall Packages**: Click the trash icon 🗑️ to remove packages
+  - Confirmation modal before uninstalling
+  - Works with npm, yarn, pnpm, and bun
+  - Auto-refreshes the table after uninstall
+
 ## [0.5.1] - 2026-02-21
 
 ### Removed
