@@ -89,6 +89,7 @@ export class NpmGuiManagerPanel {
       }
     );
 
+    // Set theme-aware icons
     panel.iconPath = {
       light: vscode.Uri.joinPath(extensionUri, 'resources', 'icon-light.svg'),
       dark: vscode.Uri.joinPath(extensionUri, 'resources', 'icon-dark.svg')
