@@ -4,7 +4,7 @@ All notable changes to the "npm-visual-manager" extension will be documented in 
 
 ## [Unreleased]
 
-## [0.7.0] - 2026-02-27
+## [0.7.1] - 2026-02-27
 
 ### Fixed
 - **Progress message stuck**: "Installing N package(s)..." message no longer stays forever when updating multiple packages
