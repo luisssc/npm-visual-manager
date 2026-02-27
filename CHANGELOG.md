@@ -12,6 +12,14 @@ All notable changes to the "npm-visual-manager" extension will be documented in 
   - Works with npm, yarn, pnpm, and bun
   - Auto-refreshes the table after uninstall
 
+### Fixed
+- **Search Input Focus**: Fixed search input losing focus while typing
+  - Removed `disabled` state during search
+  - Added `memo` to prevent unnecessary re-renders
+  - Confirmation modal before uninstalling
+  - Works with npm, yarn, pnpm, and bun
+  - Auto-refreshes the table after uninstall
+
 ## [0.5.1] - 2026-02-21
 
 ### Removed

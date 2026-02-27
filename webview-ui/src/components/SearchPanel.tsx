@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef } from 'react';
+import { memo, useState, useRef } from 'react';
 import { SearchResult } from '../types';
 import './SearchPanel.css';
 
@@ -9,14 +9,14 @@ interface SearchPanelProps {
   isLoading?: boolean;
 }
 
-export const SearchPanel = ({ results, onSearch, onInstall, isLoading }: SearchPanelProps) => {
+export const SearchPanel = memo(({ results, onSearch, onInstall, isLoading }: SearchPanelProps) => {
   const [query, setQuery] = useState('');
   const [isCollapsed, setIsCollapsed] = useState(true);
   const [selectedPackage, setSelectedPackage] = useState<SearchResult | null>(null);
   const [isDev, setIsDev] = useState(false);
   const debounceRef = useRef<NodeJS.Timeout | null>(null);
 
-  const handleSearchChange = useCallback((value: string) => {
+  const handleSearchChange = (value: string) => {
     setQuery(value);
     
     if (debounceRef.current) {
@@ -32,7 +32,7 @@ export const SearchPanel = ({ results, onSearch, onInstall, isLoading }: SearchP
       // Clear results when search is empty
       onSearch('');
     }
-  }, [onSearch]);
+  };
 
   const formatDownloads = (weekly?: number): string => {
     if (!weekly) return '-';
@@ -73,7 +73,6 @@ export const SearchPanel = ({ results, onSearch, onInstall, isLoading }: SearchP
               placeholder="Search npm packages..."
               value={query}
               onChange={(e) => handleSearchChange(e.target.value)}
-              disabled={isLoading}
             />
             {isLoading && <span className="search-loading">Searching...</span>}
           </div>
@@ -145,4 +144,4 @@ export const SearchPanel = ({ results, onSearch, onInstall, isLoading }: SearchP
       )}
     </div>
   );
-};
+});
