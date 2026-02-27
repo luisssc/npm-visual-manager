@@ -4,6 +4,15 @@ All notable changes to the "npm-visual-manager" extension will be documented in 
 
 ## [Unreleased]
 
+## [0.7.0] - 2026-02-27
+
+### Fixed
+- **Progress message stuck**: "Installing N package(s)..." message no longer stays forever when updating multiple packages
+  - Now uses native VS Code notification with auto-close after 3 seconds
+  - Removed redundant progress indicator from webview UI
+- **Sidebar text spacing**: Fixed line-height issue in welcome view when sidebar is narrow
+  - Text no longer overlaps when "Ctrl+Shift+P" wraps to multiple lines
+
 ## [0.6.0] - 2026-02-21
 
 ### Added

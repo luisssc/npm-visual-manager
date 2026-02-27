@@ -95,13 +95,19 @@ export class NpmDependenciesProvider implements vscode.WebviewViewProvider {
       font-size: 12px;
       color: var(--vscode-descriptionForeground);
       margin-top: 12px;
+      line-height: 2;
+      text-align: center;
+      padding: 0 10px;
     }
     kbd {
       background: var(--vscode-keybindingLabel-background);
       border: 1px solid var(--vscode-keybindingLabel-border);
       border-radius: 3px;
-      padding: 2px 6px;
+      padding: 1px 4px;
       font-family: var(--vscode-editor-font-family);
+      font-size: 11px;
+      vertical-align: 1px;
+      margin: 0 1px;
     }
   </style>
 </head>

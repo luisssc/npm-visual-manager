@@ -614,10 +614,15 @@ export class NpmGuiManagerPanel {
         }))
     };
 
-    this._sendMessage({
-      type: 'PROGRESS',
-      message: `Installing ${packages.length} package(s)...`
-    });
+    // Mostrar notificación nativa que se cierra automáticamente en 2 segundos
+    vscode.window.withProgress(
+      {
+        location: vscode.ProgressLocation.Notification,
+        title: `Updating ${packages.length} package(s)...`,
+        cancellable: false
+      },
+      () => new Promise(resolve => setTimeout(resolve, 3000))
+    );
 
     try {
       // Use detected package manager
@@ -634,11 +639,23 @@ export class NpmGuiManagerPanel {
         clearAuditCache(this._currentProjectPath);
 
         await this._loadDependencies();
+
+        this._sendMessage({
+          type: 'UPDATE_RESULT',
+          success: true,
+          packageName: packages.map(p => p.name).join(', '),
+          message: `Successfully updated ${packages.length} package(s)`
+        });
       }, 8000);
 
-      vscode.window.showInformationMessage(`Updating ${packages.length} package(s)...`);
     } catch (error) {
       this._updateHistory = null; // Clear history on error
+      this._sendMessage({
+        type: 'UPDATE_RESULT',
+        success: false,
+        packageName: packages.map(p => p.name).join(', '),
+        message: `Failed to update packages: ${error instanceof Error ? error.message : String(error)}`
+      });
       vscode.window.showErrorMessage(`Failed to update packages: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
