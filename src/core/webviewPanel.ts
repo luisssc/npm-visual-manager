@@ -520,22 +520,6 @@ export class NpmGuiManagerPanel {
    * Actualiza un paquete específico
    */
   private async _updatePackage(packageName: string, version: string, currentVersion?: string): Promise<void> {
-    // Show confirmation modal
-    const message = currentVersion 
-      ? `Update "${packageName}" from ${currentVersion} to ${version}?`
-      : `Update "${packageName}" to ${version}?`;
-    
-    const result = await vscode.window.showWarningMessage(
-      message,
-      { modal: true },
-      'Update',
-      'Cancel'
-    );
-
-    if (result !== 'Update') {
-      return;
-    }
-
     // Get exact installed version from node_modules before updating
     const exactVersion = await getInstalledVersion(this._currentProjectPath, packageName);
     

@@ -755,6 +755,119 @@ tr:hover .uninstall-btn,
   background: color-mix(in srgb, var(--vscode-errorForeground) 80%, white);
 }
 
+/* Update modal specific styles */
+.modal-version-info {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin: 16px 0;
+  padding: 12px;
+  background: var(--vscode-editor-inactiveSelectionBackground);
+  border-radius: 4px;
+}
+
+.modal-version-info .version-from,
+.modal-version-info .version-to {
+  font-family: var(--vscode-editor-font-family, monospace);
+  font-size: 14px;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 4px;
+}
+
+.modal-version-info .version-from {
+  background: color-mix(in srgb, var(--vscode-descriptionForeground) 20%, transparent);
+  color: var(--vscode-descriptionForeground);
+}
+
+.modal-version-info .version-to {
+  background: color-mix(in srgb, var(--vscode-testing-iconPassed, #4caf50) 20%, transparent);
+  color: var(--vscode-testing-iconPassed, #4caf50);
+}
+
+.modal-version-info .codicon {
+  color: var(--vscode-foreground);
+  font-size: 14px;
+}
+
+/* Large modal for Update All / Update Selected */
+.modal-content-large {
+  max-width: 450px;
+  min-width: 350px;
+}
+
+.modal-package-list {
+  max-height: 200px;
+  overflow-y: auto;
+  margin: 16px 0;
+  padding: 8px;
+  background: var(--vscode-editor-inactiveSelectionBackground);
+  border-radius: 4px;
+}
+
+.modal-package-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 6px 8px;
+  font-size: 13px;
+  border-bottom: 1px solid color-mix(in srgb, var(--vscode-panel-border) 50%, transparent);
+}
+
+.modal-package-item:last-child {
+  border-bottom: none;
+}
+
+.modal-package-item.more-items {
+  justify-content: center;
+  color: var(--vscode-descriptionForeground);
+  font-style: italic;
+}
+
+.package-name-text {
+  font-weight: 500;
+  color: var(--vscode-foreground);
+}
+
+.version-arrow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--vscode-editor-font-family, monospace);
+}
+
+.version-from-small,
+.version-to-small {
+  font-size: 12px;
+  padding: 2px 6px;
+  border-radius: 3px;
+}
+
+.version-from-small {
+  background: color-mix(in srgb, var(--vscode-descriptionForeground) 15%, transparent);
+  color: var(--vscode-descriptionForeground);
+}
+
+.version-to-small {
+  background: color-mix(in srgb, var(--vscode-testing-iconPassed, #4caf50) 15%, transparent);
+  color: var(--vscode-testing-iconPassed, #4caf50);
+}
+
+.version-arrow .codicon {
+  font-size: 12px;
+  color: var(--vscode-foreground);
+}
+
+/* Ignore modal hint */
+.modal-hint {
+  font-size: 12px;
+  color: var(--vscode-descriptionForeground);
+  font-style: italic;
+  margin-top: -12px;
+  margin-bottom: 16px;
+}
+
 /* Also show ignore button on row hover */
 tr:hover .ignore-btn,
 .action-cell:hover .ignore-btn {

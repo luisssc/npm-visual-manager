@@ -13,6 +13,18 @@ All notable changes to the "npm-visual-manager" extension will be documented in 
   - Cache files are named `cache-{projectHash}.json` and stored per project
   - Backward compatible: falls back to old location if global storage is not available
 
+### Added
+- **Confirmation Modals for All Actions**: All destructive/update actions now show consistent confirmation modals
+  - **Update Package**: Shows version change (from → to) before updating
+  - **Update All**: Shows list of all packages to be updated (up to 10, then "and X more")
+  - **Update Selected**: Shows list of selected packages with version changes
+  - **Ignore Package**: Confirmation with explanation that ignored packages are excluded from update checks
+  - **Unignore Package**: Confirmation to re-enable update checks for the package
+  - All modals use consistent styling with Cancel/Confirm buttons
+
+### Fixed
+- **Security Icon Tooltip**: Added tooltip "No security issues detected" to the shield icon for packages without vulnerabilities
+
 ## [0.7.1] - 2026-02-27
 
 ### Fixed

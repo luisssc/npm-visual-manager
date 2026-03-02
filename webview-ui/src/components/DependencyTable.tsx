@@ -79,6 +79,10 @@ export const DependencyTable = ({
   const [selectedPackages, setSelectedPackages] = useState<Set<string>>(new Set());
   const [showIgnored, setShowIgnored] = useState(false);
   const [confirmUninstall, setConfirmUninstall] = useState<string | null>(null);
+  const [confirmUpdate, setConfirmUpdate] = useState<Dependency | null>(null);
+  const [confirmUpdateAll, setConfirmUpdateAll] = useState<Dependency[] | null>(null);
+  const [confirmUpdateSelected, setConfirmUpdateSelected] = useState<Dependency[] | null>(null);
+  const [confirmIgnore, setConfirmIgnore] = useState<{ name: string; isIgnored: boolean } | null>(null);
 
   const handleSort = (column: SortColumn) => {
     if (sortColumn === column) {
@@ -91,12 +95,18 @@ export const DependencyTable = ({
 
   const handleUpdate = (dep: Dependency) => {
     if (!dep.latestVersion) {return;}
-    setUpdatingPackages(prev => new Set(prev).add(dep.name));
-    onUpdatePackage(dep.name, 'latest', dep.declaredVersion);
+    setConfirmUpdate(dep);
+  };
+
+  const confirmUpdatePackage = () => {
+    if (!confirmUpdate) {return;}
+    setUpdatingPackages(prev => new Set(prev).add(confirmUpdate.name));
+    onUpdatePackage(confirmUpdate.name, 'latest', confirmUpdate.declaredVersion);
+    setConfirmUpdate(null);
     setTimeout(() => {
       setUpdatingPackages(prev => {
         const next = new Set(prev);
-        next.delete(dep.name);
+        next.delete(confirmUpdate.name);
         return next;
       });
     }, 3000);
@@ -128,20 +138,43 @@ export const DependencyTable = ({
 
   const handleUpdateSelected = () => {
     const packagesToUpdate = sortedAndFilteredDeps
-      .filter(d => selectedPackages.has(d.name) && d.updateAvailable && !d.isIgnored && d.latestVersion)
-      .map(d => ({ name: d.name, version: 'latest', currentVersion: d.declaredVersion }));
+      .filter(d => selectedPackages.has(d.name) && d.updateAvailable && !d.isIgnored && d.latestVersion);
     
     if (packagesToUpdate.length > 0) {
-      onUpdateAll(packagesToUpdate);
-      setSelectedPackages(new Set()); // Clear selection after update
+      setConfirmUpdateSelected(packagesToUpdate);
     }
+  };
+
+  const confirmUpdateSelectedPackages = () => {
+    if (!confirmUpdateSelected) {return;}
+    const packages = confirmUpdateSelected.map(d => ({ 
+      name: d.name, 
+      version: 'latest', 
+      currentVersion: d.declaredVersion 
+    }));
+    onUpdateAll(packages);
+    setSelectedPackages(new Set()); // Clear selection after update
+    setConfirmUpdateSelected(null);
   };
 
   const handleUpdateAll = () => {
     const packagesToUpdate = sortedAndFilteredDeps
-      .filter(d => d.updateAvailable && !d.isIgnored && d.latestVersion)
-      .map(d => ({ name: d.name, version: 'latest', currentVersion: d.declaredVersion }));
-    onUpdateAll(packagesToUpdate);
+      .filter(d => d.updateAvailable && !d.isIgnored && d.latestVersion);
+    
+    if (packagesToUpdate.length > 0) {
+      setConfirmUpdateAll(packagesToUpdate);
+    }
+  };
+
+  const confirmUpdateAllPackages = () => {
+    if (!confirmUpdateAll) {return;}
+    const packages = confirmUpdateAll.map(d => ({ 
+      name: d.name, 
+      version: 'latest', 
+      currentVersion: d.declaredVersion 
+    }));
+    onUpdateAll(packages);
+    setConfirmUpdateAll(null);
   };
 
   const sortDeps = (result: Dependency[]) => {
@@ -380,7 +413,9 @@ export const DependencyTable = ({
                             </span>
                           </Tooltip>
                         ) : (
-                          <span className="status-badge status-safe"><i className="codicon codicon-shield" /></span>
+                          <Tooltip text="No security issues detected">
+                            <span className="status-badge status-safe"><i className="codicon codicon-shield" /></span>
+                          </Tooltip>
                         )}
                       </div>
                     </td>
@@ -478,7 +513,10 @@ export const DependencyTable = ({
                         </button>
                         <button
                           className="ignore-btn"
-                          onClick={() => onToggleIgnore?.(dep.name, dep.installedVersion)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setConfirmIgnore({ name: dep.name, isIgnored: false });
+                          }}
                           disabled={isLoading}
                           title="Ignore this package"
                         >
@@ -543,7 +581,10 @@ export const DependencyTable = ({
                             <Tooltip text="Unignore package">
                               <button
                                 className="unignore-btn"
-                                onClick={() => onToggleIgnore?.(dep.name, dep.installedVersion)}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setConfirmIgnore({ name: dep.name, isIgnored: true });
+                                }}
                                 disabled={isLoading}
                               >
                                 <i className="codicon codicon-eye" />
@@ -595,6 +636,153 @@ export const DependencyTable = ({
                 }}
               >
                 Uninstall
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {confirmUpdate && (
+        <div className="modal-overlay" onClick={() => setConfirmUpdate(null)}>
+          <div className="modal-content" onClick={e => e.stopPropagation()}>
+            <h3>Update Package</h3>
+            <p>
+              Are you sure you want to update <strong>{confirmUpdate.name}</strong>?
+            </p>
+            <p className="modal-version-info">
+              <span className="version-from">{confirmUpdate.declaredVersion}</span>
+              <i className="codicon codicon-arrow-right" />
+              <span className="version-to">{confirmUpdate.latestVersion}</span>
+            </p>
+            <div className="modal-actions">
+              <button 
+                className="modal-btn cancel" 
+                onClick={() => setConfirmUpdate(null)}
+              >
+                Cancel
+              </button>
+              <button 
+                className="modal-btn confirm" 
+                onClick={confirmUpdatePackage}
+              >
+                Update
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {confirmUpdateAll && (
+        <div className="modal-overlay" onClick={() => setConfirmUpdateAll(null)}>
+          <div className="modal-content modal-content-large" onClick={e => e.stopPropagation()}>
+            <h3>Update All Packages</h3>
+            <p>
+              Are you sure you want to update <strong>{confirmUpdateAll.length} package{confirmUpdateAll.length !== 1 ? 's' : ''}</strong>?
+            </p>
+            <div className="modal-package-list">
+              {confirmUpdateAll.slice(0, 10).map(dep => (
+                <div key={dep.name} className="modal-package-item">
+                  <span className="package-name-text">{dep.name}</span>
+                  <span className="version-arrow">
+                    <span className="version-from-small">{dep.declaredVersion}</span>
+                    <i className="codicon codicon-arrow-small-right" />
+                    <span className="version-to-small">{dep.latestVersion}</span>
+                  </span>
+                </div>
+              ))}
+              {confirmUpdateAll.length > 10 && (
+                <div className="modal-package-item more-items">
+                  ...and {confirmUpdateAll.length - 10} more
+                </div>
+              )}
+            </div>
+            <div className="modal-actions">
+              <button 
+                className="modal-btn cancel" 
+                onClick={() => setConfirmUpdateAll(null)}
+              >
+                Cancel
+              </button>
+              <button 
+                className="modal-btn confirm" 
+                onClick={confirmUpdateAllPackages}
+              >
+                Update All
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {confirmUpdateSelected && (
+        <div className="modal-overlay" onClick={() => setConfirmUpdateSelected(null)}>
+          <div className="modal-content modal-content-large" onClick={e => e.stopPropagation()}>
+            <h3>Update Selected Packages</h3>
+            <p>
+              Are you sure you want to update <strong>{confirmUpdateSelected.length} selected package{confirmUpdateSelected.length !== 1 ? 's' : ''}</strong>?
+            </p>
+            <div className="modal-package-list">
+              {confirmUpdateSelected.slice(0, 10).map(dep => (
+                <div key={dep.name} className="modal-package-item">
+                  <span className="package-name-text">{dep.name}</span>
+                  <span className="version-arrow">
+                    <span className="version-from-small">{dep.declaredVersion}</span>
+                    <i className="codicon codicon-arrow-small-right" />
+                    <span className="version-to-small">{dep.latestVersion}</span>
+                  </span>
+                </div>
+              ))}
+              {confirmUpdateSelected.length > 10 && (
+                <div className="modal-package-item more-items">
+                  ...and {confirmUpdateSelected.length - 10} more
+                </div>
+              )}
+            </div>
+            <div className="modal-actions">
+              <button 
+                className="modal-btn cancel" 
+                onClick={() => setConfirmUpdateSelected(null)}
+              >
+                Cancel
+              </button>
+              <button 
+                className="modal-btn confirm" 
+                onClick={confirmUpdateSelectedPackages}
+              >
+                Update Selected
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {confirmIgnore && (
+        <div className="modal-overlay" onClick={() => setConfirmIgnore(null)}>
+          <div className="modal-content" onClick={e => e.stopPropagation()}>
+            <h3>{confirmIgnore.isIgnored ? 'Unignore Package' : 'Ignore Package'}</h3>
+            <p>
+              Are you sure you want to {confirmIgnore.isIgnored ? 'unignore' : 'ignore'} <strong>{confirmIgnore.name}</strong>?
+            </p>
+            {!confirmIgnore.isIgnored && (
+              <p className="modal-hint">
+                Ignored packages are excluded from update checks and counters.
+              </p>
+            )}
+            <div className="modal-actions">
+              <button 
+                className="modal-btn cancel" 
+                onClick={() => setConfirmIgnore(null)}
+              >
+                Cancel
+              </button>
+              <button 
+                className="modal-btn confirm" 
+                onClick={() => {
+                  onToggleIgnore?.(confirmIgnore.name);
+                  setConfirmIgnore(null);
+                }}
+              >
+                {confirmIgnore.isIgnored ? 'Unignore' : 'Ignore'}
               </button>
             </div>
           </div>
