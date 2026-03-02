@@ -5,10 +5,14 @@
 import * as vscode from 'vscode';
 import * as path from 'path';
 import { NpmGuiManagerPanel } from './webviewPanel';
+import { setGlobalStorageUri } from '../services/cacheService';
 import { NpmDependenciesProvider } from './sidebarProvider';
 
 export function activate(context: vscode.ExtensionContext): void {
   console.log('npm-visual-manager extension is now active');
+  
+  // Set global storage URI for cache service
+  setGlobalStorageUri(context.globalStorageUri);
 
   // Register the main command (opens in panel)
   const openManagerCommand = vscode.commands.registerCommand(
@@ -42,6 +46,7 @@ export function activate(context: vscode.ExtensionContext): void {
       try {
         await NpmGuiManagerPanel.createOrShow(
           context.extensionUri,
+          context.globalStorageUri,
           workspaceRoot,
           preferredProjectPath
         );

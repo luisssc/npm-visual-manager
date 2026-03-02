@@ -5,6 +5,7 @@
 
 import * as fs from 'fs';
 import * as path from 'path';
+import * as vscode from 'vscode';
 
 interface CacheEntry {
   latestVersion: string;
@@ -30,10 +31,28 @@ export class VersionCache {
   private cache: CacheData;
   private ttlMs: number;
 
-  constructor(projectPath: string, ttlHours: number = DEFAULT_TTL_HOURS) {
-    this.cachePath = path.join(projectPath, '.vscode', CACHE_FILENAME);
+  constructor(
+    projectPath: string,
+    storageUri: vscode.Uri | null,
+    ttlHours: number = DEFAULT_TTL_HOURS
+  ) {
+    // Use global storage if available, fallback to .vscode for backward compatibility
+    if (storageUri) {
+      // Create a safe filename from project path (replace invalid chars)
+      const projectHash = this._getProjectHash(projectPath);
+      this.cachePath = path.join(storageUri.fsPath, `cache-${projectHash}.json`);
+    } else {
+      // Fallback to old location for backward compatibility
+      this.cachePath = path.join(projectPath, '.vscode', CACHE_FILENAME);
+    }
     this.ttlMs = ttlHours * 60 * 60 * 1000;
     this.cache = { version: CACHE_VERSION, entries: {} };
+  }
+
+  private _getProjectHash(projectPath: string): string {
+    // Create a simple hash from the project path to use as filename
+    // This ensures unique cache files per project while being filesystem-safe
+    return Buffer.from(projectPath).toString('base64').replace(/[+/=]/g, '_');
   }
 
   /**
@@ -179,10 +198,15 @@ export class VersionCache {
 
 // Global cache instance per project
 const cacheInstances = new Map<string, VersionCache>();
+let globalStorageUri: vscode.Uri | null = null;
+
+export function setGlobalStorageUri(uri: vscode.Uri): void {
+  globalStorageUri = uri;
+}
 
 export function getCache(projectPath: string): VersionCache {
   if (!cacheInstances.has(projectPath)) {
-    cacheInstances.set(projectPath, new VersionCache(projectPath));
+    cacheInstances.set(projectPath, new VersionCache(projectPath, globalStorageUri));
   }
   return cacheInstances.get(projectPath)!;
 }

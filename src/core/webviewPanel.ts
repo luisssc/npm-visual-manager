@@ -33,6 +33,7 @@ export class NpmGuiManagerPanel {
 
   public static async createOrShow(
     extensionUri: vscode.Uri,
+    globalStorageUri: vscode.Uri,
     workspaceRoot: string,
     preferredProjectPath?: string
   ): Promise<void> {
@@ -98,6 +99,7 @@ export class NpmGuiManagerPanel {
     NpmGuiManagerPanel.currentPanel = new NpmGuiManagerPanel(
       panel,
       extensionUri,
+      globalStorageUri,
       workspaceRoot,
       projects,
       preferredProjectPath
@@ -196,15 +198,19 @@ export class NpmGuiManagerPanel {
     return projects[0].path;
   }
 
+  private _globalStorageUri: vscode.Uri;
+
   private constructor(
     panel: vscode.WebviewPanel,
     extensionUri: vscode.Uri,
+    globalStorageUri: vscode.Uri,
     workspaceRoot: string,
     projects: Project[],
     preferredProjectPath?: string
   ) {
     this._panel = panel;
     this._extensionUri = extensionUri;
+    this._globalStorageUri = globalStorageUri;
     this._workspaceRoot = workspaceRoot;
     this._projects = projects;
     this._currentProjectPath = NpmGuiManagerPanel._resolveProjectPath(projects, preferredProjectPath);
