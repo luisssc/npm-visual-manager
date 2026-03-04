@@ -306,7 +306,9 @@ function App() {
           results={searchResults}
           onSearch={handleSearch}
           onInstall={handleInstallNew}
+          onUninstall={handleUninstall}
           isLoading={isSearching}
+          installedPackages={dependencies}
         />
 
       </main>

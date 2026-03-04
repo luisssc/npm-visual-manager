@@ -14,6 +14,12 @@
   margin-bottom: 12px;
   text-transform: uppercase;
   letter-spacing: 0.5px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.search-header:hover {
+  opacity: 0.8;
 }
 
 .search-header-left {
@@ -224,10 +230,67 @@
   background: var(--vscode-button-hoverBackground);
 }
 
+.search-uninstall-btn {
+  background-color: var(--vscode-errorForeground, #d73a49);
+  color: #ffffff;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 500;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.search-uninstall-btn:hover {
+  background-color: var(--vscode-errorForeground, #d73a49);
+  opacity: 0.9;
+}
+
+.go-back-btn {
+  background: var(--vscode-button-secondaryBackground);
+  color: var(--vscode-button-secondaryForeground);
+  border: none;
+  padding: 8px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.go-back-btn:hover {
+  background: var(--vscode-button-secondaryHoverBackground);
+}
+
+.uninstall-confirm {
+  background: var(--vscode-inputValidation-errorBackground);
+  border: 1px solid var(--vscode-inputValidation-errorBorder);
+  border-radius: 6px;
+  padding: 12px;
+  margin-top: 8px;
+}
+
+.uninstall-warning {
+  color: var(--vscode-errorForeground);
+  font-size: 13px;
+  margin: 0 0 12px 0;
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.uninstall-warning i {
+  font-size: 16px;
+  flex-shrink: 0;
+}
+
 .cancel-btn {
-  background: transparent;
-  color: var(--vscode-foreground);
-  border: 1px solid var(--vscode-button-secondaryBackground);
+  background: var(--vscode-button-secondaryBackground);
+  color: var(--vscode-button-secondaryForeground);
+  border: none;
   padding: 8px 16px;
   border-radius: 4px;
   cursor: pointer;

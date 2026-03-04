@@ -1,19 +1,22 @@
-import { memo, useState, useRef } from 'react';
-import { SearchResult } from '../types';
+import { memo, useState, useRef, useMemo } from 'react';
+import { SearchResult, Dependency } from '../types';
 import './SearchPanel.css';
 
 interface SearchPanelProps {
   results: SearchResult[];
   onSearch: (query: string) => void;
   onInstall: (packageName: string, version: string, isDev: boolean) => void;
+  onUninstall?: (packageName: string) => void;
   isLoading?: boolean;
+  installedPackages?: Dependency[];
 }
 
-export const SearchPanel = memo(({ results, onSearch, onInstall, isLoading }: SearchPanelProps) => {
+export const SearchPanel = memo(({ results, onSearch, onInstall, onUninstall, isLoading, installedPackages }: SearchPanelProps) => {
   const [query, setQuery] = useState('');
   const [isCollapsed, setIsCollapsed] = useState(true);
   const [selectedPackage, setSelectedPackage] = useState<SearchResult | null>(null);
   const [isDev, setIsDev] = useState(false);
+  const [showUninstallConfirm, setShowUninstallConfirm] = useState(false);
   const debounceRef = useRef<NodeJS.Timeout | null>(null);
 
   const handleSearchChange = (value: string) => {
@@ -47,16 +50,32 @@ export const SearchPanel = memo(({ results, onSearch, onInstall, isLoading }: Se
     return date.toLocaleDateString();
   };
 
+  // Crear un Set con los nombres de paquetes instalados para búsqueda rápida
+  const installedPackageNames = useMemo(() => {
+    return new Set(installedPackages?.map(dep => dep.name) ?? []);
+  }, [installedPackages]);
+
+  const isPackageInstalled = (packageName: string): boolean => {
+    return installedPackageNames.has(packageName);
+  };
+
   return (
     <div className="search-panel">
-      <div className="search-header">
+      <div 
+        className="search-header"
+        onClick={() => setIsCollapsed(!isCollapsed)}
+        title={isCollapsed ? 'Show search' : 'Hide search'}
+      >
         <div className="search-header-left">
           <i className="codicon codicon-search" />
           <span>Install Packages</span>
         </div>
         <button
           className="search-toggle-btn"
-          onClick={() => setIsCollapsed(!isCollapsed)}
+          onClick={(e) => {
+            e.stopPropagation();
+            setIsCollapsed(!isCollapsed);
+          }}
           title={isCollapsed ? 'Show search' : 'Hide search'}
         >
           <i className={`codicon codicon-chevron-${isCollapsed ? 'up' : 'down'}`} />
@@ -79,36 +98,87 @@ export const SearchPanel = memo(({ results, onSearch, onInstall, isLoading }: Se
 
           {selectedPackage ? (
             <div className="install-confirmation">
-              <h4>Install {selectedPackage.name}@{selectedPackage.version}?</h4>
-              <p className="install-description">{selectedPackage.description}</p>
-              <div className="install-options">
-                <label className="dev-checkbox">
-                  <input
-                    type="checkbox"
-                    checked={isDev}
-                    onChange={(e) => setIsDev(e.target.checked)}
-                  />
-                  Install as dev dependency
-                </label>
-              </div>
-              <div className="install-actions">
-                <button
-                  className="install-btn"
-                  onClick={() => {
-                    onInstall(selectedPackage.name, selectedPackage.version, isDev);
-                    setSelectedPackage(null);
-                    setQuery('');
-                  }}
-                >
-                  Install
-                </button>
-                <button
-                  className="cancel-btn"
-                  onClick={() => setSelectedPackage(null)}
-                >
-                  Cancel
-                </button>
-              </div>
+              {isPackageInstalled(selectedPackage.name) ? (
+                <>
+                  <h4>{selectedPackage.name} is already installed</h4>
+                  <p className="install-description">{selectedPackage.description}</p>
+                  {showUninstallConfirm ? (
+                    <div className="uninstall-confirm">
+                      <p className="uninstall-warning">
+                        <i className="codicon codicon-warning" />
+                        Are you sure you want to uninstall <strong>{selectedPackage.name}</strong>?
+                      </p>
+                      <div className="install-actions">
+                        <button
+                          className="search-uninstall-btn"
+                          onClick={() => {
+                            onUninstall?.(selectedPackage.name);
+                            setShowUninstallConfirm(false);
+                            setSelectedPackage(null);
+                            setQuery('');
+                          }}
+                        >
+                          <i className="codicon codicon-trash" /> Yes, Uninstall
+                        </button>
+                        <button
+                          className="go-back-btn"
+                          onClick={() => setShowUninstallConfirm(false)}
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="install-actions">
+                      <button
+                        className="search-uninstall-btn"
+                        onClick={() => setShowUninstallConfirm(true)}
+                      >
+                        <i className="codicon codicon-trash" /> Uninstall
+                      </button>
+                      <button
+                        className="go-back-btn"
+                        onClick={() => setSelectedPackage(null)}
+                      >
+                        Go Back
+                      </button>
+                    </div>
+                  )}
+                </>
+              ) : (
+                <>
+                  <h4>Install {selectedPackage.name}@{selectedPackage.version}?</h4>
+                  <p className="install-description">{selectedPackage.description}</p>
+                  <div className="install-options">
+                    <label className="dev-checkbox">
+                      <input
+                        type="checkbox"
+                        checked={isDev}
+                        onChange={(e) => setIsDev(e.target.checked)}
+                      />
+                      Install as dev dependency
+                    </label>
+                  </div>
+                  <div className="install-actions">
+                    <button
+                      className="install-btn"
+                      onClick={() => {
+                        onInstall(selectedPackage.name, selectedPackage.version, isDev);
+                        setSelectedPackage(null);
+                        setQuery('');
+                      }}
+                    >
+                      Install
+                    </button>
+                    <button
+                      className="cancel-btn"
+                      onClick={() => setSelectedPackage(null)}
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </>
+              )}
             </div>
           ) : (
             <div className="search-results">

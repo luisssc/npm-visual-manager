@@ -4,6 +4,22 @@ All notable changes to the "npm-visual-manager" extension will be documented in 
 
 ## [Unreleased]
 
+## [0.9.0] - 2026-03-04
+
+### Added
+- **Smart Package Search**: Install Packages section now detects already installed packages
+  - When searching for a package that is already installed, shows "Uninstall" button instead of "Install"
+  - Confirmation dialog before uninstalling with "Are you sure..." message
+  - "Go Back" button to return to search results without action
+- **Improved Install Packages UX**: Click anywhere on the "Install Packages" header to expand/collapse
+  - No longer limited to clicking only the chevron icon
+  - Better visual feedback with hover state
+
+### Changed
+- **Uninstall Button Styling**: Red color now matches VS Code's error theme color
+  - More consistent with VS Code's design language
+  - Adapts to user's color theme automatically
+
 ## [0.8.0] - 2026-03-02
 
 ### Changed
