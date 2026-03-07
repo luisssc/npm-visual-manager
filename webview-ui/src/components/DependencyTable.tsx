@@ -1,5 +1,5 @@
-import { useState, useMemo, ReactNode } from 'react';
-import { Dependency, SemverUpdateType, ColumnConfig, UpdateHistory } from '../types';
+import { useState, useMemo, ReactNode, useEffect } from 'react';
+import type { Dependency, SemverUpdateType, ColumnConfig, UpdateHistory } from '../../../types';
 import './DependencyTable.css';
 
 const Tooltip = ({ text, children }: { text: string; children: ReactNode }) => (
@@ -83,6 +83,23 @@ export const DependencyTable = ({
   const [confirmUpdateAll, setConfirmUpdateAll] = useState<Dependency[] | null>(null);
   const [confirmUpdateSelected, setConfirmUpdateSelected] = useState<Dependency[] | null>(null);
   const [confirmIgnore, setConfirmIgnore] = useState<{ name: string; isIgnored: boolean } | null>(null);
+
+  // Clear selection for packages that are no longer in the dependencies list (e.g. after uninstall)
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setSelectedPackages(prev => {
+      let changed = false;
+      const next = new Set<string>();
+      for (const p of prev) {
+        if (dependencies.some(d => d.name === p)) {
+          next.add(p);
+        } else {
+          changed = true;
+        }
+      }
+      return changed ? next : prev;
+    });
+  }, [dependencies]);
 
   const handleSort = (column: SortColumn) => {
     if (sortColumn === column) {
@@ -177,43 +194,43 @@ export const DependencyTable = ({
     setConfirmUpdateAll(null);
   };
 
-  const sortDeps = (result: Dependency[]) => {
-    return result.sort((a, b) => {
-      // If showing all packages, always show updates at the top
-      if (showAllPackages) {
-        const aUpdate = a.updateAvailable ? 1 : 0;
-        const bUpdate = b.updateAvailable ? 1 : 0;
-        if (aUpdate !== bUpdate) {
-          return bUpdate - aUpdate;
-        }
-      }
-
-      let comparison = 0;
-      switch (sortColumn) {
-        case 'name':
-          comparison = a.name.localeCompare(b.name);
-          break;
-        case 'installedVersion':
-          comparison = a.declaredVersion.localeCompare(b.declaredVersion);
-          break;
-        case 'latestVersion':
-          comparison = (a.latestVersion || '').localeCompare(b.latestVersion || '');
-          break;
-        case 'type':
-          comparison = a.type.localeCompare(b.type);
-          break;
-        case 'size':
-          comparison = (a.size || '').localeCompare(b.size || '');
-          break;
-        case 'lastPublishDate':
-          comparison = (a.lastPublishDate || '').localeCompare(b.lastPublishDate || '');
-          break;
-      }
-      return sortDirection === 'asc' ? comparison : -comparison;
-    });
-  };
-
   const { sortedAndFilteredDeps, ignoredDeps } = useMemo(() => {
+    const sortDepsInternal = (result: Dependency[]) => {
+      return result.sort((a, b) => {
+        // If showing all packages, always show updates at the top
+        if (showAllPackages) {
+          const aUpdate = a.updateAvailable ? 1 : 0;
+          const bUpdate = b.updateAvailable ? 1 : 0;
+          if (aUpdate !== bUpdate) {
+            return bUpdate - aUpdate;
+          }
+        }
+
+        let comparison = 0;
+        switch (sortColumn) {
+          case 'name':
+            comparison = a.name.localeCompare(b.name);
+            break;
+          case 'installedVersion':
+            comparison = a.declaredVersion.localeCompare(b.declaredVersion);
+            break;
+          case 'latestVersion':
+            comparison = (a.latestVersion || '').localeCompare(b.latestVersion || '');
+            break;
+          case 'type':
+            comparison = a.type.localeCompare(b.type);
+            break;
+          case 'size':
+            comparison = (a.size || '').localeCompare(b.size || '');
+            break;
+          case 'lastPublishDate':
+            comparison = (a.lastPublishDate || '').localeCompare(b.lastPublishDate || '');
+            break;
+        }
+        return sortDirection === 'asc' ? comparison : -comparison;
+      });
+    };
+
     let result = [...dependencies];
 
     // Filter by update availability (unless showing all)
@@ -235,8 +252,8 @@ export const DependencyTable = ({
     const ignored = result.filter(d => d.isIgnored);
 
     return {
-      sortedAndFilteredDeps: sortDeps(active),
-      ignoredDeps: sortDeps(ignored)
+      sortedAndFilteredDeps: sortDepsInternal(active),
+      ignoredDeps: sortDepsInternal(ignored)
     };
   }, [dependencies, sortColumn, sortDirection, filter, showAllPackages]);
 
@@ -632,6 +649,15 @@ export const DependencyTable = ({
                 className="modal-btn confirm" 
                 onClick={() => {
                   onUninstall?.(confirmUninstall);
+                  // Remove from selection as well
+                  setSelectedPackages(prev => {
+                    if (prev.has(confirmUninstall)) {
+                      const next = new Set(prev);
+                      next.delete(confirmUninstall);
+                      return next;
+                    }
+                    return prev;
+                  });
                   setConfirmUninstall(null);
                 }}
               >

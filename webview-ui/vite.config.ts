@@ -25,7 +25,8 @@ export default defineConfig({
   },
   resolve: {
     alias: {
-      '@': path.resolve(__dirname, './src')
+      '@': path.resolve(__dirname, './src'),
+      '@shared': path.resolve(__dirname, '../types')
     }
   },
   // No abrir navegador en modo dev (no aplica para webview)

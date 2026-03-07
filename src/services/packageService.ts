@@ -4,7 +4,7 @@
 
 import * as fs from 'fs';
 import * as path from 'path';
-import { PackageJson, Dependency } from '../core/types';
+import type { PackageJson, Dependency } from '../../types';
 import { getPackageSize } from './sizeService';
 import { getInstalledVersion } from './installedVersionService';
 
@@ -105,6 +105,7 @@ async function mapWithConcurrency<T, R>(
   let currentIndex = 0;
 
   const workers = Array.from({ length: Math.min(limit, items.length) }, async () => {
+    // eslint-disable-next-line no-constant-condition
     while (true) {
       const index = currentIndex++;
       if (index >= items.length) {

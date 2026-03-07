@@ -5,20 +5,19 @@
 import * as vscode from 'vscode';
 import * as path from 'path';
 import * as fs from 'fs';
-import { Dependency, WebviewToHostMessage, HostToWebviewMessage, ColumnConfig, UpdateHistory } from './types';
+import type { Dependency, WebviewToHostMessage, HostToWebviewMessage, ColumnConfig, UpdateHistory } from '../../types';
 import { findPackageJson, readPackageJson, extractDependencies } from '../services/packageService';
-import { getPackageDetails, isUpdateAvailable, getSemverUpdateType, setGlobalCache } from '../services/npmService';
+import { getPackageDetails, getSemverUpdateType, setGlobalCache } from '../services/npmService';
 import { getCache, VersionCache } from '../services/cacheService';
-import { getIgnoreService, IgnoreService } from '../services/ignoreService';
+import { getIgnoreService } from '../services/ignoreService';
 import { findAllProjects, Project } from '../services/workspaceService';
 import { runAudit, hasVulnerabilities, getPackageVulnerabilityCount, detectPackageManager, clearAuditCache } from '../services/auditService';
-import { getInstallCommand, getPackageManagerInfo, getUninstallCommand, PackageManager } from '../services/packageManagerService';
 import { getVersions } from '../services/nodeVersionService';
-import { getInstalledVersion, getInstalledVersions } from '../services/installedVersionService';
+import { searchPackages } from '../services/searchService';
 import { clearPackageSizeCache } from '../services/sizeService';
-import { searchPackages, SearchResult } from '../services/searchService';
-import { runCommand } from '../utils/commandRunner';
-import { getNonce } from '../utils/nonce';
+import { PackageManager } from '../services/packageManagerService';
+import { getHtmlForWebview } from './htmlProvider';
+import { PackageOperationsService } from '../services/packageOperationsService';
 
 export class NpmGuiManagerPanel {
   public static currentPanel: NpmGuiManagerPanel | undefined;
@@ -31,6 +30,7 @@ export class NpmGuiManagerPanel {
   private _currentPackageManager: PackageManager = 'npm';
   private _updateHistory: UpdateHistory | null = null;
   private _cache: VersionCache | null = null;
+  private _packageOperationsService: PackageOperationsService;
 
   public static async createOrShow(
     extensionUri: vscode.Uri,
@@ -216,6 +216,13 @@ export class NpmGuiManagerPanel {
     this._projects = projects;
     this._currentProjectPath = NpmGuiManagerPanel._resolveProjectPath(projects, preferredProjectPath);
     
+    // Initialize Package Operations Service
+    this._packageOperationsService = new PackageOperationsService(
+      (msg) => this._sendMessage(msg),
+      () => this._loadDependencies(),
+      (history) => { this._updateHistory = history; }
+    );
+    
     // Initialize cache for this project
     this._initializeCache();
 
@@ -264,26 +271,26 @@ export class NpmGuiManagerPanel {
         await this._toggleIgnorePackage(message.packageName, message.currentVersion);
         break;
 
-      case 'UPDATE_PACKAGE':
-        await this._updatePackage(message.packageName, message.version, message.currentVersion);
+      case 'UPDATE_PACKAGE': {
+        await this._packageOperationsService.updatePackage(message.packageName, message.version, message.currentVersion, this._currentProjectPath, this._currentPackageManager);
         break;
+      }
 
-      case 'UPDATE_ALL_PACKAGES':
-        await this._updateAllPackages(message.packages);
+      case 'UPDATE_ALL_PACKAGES': {
+        await this._packageOperationsService.updateAllPackages(message.packages, this._currentProjectPath, this._currentPackageManager);
         break;
+      }
 
       case 'ROLLBACK_LAST':
-        await this._rollbackLastUpdate();
+        await this._packageOperationsService.rollbackLastUpdate(this._updateHistory, this._currentProjectPath, this._currentPackageManager);
         break;
-
-
 
       case 'SEARCH_PACKAGES':
         await this._searchPackages(message.query);
         break;
 
       case 'INSTALL_NEW_PACKAGE':
-        await this._installNewPackage(message.packageName, message.version, message.isDev);
+        await this._packageOperationsService.installNewPackage(message.packageName, message.version, message.isDev, this._currentProjectPath, this._currentPackageManager);
         break;
 
       case 'OPEN_EXTERNAL':
@@ -292,7 +299,7 @@ export class NpmGuiManagerPanel {
         break;
 
       case 'UNINSTALL_PACKAGE':
-        await this._uninstallPackage(message.packageName);
+        await this._packageOperationsService.uninstallPackage(message.packageName, this._currentProjectPath, this._currentPackageManager);
         break;
     }
   }
@@ -518,126 +525,6 @@ export class NpmGuiManagerPanel {
   }
 
   /**
-   * Update a specific package
-   */
-  private async _updatePackage(packageName: string, version: string, currentVersion?: string): Promise<void> {
-    // Get exact installed version from node_modules before updating
-    const exactVersion = await getInstalledVersion(this._currentProjectPath, packageName);
-    
-    // Save to history before updating (use declared version for rollback)
-    if (currentVersion) {
-      this._updateHistory = {
-        timestamp: Date.now(),
-        packages: [{
-          name: packageName,
-          previousDeclaredVersion: currentVersion,     // e.g. "^5"
-          previousInstalledVersion: exactVersion || currentVersion, // e.g. "5.9.3"
-          newVersion: version
-        }]
-      };
-    }
-
-    this._sendMessage({
-      type: 'PROGRESS',
-      message: `Installing ${packageName}@${version}...`
-    });
-
-    try {
-      const installCmd = getInstallCommand(this._currentPackageManager, packageName, version);
-
-      const result = await runCommand(installCmd, {
-        cwd: this._currentProjectPath,
-        label: `Update ${packageName}@${version}`
-      });
-
-      clearAuditCache(this._currentProjectPath);
-      await this._loadDependencies();
-
-      this._sendMessage({
-        type: 'UPDATE_RESULT',
-        success: result.exitCode === 0,
-        packageName,
-        message: result.exitCode === 0
-          ? `Successfully updated ${packageName}`
-          : `Update finished with exit code ${result.exitCode}`
-      });
-    } catch (error) {
-      this._updateHistory = null; // Clear history on error
-      this._sendMessage({
-        type: 'UPDATE_RESULT',
-        success: false,
-        packageName,
-        message: `Failed to update ${packageName}: ${error instanceof Error ? error.message : String(error)}`
-      });
-    }
-  }
-
-  /**
-   * Update multiple packages at once
-   */
-  private async _updateAllPackages(packages: { name: string; version: string; currentVersion?: string }[]): Promise<void> {
-    if (packages.length === 0) {
-      vscode.window.showInformationMessage('No packages to update');
-      return;
-    }
-
-    const packageList = packages.map(p => `${p.name}@${p.version}`).join(' ');
-
-    // Get exact installed versions from node_modules before updating
-    const packageNames = packages.map(p => p.name);
-    const installedVersions = await getInstalledVersions(this._currentProjectPath, packageNames);
-    
-    // Save to history before updating (use declared versions for rollback)
-    this._updateHistory = {
-      timestamp: Date.now(),
-      packages: packages
-        .filter(p => p.currentVersion)
-        .map(p => ({
-          name: p.name,
-          previousDeclaredVersion: p.currentVersion!,  // e.g. "^5"
-          previousInstalledVersion: installedVersions.get(p.name) || p.currentVersion!,
-          newVersion: p.version
-        }))
-    };
-
-    this._sendMessage({
-      type: 'PROGRESS',
-      message: `Updating ${packages.length} package(s)...`
-    });
-
-    try {
-      const info = getPackageManagerInfo(this._currentPackageManager);
-      const command = `${info.addCommand} ${packageList}`;
-
-      const result = await runCommand(command, {
-        cwd: this._currentProjectPath,
-        label: `Update ${packages.length} package(s)`
-      });
-
-      clearAuditCache(this._currentProjectPath);
-      await this._loadDependencies();
-
-      this._sendMessage({
-        type: 'UPDATE_RESULT',
-        success: result.exitCode === 0,
-        packageName: packages.map(p => p.name).join(', '),
-        message: result.exitCode === 0
-          ? `Successfully updated ${packages.length} package(s)`
-          : `Update finished with exit code ${result.exitCode}`
-      });
-    } catch (error) {
-      this._updateHistory = null; // Clear history on error
-      this._sendMessage({
-        type: 'UPDATE_RESULT',
-        success: false,
-        packageName: packages.map(p => p.name).join(', '),
-        message: `Failed to update packages: ${error instanceof Error ? error.message : String(error)}`
-      });
-      vscode.window.showErrorMessage(`Failed to update packages: ${error instanceof Error ? error.message : String(error)}`);
-    }
-  }
-
-  /**
    * Search packages in npm registry
    */
   private async _searchPackages(query: string): Promise<void> {
@@ -668,180 +555,6 @@ export class NpmGuiManagerPanel {
     }
   }
 
-  /**
-   * Uninstall a package
-   */
-  private async _uninstallPackage(packageName: string): Promise<void> {
-    try {
-      const uninstallCmd = getUninstallCommand(this._currentPackageManager, packageName);
-
-      this._sendMessage({
-        type: 'PROGRESS',
-        message: `Uninstalling ${packageName}...`
-      });
-
-      const result = await runCommand(uninstallCmd, {
-        cwd: this._currentProjectPath,
-        label: `Uninstall ${packageName}`
-      });
-
-      await this._loadDependencies();
-
-      this._sendMessage({
-        type: 'UNINSTALL_RESULT',
-        packageName,
-        success: result.exitCode === 0,
-        message: result.exitCode === 0
-          ? `Successfully uninstalled ${packageName}`
-          : `Uninstall finished with exit code ${result.exitCode}`
-      });
-    } catch (error) {
-      this._sendMessage({
-        type: 'UNINSTALL_RESULT',
-        packageName,
-        success: false,
-        message: `Failed to uninstall ${packageName}: ${error instanceof Error ? error.message : String(error)}`
-      });
-      vscode.window.showErrorMessage(`Failed to uninstall package: ${error instanceof Error ? error.message : String(error)}`);
-    }
-  }
-
-  /**
-   * Install a new package
-   */
-  private async _installNewPackage(packageName: string, version: string, isDev: boolean): Promise<void> {
-    try {
-      const info = getPackageManagerInfo(this._currentPackageManager);
-      const devFlag = isDev ? info.devFlag || '--save-dev' : '';
-      const versionSuffix = version ? `@${version}` : '';
-      const command = `${info.addCommand} ${packageName}${versionSuffix} ${devFlag}`.trim();
-
-      this._sendMessage({
-        type: 'PROGRESS',
-        message: `Installing ${packageName}...`
-      });
-
-      const result = await runCommand(command, {
-        cwd: this._currentProjectPath,
-        label: `Install ${packageName}${versionSuffix}`
-      });
-
-      await this._loadDependencies();
-
-      this._sendMessage({
-        type: 'UPDATE_RESULT',
-        success: result.exitCode === 0,
-        packageName,
-        message: result.exitCode === 0
-          ? `Successfully installed ${packageName}`
-          : `Install finished with exit code ${result.exitCode}`
-      });
-    } catch (error) {
-      vscode.window.showErrorMessage(`Failed to install package: ${error instanceof Error ? error.message : String(error)}`);
-    }
-  }
-
-  /**
-   * Rollback the last update operation
-   */
-  private async _rollbackLastUpdate(): Promise<void> {
-    if (!this._updateHistory || this._updateHistory.packages.length === 0) {
-      this._sendMessage({
-        type: 'ROLLBACK_RESULT',
-        success: false,
-        message: 'No previous update to rollback'
-      });
-      return;
-    }
-
-    const packagesToRollback = this._updateHistory.packages;
-    const packageList = packagesToRollback.map(p => `${p.name}@${p.previousDeclaredVersion}`).join(', ');
-    
-    const result = await vscode.window.showWarningMessage(
-      `Rollback ${packagesToRollback.length} package(s) to previous versions?\n\n${packageList}`,
-      { modal: true },
-      'Rollback',
-      'Cancel'
-    );
-
-    if (result !== 'Rollback') {
-      return;
-    }
-
-    this._sendMessage({
-      type: 'PROGRESS',
-      message: `Rolling back ${packagesToRollback.length} package(s)...`
-    });
-
-    try {
-      const info = getPackageManagerInfo(this._currentPackageManager);
-      
-      // Install using the EXACT installed version to get the right package
-      // We'll restore the declared version in package.json after
-      const installArgs = packagesToRollback
-        .map(p => `"${p.name}@${p.previousInstalledVersion}"`)
-        .join(' ');
-      const command = `${info.addCommand} ${installArgs}`;
-
-      await runCommand(command, {
-        cwd: this._currentProjectPath,
-        label: `Rollback ${packagesToRollback.length} package(s)`
-      });
-
-      clearAuditCache(this._currentProjectPath);
-      await this._restorePackageJsonVersions(packagesToRollback);
-      await this._loadDependencies();
-
-      // Clear history after successful rollback
-      const rolledBackPackages = packagesToRollback.map(p => p.name);
-      this._updateHistory = null;
-
-      this._sendMessage({
-        type: 'ROLLBACK_RESULT',
-        success: true,
-        message: `Successfully rolled back ${packagesToRollback.length} package(s)`,
-        rolledBackPackages
-      });
-    } catch (error) {
-      this._sendMessage({
-        type: 'ROLLBACK_RESULT',
-        success: false,
-        message: `Failed to rollback: ${error instanceof Error ? error.message : String(error)}`
-      });
-    }
-  }
-
-  /**
-   * Restore declared versions in package.json after rollback
-   * This preserves the original format (^, ~, exact versions, etc.)
-   */
-  private async _restorePackageJsonVersions(
-    packages: Array<{ name: string; previousDeclaredVersion: string; previousInstalledVersion: string; newVersion: string }>
-  ): Promise<void> {
-    try {
-      const packageJsonPath = path.join(this._currentProjectPath, 'package.json');
-      const content = await fs.promises.readFile(packageJsonPath, 'utf-8');
-      const pkg = JSON.parse(content);
-
-      for (const { name, previousDeclaredVersion } of packages) {
-        // Find which dependency type this package is in
-        if (pkg.dependencies && name in pkg.dependencies) {
-          pkg.dependencies[name] = previousDeclaredVersion;
-        } else if (pkg.devDependencies && name in pkg.devDependencies) {
-          pkg.devDependencies[name] = previousDeclaredVersion;
-        } else if (pkg.peerDependencies && name in pkg.peerDependencies) {
-          pkg.peerDependencies[name] = previousDeclaredVersion;
-        }
-      }
-
-      // Write back with proper formatting
-      await fs.promises.writeFile(packageJsonPath, JSON.stringify(pkg, null, 2) + '\n');
-    } catch (error) {
-      console.error('[npm-visual-manager] Failed to restore package.json versions:', error);
-      // Don't throw - the rollback technically succeeded, just package.json wasn't restored
-    }
-  }
-
 
 
   /**
@@ -855,37 +568,7 @@ export class NpmGuiManagerPanel {
    * Update the Webview HTML content
    */
   private _update(): void {
-    this._panel.webview.html = this._getHtmlForWebview();
-  }
-
-  /**
-   * Generate the HTML for the Webview
-   */
-  private _getHtmlForWebview(): string {
-    const webview = this._panel.webview;
-    const scriptPath = vscode.Uri.joinPath(this._extensionUri, 'out', 'webview', 'assets', 'index.js');
-    const cssPath = vscode.Uri.joinPath(this._extensionUri, 'out', 'webview', 'assets', 'index.css');
-
-    const scriptUri = webview.asWebviewUri(scriptPath);
-    const cssUri = webview.asWebviewUri(cssPath);
-    const cacheBuster = Date.now();
-
-    const nonce = getNonce();
-
-    return `<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'nonce-${nonce}'; style-src ${webview.cspSource} 'unsafe-inline'; font-src ${webview.cspSource}; connect-src https:;">
-  <title>NPM Package Manager</title>
-  <link rel="stylesheet" href="${cssUri}?v=${cacheBuster}">
-</head>
-<body>
-  <div id="root"></div>
-  <script nonce="${nonce}" src="${scriptUri}?v=${cacheBuster}"></script>
-</body>
-</html>`;
+    this._panel.webview.html = getHtmlForWebview(this._panel.webview, this._extensionUri);
   }
 
   public dispose(): void {

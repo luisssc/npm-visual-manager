@@ -1,5 +1,5 @@
 import { useEffect, useRef, useCallback, useState } from 'react';
-import { WebviewToHostMessage, HostToWebviewMessage, Dependency } from '../types';
+import type { WebviewToHostMessage, HostToWebviewMessage, Dependency } from '../../../types';
 
 // Type for the VS Code API acquired via acquireVsCodeApi
 type VSCodeApi = {
@@ -86,7 +86,7 @@ export function useVsCodeApi() {
   }, [postMessage]);
 
   return {
-    vscode: vscodeRef.current,
+    get vscode() { return vscodeRef.current; },
     isReady,
     postMessage,
     requestDependencies,

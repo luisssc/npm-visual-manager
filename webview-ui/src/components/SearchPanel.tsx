@@ -1,5 +1,5 @@
 import { memo, useState, useRef, useMemo } from 'react';
-import { SearchResult, Dependency } from '../types';
+import type { SearchResult, Dependency } from '../../../types';
 import './SearchPanel.css';
 
 interface SearchPanelProps {
@@ -215,3 +215,5 @@ export const SearchPanel = memo(({ results, onSearch, onInstall, onUninstall, is
     </div>
   );
 });
+
+SearchPanel.displayName = 'SearchPanel';

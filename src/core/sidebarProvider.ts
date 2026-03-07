@@ -17,7 +17,7 @@ export class NpmDependenciesProvider implements vscode.WebviewViewProvider {
 
   public resolveWebviewView(
     webviewView: vscode.WebviewView,
-    context: vscode.WebviewViewResolveContext,
+    _context: vscode.WebviewViewResolveContext,
     _token: vscode.CancellationToken
   ): void {
     this._view = webviewView;
@@ -38,7 +38,7 @@ export class NpmDependenciesProvider implements vscode.WebviewViewProvider {
     );
   }
 
-  private _getHtmlForWebview(webview: vscode.Webview): string {
+  private _getHtmlForWebview(_webview: vscode.Webview): string {
     const nonce = getNonce();
 
     return `<!DOCTYPE html>

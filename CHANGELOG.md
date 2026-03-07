@@ -13,6 +13,9 @@ All notable changes to the "npm-visual-manager" extension will be documented in 
   - The dependency table only reloads after the command has completed, ensuring accurate data
 - **Code quality**: Standardized all code comments from Spanish to English for consistency
 - **Code deduplication**: Extracted shared `getNonce()` utility to `src/utils/nonce.ts` (was duplicated in webviewPanel.ts and sidebarProvider.ts)
+- **Type deduction**: Eliminated duplicated types between host and webview by creating a shared `types/` directory at the project root.
+- **Improved UX**: Removed the duplicated `isUpdateAvailable` logic from the frontend to seamlessly use the backend's explicit semver types.
+- **Code quality**: Added ESLint with `@typescript-eslint` plugin on both the root extension package and the frontend `webview-ui` package, running correctly without errors.
 
 ### Added
 - New `src/utils/commandRunner.ts` utility for executing shell commands with real-time output streaming

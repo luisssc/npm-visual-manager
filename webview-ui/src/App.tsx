@@ -2,7 +2,7 @@ import { useState, useCallback, useEffect, useRef } from 'react';
 import { DependencyTable } from './components/DependencyTable';
 import { SearchPanel } from './components/SearchPanel';
 import { useVsCodeApi, useVsCodeMessages } from './hooks/useVsCodeApi';
-import { Dependency, HostToWebviewMessage, ColumnConfig, ProjectInfo, PackageManager, VersionInfo, UpdateHistory } from './types';
+import type { Dependency, HostToWebviewMessage, ColumnConfig, ProjectInfo, PackageManager, VersionInfo, UpdateHistory, SearchResult } from '../../types';
 import './App.css';
 
 function App() {
@@ -28,7 +28,7 @@ function App() {
   const [lastUpdate, setLastUpdate] = useState<UpdateHistory | null>(null);
   const [rollbackMessage, setRollbackMessage] = useState<string | null>(null);
   const cacheInfoRef = useRef<{ fromCache: boolean; age?: number } | null>(null);
-  const [searchResults, setSearchResults] = useState<any[]>([]);
+  const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
   const [isSearching, setIsSearching] = useState(false);
 
   // Handle messages from Extension Host
@@ -68,7 +68,7 @@ function App() {
               ? {
                   ...dep,
                   latestVersion: message.latestVersion,
-                  updateAvailable: isUpdateAvailable(dep.declaredVersion, message.latestVersion),
+                  updateAvailable: !!message.semverUpdateType && message.semverUpdateType !== 'none' && message.semverUpdateType !== 'unknown',
                   semverUpdateType: message.semverUpdateType,
                   lastPublishDate: message.lastPublishDate,
                   isDeprecated: message.isDeprecated,
@@ -106,21 +106,17 @@ function App() {
 
       case 'UPDATE_RESULT':
         setProgressMessage(null);
-        if (!message.success) {
-          setError(message.message);
-        } else {
-          // Reload dependencies after successful update
-          setTimeout(() => {
-            requestDependencies();
-          }, 2000);
-        }
+        requestDependencies();
+        break;
+
+      case 'UNINSTALL_RESULT':
+        setProgressMessage(null);
+        requestDependencies();
         break;
 
       case 'ROLLBACK_RESULT':
         setProgressMessage(null);
-        if (!message.success) {
-          setError(message.message);
-        } else {
+        if (message.success) {
           setLastUpdate(null);
           setRollbackMessage(message.message);
           setTimeout(() => setRollbackMessage(null), 5000);
@@ -131,12 +127,16 @@ function App() {
         setProgressMessage(message.message);
         break;
 
+      case 'INSTALL_RESULT':
+        setProgressMessage(null);
+        break;
+
       case 'ERROR':
         setError(message.message);
         setIsLoading(false);
         break;
     }
-  }, []);
+  }, [requestDependencies]);
 
   useVsCodeMessages(handleMessage);
 
@@ -147,25 +147,7 @@ function App() {
     }
   }, [isReady, requestDependencies]);
 
-  // Helper function to compare semver versions
-  function isUpdateAvailable(installed: string, latest: string): boolean {
-    const clean = (v: string) => v.replace(/^[\^~>=<]+/, '');
-    const cleanInstalled = clean(installed);
-    const cleanLatest = clean(latest);
-    
-    // Numeric semver comparison (not string comparison)
-    const parseVersion = (v: string): number[] => v.split('.').map(Number);
-    const installedParts = parseVersion(cleanInstalled);
-    const latestParts = parseVersion(cleanLatest);
-    
-    for (let i = 0; i < Math.max(installedParts.length, latestParts.length); i++) {
-      const inst = installedParts[i] || 0;
-      const lat = latestParts[i] || 0;
-      if (lat > inst) {return true;}
-      if (lat < inst) {return false;}
-    }
-    return false; // They are equal
-  }
+
 
   const handleUpdatePackage = (packageName: string, version: string, currentVersion?: string) => {
     updatePackage(packageName, version, currentVersion);

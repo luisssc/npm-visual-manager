@@ -103,7 +103,7 @@ export class VersionCache {
    */
   get(packageName: string): CacheEntry | null {
     const entry = this.cache.entries[packageName];
-    if (!entry) return null;
+    if (!entry) {return null;}
 
     // Check TTL
     const age = Date.now() - entry.timestamp;
@@ -126,7 +126,7 @@ export class VersionCache {
    */
   isStale(packageName: string): boolean {
     const entry = this.cache.entries[packageName];
-    if (!entry) return false;
+    if (!entry) {return false;}
     
     const age = Date.now() - entry.timestamp;
     return age > this.ttlMs;
@@ -147,7 +147,7 @@ export class VersionCache {
    */
   getAgeHours(packageName: string): number | null {
     const entry = this.cache.entries[packageName];
-    if (!entry) return null;
+    if (!entry) {return null;}
     
     const age = Date.now() - entry.timestamp;
     return Math.round(age / (60 * 60 * 1000) * 10) / 10;

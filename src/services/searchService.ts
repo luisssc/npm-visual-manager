@@ -58,6 +58,7 @@ export function searchPackages(query: string, limit: number = 20): Promise<Searc
     const req = https.get(url, {
       headers: {
         'Accept': 'application/json',
+        // eslint-disable-next-line @typescript-eslint/naming-convention
         'User-Agent': 'npm-visual-manager-vscode-extension'
       },
       timeout: 10000
@@ -115,7 +116,7 @@ export function searchPackages(query: string, limit: number = 20): Promise<Searc
  * Format download count for display
  */
 export function formatDownloads(weekly?: number): string {
-  if (!weekly) return '-';
+  if (!weekly) {return '-';}
   
   if (weekly >= 1000000) {
     return `${(weekly / 1000000).toFixed(1)}M`;
