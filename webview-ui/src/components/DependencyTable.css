@@ -338,7 +338,7 @@
 }
 
 .date-col {
-  width: 100px;
+  width: 70px;
 }
 
 .security-col {
@@ -351,11 +351,12 @@
 }
 
 .action-col {
-  width: 80px;
+  width: 160px;
   text-align: center !important;
 }
 
 .action-cell {
+  width: 160px;
   text-align: center !important;
 }
 
@@ -591,9 +592,12 @@
 /* Action buttons */
 .action-buttons {
   display: flex;
-  gap: 4px;
   align-items: center;
   justify-content: center;
+  position: relative;
+  min-height: 28px;
+  width: 100%;
+  padding: 0 4px;
 }
 
 .ignore-btn {
@@ -604,8 +608,13 @@
   padding: 4px;
   border-radius: 3px;
   font-size: 12px;
+  position: absolute;
+  right: 4px;
+  top: 50%;
+  transform: translateY(-50%);
   opacity: 0;
   transition: opacity 0.2s, background 0.2s;
+  z-index: 2;
 }
 
 tr:hover .ignore-btn {
@@ -630,13 +639,18 @@ tr:hover .ignore-btn {
   padding: 4px;
   border-radius: 3px;
   font-size: 12px;
-  display: inline-flex;
+  position: absolute;
+  left: 4px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
   align-items: center;
   justify-content: center;
   opacity: 0;
   transition: opacity 0.2s, background 0.2s;
   width: 24px;
   height: 24px;
+  z-index: 2;
 }
 
 tr:hover .changelog-btn,
@@ -657,7 +671,11 @@ tr:hover .changelog-btn,
   padding: 4px;
   border-radius: 3px;
   font-size: 12px;
-  display: inline-flex;
+  position: absolute;
+  right: 32px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
   align-items: center;
   justify-content: center;
   width: 24px;
@@ -665,6 +683,7 @@ tr:hover .changelog-btn,
   opacity: 0;
   transition: opacity 0.2s, background 0.2s;
   pointer-events: auto;
+  z-index: 2;
 }
 
 tr:hover .uninstall-btn,

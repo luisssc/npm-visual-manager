@@ -45,8 +45,17 @@ export interface SearchResponse {
 /**
  * Search packages in npm registry
  */
-export function searchPackages(query: string, limit: number = 20): Promise<SearchResult[]> {
+export function searchPackages(
+  query: string, 
+  limit: number = 20, 
+  signal?: AbortSignal
+): Promise<SearchResult[]> {
   return new Promise((resolve, reject) => {
+    if (signal?.aborted) {
+      resolve([]);
+      return;
+    }
+
     if (!query.trim()) {
       resolve([]);
       return;
@@ -70,6 +79,11 @@ export function searchPackages(query: string, limit: number = 20): Promise<Searc
       });
 
       res.on('end', () => {
+        if (signal?.aborted) {
+          resolve([]);
+          return;
+        }
+
         try {
           if (res.statusCode === 200) {
             const response: SearchResponse = JSON.parse(data);
@@ -101,8 +115,19 @@ export function searchPackages(query: string, limit: number = 20): Promise<Searc
       });
     });
 
+    if (signal) {
+      signal.addEventListener('abort', () => {
+        req.destroy();
+        resolve([]);
+      }, { once: true });
+    }
+
     req.on('error', (error) => {
-      reject(new Error(`Search request failed: ${error.message}`));
+      if (signal?.aborted) {
+        resolve([]);
+      } else {
+        reject(new Error(`Search request failed: ${error.message}`));
+      }
     });
 
     req.on('timeout', () => {

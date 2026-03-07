@@ -31,6 +31,9 @@ export class NpmGuiManagerPanel {
   private _updateHistory: UpdateHistory | null = null;
   private _cache: VersionCache | null = null;
   private _packageOperationsService: PackageOperationsService;
+  private _searchAbortController: AbortController | null = null;
+  private _fileWatcher: vscode.FileSystemWatcher | undefined;
+  private _fileWatcherDebounce: NodeJS.Timeout | undefined;
 
   public static async createOrShow(
     extensionUri: vscode.Uri,
@@ -244,6 +247,38 @@ export class NpmGuiManagerPanel {
       null,
       this._disposables
     );
+
+    // Initialize file watcher for package.json changes
+    this._initFileWatcher();
+  }
+
+  private _initFileWatcher(): void {
+    // Watch for package.json changes in the entire workspace
+    this._fileWatcher = vscode.workspace.createFileSystemWatcher('**/package.json');
+    
+    this._fileWatcher.onDidChange((uri) => this._onFileChanged(uri), null, this._disposables);
+    this._fileWatcher.onDidCreate((uri) => this._onFileChanged(uri), null, this._disposables);
+    this._fileWatcher.onDidDelete((uri) => this._onFileChanged(uri), null, this._disposables);
+    
+    this._disposables.push(this._fileWatcher);
+  }
+
+  private _onFileChanged(uri: vscode.Uri): void {
+    const changedPath = path.dirname(uri.fsPath);
+    const normalizedChanged = NpmGuiManagerPanel._normalizePath(changedPath);
+    const normalizedCurrent = NpmGuiManagerPanel._normalizePath(this._currentProjectPath);
+
+    // Only reload if the changed package.json is in the current project
+    if (normalizedChanged === normalizedCurrent) {
+      if (this._fileWatcherDebounce) {
+        clearTimeout(this._fileWatcherDebounce);
+      }
+
+      this._fileWatcherDebounce = setTimeout(() => {
+        console.log('package.json changed, auto-refreshing...');
+        this._loadDependencies();
+      }, 500); // 500ms debounce
+    }
   }
 
   /**
@@ -528,14 +563,37 @@ export class NpmGuiManagerPanel {
    * Search packages in npm registry
    */
   private async _searchPackages(query: string): Promise<void> {
+    // Abort previous search if it's still running
+    if (this._searchAbortController) {
+      this._searchAbortController.abort();
+    }
+
+    if (!query.trim()) {
+      this._sendMessage({
+        type: 'SEARCH_RESULTS',
+        results: []
+      });
+      return;
+    }
+
+    // Create new abort controller for this search
+    this._searchAbortController = new AbortController();
+    const signal = this._searchAbortController.signal;
+
     try {
       this._sendMessage({
         type: 'PROGRESS',
         message: `Searching for "${query}"...`
       });
       
-      const results = await searchPackages(query, 20);
+      const results = await searchPackages(query, 20, signal);
       
+      // If signal was aborted, results will be empty or searchPackages handled it.
+      // But we double check here to avoid updating UI with stale data if necessary.
+      if (signal.aborted) {
+        return;
+      }
+
       this._sendMessage({
         type: 'SEARCH_RESULTS',
         results
@@ -545,13 +603,21 @@ export class NpmGuiManagerPanel {
         type: 'PROGRESS',
         message: null as any
       });
-    } catch (error) {
+    } catch (error: any) {
+      if (signal.aborted) {
+        return;
+      }
+
       console.error('Search failed:', error);
       this._sendMessage({
         type: 'SEARCH_RESULTS',
         results: []
       });
       vscode.window.showErrorMessage(`Search failed: ${error instanceof Error ? error.message : String(error)}`);
+    } finally {
+      if (this._searchAbortController?.signal === signal) {
+        this._searchAbortController = null;
+      }
     }
   }
 
@@ -573,6 +639,10 @@ export class NpmGuiManagerPanel {
 
   public dispose(): void {
     NpmGuiManagerPanel.currentPanel = undefined;
+
+    if (this._fileWatcherDebounce) {
+      clearTimeout(this._fileWatcherDebounce);
+    }
 
     this._panel.dispose();
 
