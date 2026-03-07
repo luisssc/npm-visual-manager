@@ -21,23 +21,16 @@ One-click updates for individual packages with automatic version checking.
 
 ## Features
 
-- 📊 **Visual Dependency Table**: View all dependencies (production, development, and peer) in a clean, sortable table
-- 🔍 **Search & Install Packages**: Search NPM registry and install new packages directly from the UI
-- 👁️ **Ignore Packages**: Exclude packages from update checks with a click
-- 📖 **Changelog Viewer**: Click the book icon to view package releases on GitHub
-- ⚠️ **Version Mismatch Detection**: Visual indicator when installed version differs from package.json
-- 🔄 **Version Checking**: Automatically checks for latest versions from the NPM registry
-- ⬆️ **One-Click Updates**: Update individual packages or all outdated packages at once
-- 🗑️ **Uninstall Packages**: Remove packages with one click (with confirmation)
-- 🛡️ **Security Audit**: Shows vulnerability counts from `npm audit`
-- ↩️ **Rollback Support**: Restore previous versions if an update breaks something
-- 🏢 **Multi-Project**: Detects all package.json files in monorepos
-- 📦 **Multiple Package Managers**: Auto-detects and uses npm, yarn, pnpm, or bun
-- 📏 **Package Size**: Shows estimated package sizes
-- 🏷️ **Semver Badges**: Visual indicators for MAJOR, MINOR, and PATCH updates
-- 🔍 **Filtering & Search**: Filter by dependency type and search by package name
-- 🎨 **Theme-Aware UI**: Uses VS Code's native CSS variables for seamless integration
-- ⚡ **Fast & Lightweight**: Built with React and Vite for optimal performance
+- **Dependency Management**: View production, development, and peer dependencies in a clean, sortable table.
+- **Search & Install**: Integrated NPM registry search to install new packages directly from the UI.
+- **Auto-Refresh**: Automatic UI reload when `package.json` is modified manually.
+- **Robust Searching**: Real-time search with intelligent debouncing and request cancellation to prevent race conditions.
+- **Changelog Viewer**: Direct links to GitHub releases for every package.
+- **One-Click Operations**: Bulk or individual updates, uninstalls, and version rollbacks.
+- **Multi-Project Support**: Auto-detects all project folders in monorepos.
+- **Compatibility**: Supports npm, yarn, pnpm, and bun with automatic detection.
+- **Security & Info**: Integrated security audit data, package sizes, and deprecation warnings.
+- **Professional Integration**: Theme-aware UI using native VS Code styles and robust ESLint-verified code.
 
 ## Requirements
 
@@ -100,102 +93,28 @@ Hover over any package row and click the book icon 📖 to open the package's Gi
 ```
 npm-visual-manager/
 ├── src/                          # Extension Host (Node.js)
-│   ├── core/                     # Core functionality
-│   │   ├── extension.ts          # Entry point
-│   │   ├── webviewPanel.ts       # Webview panel management
-│   │   └── types.ts              # Shared types
-│   ├── services/                 # Business logic
-│   │   ├── npmService.ts         # NPM registry API
-│   │   ├── searchService.ts      # Package search API
-│   │   ├── packageService.ts     # package.json operations
-│   │   └── packageManagerService.ts  # Package manager commands
-│   └── utils/                    # Utilities
-│       ├── commandRunner.ts      # Shell command execution
-│       └── nonce.ts              # CSP nonce generation
-├── webview-ui/                   # React Application
-│   ├── src/
-│   │   ├── components/           # React components
-│   │   ├── hooks/                # Custom hooks
-│   │   ├── App.tsx               # Main component
-│   │   └── main.tsx              # Entry point
-│   ├── index.html
-│   ├── package.json
-│   ├── tsconfig.json
-│   └── vite.config.ts
+├── webview-ui/                   # React Application (Vite)
+├── types/                        # Shared types between Host and Webview
 ├── out/                          # Compiled output
-│   ├── extension.js              # Compiled extension
-│   └── webview/                  # Built React app
-│       └── assets/
-├── resources/                    # Icons and assets
-└── package.json                  # Extension manifest
+└── resources/                    # Icons and assets
 ```
-
-## Development
-
-### Project Structure
-
-- **Extension Host** (`src/`): Handles VS Code API, file system operations, and NPM registry communication
-- **Webview UI** (`webview-ui/`): React application running inside the webview panel
-- **Communication**: Uses `acquireVsCodeApi()` for bidirectional message passing
-
-### Available Scripts
-
-```bash
-# Install all dependencies
-npm run install:all
-
-# Build everything for production
-npm run vscode:prepublish
-
-# Build webview in development mode
-npm run build:webview:dev
-
-# Watch TypeScript compilation
-npm run watch
-```
-
-### Message Protocol
-
-**Webview → Host:**
-- `GET_DEPENDENCIES`: Request package.json dependencies
-- `CHECK_UPDATES`: Request version check for dependencies
-- `UPDATE_PACKAGE`: Request single package update
-- `UPDATE_ALL_PACKAGES`: Request batch update
-- `SEARCH_PACKAGES`: Search NPM registry for packages
-- `INSTALL_NEW_PACKAGE`: Install a new dependency
-- `TOGGLE_IGNORE_PACKAGE`: Toggle ignore status for a package
-- `REFRESH_CACHE`: Clear version cache
-
-**Host → Webview:**
-- `DEPENDENCIES_DATA`: Send dependency list
-- `VERSION_CHECK_RESULT`: Send latest version for a package
-- `UPDATE_RESULT`: Confirm update initiation
-- `SEARCH_RESULTS`: Send package search results
-- `IGNORE_TOGGLED`: Confirm ignore status change
-- `CACHE_CLEARED`: Confirm cache cleared
-- `PROGRESS`: Show progress message
-- `ERROR`: Report errors
 
 ## Extension Settings
 
 This extension contributes the following settings:
 
-- `npm-visual-manager.columns.size`: Show Size column (default: true)
-- `npm-visual-manager.columns.type`: Show Type column (default: false)
-- `npm-visual-manager.columns.lastUpdate`: Show Last Update column (default: true)
-- `npm-visual-manager.columns.security`: Show Security column (default: true)
-- `npm-visual-manager.columns.semverUpdate`: Show Update Type column (default: true)
+- `npm-visual-manager.columns.size`: Show Size column
+- `npm-visual-manager.columns.type`: Show Type column
+- `npm-visual-manager.columns.lastUpdate`: Show Last Update column
+- `npm-visual-manager.columns.security`: Show Security column
+- `npm-visual-manager.columns.semverUpdate`: Show Update Type column
 
-## Known Issues
 
-- Large projects with many dependencies may take time to check all versions
 
 ## Roadmap
 
-- [x] ~~Install new packages via search interface~~ ✅ Added in v0.4.0
 - [ ] Export dependency report
 - [ ] Dependency usage analysis (find unused packages)
-- [ ] Changelog preview before updating
 
 ## Contributing
 

@@ -15,7 +15,11 @@ All notable changes to the "npm-visual-manager" extension will be documented in 
 - **Code deduplication**: Extracted shared `getNonce()` utility to `src/utils/nonce.ts` (was duplicated in webviewPanel.ts and sidebarProvider.ts)
 - **Type deduction**: Eliminated duplicated types between host and webview by creating a shared `types/` directory at the project root.
 - **Improved UX**: Removed the duplicated `isUpdateAvailable` logic from the frontend to seamlessly use the backend's explicit semver types.
-- **Code quality**: Added ESLint with `@typescript-eslint` plugin on both the root extension package and the frontend `webview-ui` package, running correctly without errors.
+- **Code quality**: Added ESLint with `@typescript-eslint` plugin on both the root extension package and the frontend `webview-ui` package.
+- **Robust Error Handling**: Replaced global webview error screens with native VS Code notifications for operation failures, ensuring the UI remains responsive even if `npm` commands fail.
+- **Search Debounce & Cancellation**: Implemented `AbortSignal` for package search. Fast typing now cancels previous requests in the backend, preventing race conditions and unnecessary network traffic.
+- **FileWatcher Auto-Refresh**: Added a `FileSystemWatcher` for `package.json`. The UI now automatically reloads when manual edits are detected in the project files.
+- **UI Alignment Polish**: Refined the "Action" column styling to perfectly center the primary action button while neatly tucking secondary controls into absolute-positioned side slots, eliminating layout jitter on hover.
 
 ### Added
 - New `src/utils/commandRunner.ts` utility for executing shell commands with real-time output streaming
