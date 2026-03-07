@@ -15,9 +15,10 @@ import { runAudit, hasVulnerabilities, getPackageVulnerabilityCount, detectPacka
 import { getInstallCommand, getPackageManagerInfo, getUninstallCommand, PackageManager } from '../services/packageManagerService';
 import { getVersions } from '../services/nodeVersionService';
 import { getInstalledVersion, getInstalledVersions } from '../services/installedVersionService';
-
 import { clearPackageSizeCache } from '../services/sizeService';
 import { searchPackages, SearchResult } from '../services/searchService';
+import { runCommand } from '../utils/commandRunner';
+import { getNonce } from '../utils/nonce';
 
 export class NpmGuiManagerPanel {
   public static currentPanel: NpmGuiManagerPanel | undefined;
@@ -53,7 +54,7 @@ export class NpmGuiManagerPanel {
       return;
     }
 
-    // Si ya existe un panel, mostrarlo y actualizar proyectos
+    // If panel already exists, show it and update projects
     if (NpmGuiManagerPanel.currentPanel) {
       NpmGuiManagerPanel.currentPanel._panel.reveal(column);
       NpmGuiManagerPanel.currentPanel._projects = projects;
@@ -76,7 +77,7 @@ export class NpmGuiManagerPanel {
       return;
     }
 
-    // Crear nuevo panel
+    // Create new panel
     const panel = vscode.window.createWebviewPanel(
       'npmGuiManager',
       'NPM Package Manager',
@@ -218,7 +219,7 @@ export class NpmGuiManagerPanel {
     // Initialize cache for this project
     this._initializeCache();
 
-    // Escuchar mensajes del webview
+    // Listen for messages from webview
     this._panel.webview.onDidReceiveMessage(
       async (message: WebviewToHostMessage) => {
         await this._handleMessage(message);
@@ -227,10 +228,10 @@ export class NpmGuiManagerPanel {
       this._disposables
     );
 
-    // Configurar contenido HTML inicial
+    // Set initial HTML content
     this._update();
 
-    // Limpiar cuando se cierra
+    // Clean up when panel is closed
     this._panel.onDidDispose(
       () => this.dispose(),
       null,
@@ -239,7 +240,7 @@ export class NpmGuiManagerPanel {
   }
 
   /**
-   * Maneja los mensajes recibidos del Webview
+   * Handles messages received from the Webview
    */
   private async _handleMessage(message: WebviewToHostMessage): Promise<void> {
     switch (message.type) {
@@ -297,7 +298,7 @@ export class NpmGuiManagerPanel {
   }
 
   /**
-   * Cambia el proyecto actual
+   * Initialize cache for the current project
    */
   private async _initializeCache(): Promise<void> {
     this._cache = getCache(this._currentProjectPath);
@@ -347,7 +348,7 @@ export class NpmGuiManagerPanel {
   }
 
   /**
-   * Muestra un quick pick para seleccionar proyecto
+   * Show a quick pick to select project
    */
   public async showProjectPicker(): Promise<void> {
     const items = this._projects.map(p => ({
@@ -366,7 +367,7 @@ export class NpmGuiManagerPanel {
   }
 
   /**
-   * Carga las dependencias del package.json del proyecto actual
+   * Load dependencies from the current project's package.json
    */
   private async _loadDependencies(): Promise<void> {
     try {
@@ -436,7 +437,7 @@ export class NpmGuiManagerPanel {
       const projectName = currentProject?.name || packageJson.name || 'NPM Package Manager';
       this._panel.title = `NPM: ${projectName}`;
 
-      // Iniciar verificación de actualizaciones en paralelo
+      // Start checking updates in parallel
       await this._checkUpdates(dependencies);
     } catch (error) {
       this._sendMessage({
@@ -470,10 +471,10 @@ export class NpmGuiManagerPanel {
   }
 
   /**
-   * Verifica las actualizaciones disponibles para las dependencias
+   * Check available updates for dependencies
    */
   private async _checkUpdates(dependencies: Dependency[], forceRefresh: boolean = false): Promise<void> {
-    const batchSize = 5; // Procesar en lotes para no saturar
+    const batchSize = 5; // Process in batches to avoid overloading
     const dependenciesToCheck = Array.from(
       new Map(
         dependencies
@@ -517,7 +518,7 @@ export class NpmGuiManagerPanel {
   }
 
   /**
-   * Actualiza un paquete específico
+   * Update a specific package
    */
   private async _updatePackage(packageName: string, version: string, currentVersion?: string): Promise<void> {
     // Get exact installed version from node_modules before updating
@@ -529,8 +530,8 @@ export class NpmGuiManagerPanel {
         timestamp: Date.now(),
         packages: [{
           name: packageName,
-          previousDeclaredVersion: currentVersion,     // ej: "^5"
-          previousInstalledVersion: exactVersion || currentVersion, // ej: "5.9.3"
+          previousDeclaredVersion: currentVersion,     // e.g. "^5"
+          previousInstalledVersion: exactVersion || currentVersion, // e.g. "5.9.3"
           newVersion: version
         }]
       };
@@ -542,28 +543,23 @@ export class NpmGuiManagerPanel {
     });
 
     try {
-      // Use detected package manager
       const installCmd = getInstallCommand(this._currentPackageManager, packageName, version);
-      const terminal = this._getOrCreateTerminal();
-      terminal.show();
-      
-      // Send cd command first (works on all platforms)
-      terminal.sendText(`cd "${this._currentProjectPath}"`, true);
-      // Then send install command
-      terminal.sendText(installCmd, true);
 
-      // Wait for npm to finish and reload dependencies
-      setTimeout(async () => {
-        clearAuditCache(this._currentProjectPath);
+      const result = await runCommand(installCmd, {
+        cwd: this._currentProjectPath,
+        label: `Update ${packageName}@${version}`
+      });
 
-        await this._loadDependencies();
-      }, 5000);
+      clearAuditCache(this._currentProjectPath);
+      await this._loadDependencies();
 
       this._sendMessage({
         type: 'UPDATE_RESULT',
-        success: true,
+        success: result.exitCode === 0,
         packageName,
-        message: `Successfully initiated update for ${packageName}`
+        message: result.exitCode === 0
+          ? `Successfully updated ${packageName}`
+          : `Update finished with exit code ${result.exitCode}`
       });
     } catch (error) {
       this._updateHistory = null; // Clear history on error
@@ -577,7 +573,7 @@ export class NpmGuiManagerPanel {
   }
 
   /**
-   * Actualiza múltiples paquetes
+   * Update multiple packages at once
    */
   private async _updateAllPackages(packages: { name: string; version: string; currentVersion?: string }[]): Promise<void> {
     if (packages.length === 0) {
@@ -598,46 +594,37 @@ export class NpmGuiManagerPanel {
         .filter(p => p.currentVersion)
         .map(p => ({
           name: p.name,
-          previousDeclaredVersion: p.currentVersion!,  // ej: "^5"
+          previousDeclaredVersion: p.currentVersion!,  // e.g. "^5"
           previousInstalledVersion: installedVersions.get(p.name) || p.currentVersion!,
           newVersion: p.version
         }))
     };
 
-    // Mostrar notificación nativa que se cierra automáticamente en 2 segundos
-    vscode.window.withProgress(
-      {
-        location: vscode.ProgressLocation.Notification,
-        title: `Updating ${packages.length} package(s)...`,
-        cancellable: false
-      },
-      () => new Promise(resolve => setTimeout(resolve, 3000))
-    );
+    this._sendMessage({
+      type: 'PROGRESS',
+      message: `Updating ${packages.length} package(s)...`
+    });
 
     try {
-      // Use detected package manager
       const info = getPackageManagerInfo(this._currentPackageManager);
-      const terminal = this._getOrCreateTerminal();
-      terminal.show();
-      
-      // Send cd command first (works on all platforms)
-      terminal.sendText(`cd "${this._currentProjectPath}"`, true);
-      // Then send install command
-      terminal.sendText(`${info.addCommand} ${packageList}`, true);
+      const command = `${info.addCommand} ${packageList}`;
 
-      setTimeout(async () => {
-        clearAuditCache(this._currentProjectPath);
+      const result = await runCommand(command, {
+        cwd: this._currentProjectPath,
+        label: `Update ${packages.length} package(s)`
+      });
 
-        await this._loadDependencies();
+      clearAuditCache(this._currentProjectPath);
+      await this._loadDependencies();
 
-        this._sendMessage({
-          type: 'UPDATE_RESULT',
-          success: true,
-          packageName: packages.map(p => p.name).join(', '),
-          message: `Successfully updated ${packages.length} package(s)`
-        });
-      }, 8000);
-
+      this._sendMessage({
+        type: 'UPDATE_RESULT',
+        success: result.exitCode === 0,
+        packageName: packages.map(p => p.name).join(', '),
+        message: result.exitCode === 0
+          ? `Successfully updated ${packages.length} package(s)`
+          : `Update finished with exit code ${result.exitCode}`
+      });
     } catch (error) {
       this._updateHistory = null; // Clear history on error
       this._sendMessage({
@@ -686,27 +673,28 @@ export class NpmGuiManagerPanel {
    */
   private async _uninstallPackage(packageName: string): Promise<void> {
     try {
-      const terminal = this._getOrCreateTerminal();
-      terminal.show();
-      
       const uninstallCmd = getUninstallCommand(this._currentPackageManager, packageName);
-      
-      // Send cd command first
-      terminal.sendText(`cd "${this._currentProjectPath}"`, true);
-      // Then send uninstall command
-      terminal.sendText(uninstallCmd, true);
+
+      this._sendMessage({
+        type: 'PROGRESS',
+        message: `Uninstalling ${packageName}...`
+      });
+
+      const result = await runCommand(uninstallCmd, {
+        cwd: this._currentProjectPath,
+        label: `Uninstall ${packageName}`
+      });
+
+      await this._loadDependencies();
 
       this._sendMessage({
         type: 'UNINSTALL_RESULT',
         packageName,
-        success: true,
-        message: `Started uninstallation of ${packageName}`
+        success: result.exitCode === 0,
+        message: result.exitCode === 0
+          ? `Successfully uninstalled ${packageName}`
+          : `Uninstall finished with exit code ${result.exitCode}`
       });
-
-      // Wait and reload
-      setTimeout(async () => {
-        await this._loadDependencies();
-      }, 5000);
     } catch (error) {
       this._sendMessage({
         type: 'UNINSTALL_RESULT',
@@ -724,28 +712,30 @@ export class NpmGuiManagerPanel {
   private async _installNewPackage(packageName: string, version: string, isDev: boolean): Promise<void> {
     try {
       const info = getPackageManagerInfo(this._currentPackageManager);
-      const terminal = this._getOrCreateTerminal();
-      terminal.show();
-      
       const devFlag = isDev ? info.devFlag || '--save-dev' : '';
       const versionSuffix = version ? `@${version}` : '';
-      
-      // Send cd command first
-      terminal.sendText(`cd "${this._currentProjectPath}"`, true);
-      // Then send install command
-      terminal.sendText(`${info.addCommand} ${packageName}${versionSuffix} ${devFlag}`.trim(), true);
+      const command = `${info.addCommand} ${packageName}${versionSuffix} ${devFlag}`.trim();
+
+      this._sendMessage({
+        type: 'PROGRESS',
+        message: `Installing ${packageName}...`
+      });
+
+      const result = await runCommand(command, {
+        cwd: this._currentProjectPath,
+        label: `Install ${packageName}${versionSuffix}`
+      });
+
+      await this._loadDependencies();
 
       this._sendMessage({
         type: 'UPDATE_RESULT',
-        success: true,
+        success: result.exitCode === 0,
         packageName,
-        message: `Started installation of ${packageName}`
+        message: result.exitCode === 0
+          ? `Successfully installed ${packageName}`
+          : `Install finished with exit code ${result.exitCode}`
       });
-
-      // Wait and reload
-      setTimeout(async () => {
-        await this._loadDependencies();
-      }, 5000);
     } catch (error) {
       vscode.window.showErrorMessage(`Failed to install package: ${error instanceof Error ? error.message : String(error)}`);
     }
@@ -785,27 +775,22 @@ export class NpmGuiManagerPanel {
 
     try {
       const info = getPackageManagerInfo(this._currentPackageManager);
-      const terminal = this._getOrCreateTerminal();
-      terminal.show();
       
       // Install using the EXACT installed version to get the right package
       // We'll restore the declared version in package.json after
       const installArgs = packagesToRollback
         .map(p => `"${p.name}@${p.previousInstalledVersion}"`)
         .join(' ');
-      
-      // Send cd command first (works on all platforms)
-      terminal.sendText(`cd "${this._currentProjectPath}"`, true);
-      // Then send install command
-      terminal.sendText(`${info.addCommand} ${installArgs}`, true);
+      const command = `${info.addCommand} ${installArgs}`;
 
-      // Wait for npm to finish, then restore package.json with declared versions
-      setTimeout(async () => {
-        clearAuditCache(this._currentProjectPath);
+      await runCommand(command, {
+        cwd: this._currentProjectPath,
+        label: `Rollback ${packagesToRollback.length} package(s)`
+      });
 
-        await this._restorePackageJsonVersions(packagesToRollback);
-        await this._loadDependencies();
-      }, 5000);
+      clearAuditCache(this._currentProjectPath);
+      await this._restorePackageJsonVersions(packagesToRollback);
+      await this._loadDependencies();
 
       // Clear history after successful rollback
       const rolledBackPackages = packagesToRollback.map(p => p.name);
@@ -857,31 +842,24 @@ export class NpmGuiManagerPanel {
     }
   }
 
-  /**
-   * Obtiene o crea un terminal dedicado
-   */
-  private _getOrCreateTerminal(): vscode.Terminal {
-    const terminalName = 'NPM Visual Manager';
-    const existing = vscode.window.terminals.find(t => t.name === terminalName);
-    return existing || vscode.window.createTerminal(terminalName);
-  }
+
 
   /**
-   * Envía un mensaje al Webview
+   * Send a message to the Webview
    */
   private _sendMessage(message: HostToWebviewMessage): void {
     this._panel.webview.postMessage(message);
   }
 
   /**
-   * Actualiza el contenido HTML del Webview
+   * Update the Webview HTML content
    */
   private _update(): void {
     this._panel.webview.html = this._getHtmlForWebview();
   }
 
   /**
-   * Genera el HTML para el Webview
+   * Generate the HTML for the Webview
    */
   private _getHtmlForWebview(): string {
     const webview = this._panel.webview;
@@ -924,11 +902,4 @@ export class NpmGuiManagerPanel {
   }
 }
 
-function getNonce(): string {
-  let text = '';
-  const possible = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-  for (let i = 0; i < 32; i++) {
-    text += possible.charAt(Math.floor(Math.random() * possible.length));
-  }
-  return text;
-}
+

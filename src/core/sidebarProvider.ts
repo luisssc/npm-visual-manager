@@ -4,6 +4,7 @@
  */
 
 import * as vscode from 'vscode';
+import { getNonce } from '../utils/nonce';
 
 export class NpmDependenciesProvider implements vscode.WebviewViewProvider {
   public static readonly viewType = 'npm-visual-manager.sidebar';
@@ -135,11 +136,4 @@ export class NpmDependenciesProvider implements vscode.WebviewViewProvider {
   }
 }
 
-function getNonce(): string {
-  let text = '';
-  const possible = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-  for (let i = 0; i < 32; i++) {
-    text += possible.charAt(Math.floor(Math.random() * possible.length));
-  }
-  return text;
-}
+

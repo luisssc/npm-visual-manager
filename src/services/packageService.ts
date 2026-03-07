@@ -1,5 +1,5 @@
 /**
- * Servicio para leer y manipular el package.json
+ * Service for reading and manipulating the package.json
  */
 
 import * as fs from 'fs';
@@ -14,7 +14,7 @@ interface ExtractDependenciesOptions {
 }
 
 /**
- * Busca el package.json en el workspace
+ * Find the package.json in the workspace
  */
 export async function findPackageJson(workspacePath: string): Promise<string | null> {
   const packageJsonPath = path.join(workspacePath, 'package.json');
@@ -28,7 +28,7 @@ export async function findPackageJson(workspacePath: string): Promise<string | n
 }
 
 /**
- * Lee y parsea el package.json
+ * Read and parse the package.json
  */
 export async function readPackageJson(packageJsonPath: string): Promise<PackageJson> {
   const content = await fs.promises.readFile(packageJsonPath, 'utf-8');
@@ -36,7 +36,7 @@ export async function readPackageJson(packageJsonPath: string): Promise<PackageJ
 }
 
 /**
- * Extrae las dependencias del package.json
+ * Extract dependencies from the package.json
  */
 export async function extractDependencies(
   packageJson: PackageJson, 

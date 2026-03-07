@@ -110,7 +110,8 @@ npm-visual-manager/
 │   │   ├── packageService.ts     # package.json operations
 │   │   └── packageManagerService.ts  # Package manager commands
 │   └── utils/                    # Utilities
-│       └── cache.ts              # Version caching
+│       ├── commandRunner.ts      # Shell command execution
+│       └── nonce.ts              # CSP nonce generation
 ├── webview-ui/                   # React Application
 │   ├── src/
 │   │   ├── components/           # React components
@@ -187,7 +188,6 @@ This extension contributes the following settings:
 
 ## Known Issues
 
-- Progress tracking during `npm install` is limited (terminal opens but progress isn't streamed back)
 - Large projects with many dependencies may take time to check all versions
 
 ## Roadmap

@@ -1,5 +1,5 @@
 /**
- * Tipos compartidos entre Extension Host y Webview
+ * Shared types between Extension Host and Webview
  */
 
 export type SemverUpdateType = 'major' | 'minor' | 'patch' | 'none' | 'unknown';
@@ -7,7 +7,7 @@ export type SemverUpdateType = 'major' | 'minor' | 'patch' | 'none' | 'unknown';
 export interface Dependency {
   name: string;
   installedVersion: string;
-  declaredVersion: string;  // Versión del package.json (ej: "^5", "~1.2.0")
+  declaredVersion: string;  // Version from package.json (e.g. "^5", "~1.2.0")
   latestVersion?: string;
   type: 'dependencies' | 'devDependencies' | 'peerDependencies';
   updateAvailable?: boolean;
@@ -40,7 +40,7 @@ export interface PackageJson {
   scripts?: Record<string, string>;
 }
 
-// Mensajes desde Webview al Extension Host
+// Messages from Webview to Extension Host
 export type WebviewToHostMessage =
   | { type: 'GET_DEPENDENCIES' }
   | { type: 'SELECT_PROJECT'; path: string }
@@ -56,7 +56,7 @@ export type WebviewToHostMessage =
   | { type: 'OPEN_EXTERNAL'; url: string }
   | { type: 'UNINSTALL_PACKAGE'; packageName: string };
 
-// Mensajes desde Extension Host al Webview
+// Messages from Extension Host to Webview
 export interface ProjectInfo {
   name: string;
   path: string;
@@ -84,8 +84,8 @@ export interface UpdateHistory {
   timestamp: number;
   packages: Array<{
     name: string;
-    previousDeclaredVersion: string;  // ej: "^5" - versión del package.json
-    previousInstalledVersion: string; // ej: "5.9.3" - versión real en node_modules
+    previousDeclaredVersion: string;  // e.g. "^5" - version from package.json
+    previousInstalledVersion: string; // e.g. "5.9.3" - actual version in node_modules
     newVersion: string;
   }>;
 }

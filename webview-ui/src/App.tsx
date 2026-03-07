@@ -31,7 +31,7 @@ function App() {
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [isSearching, setIsSearching] = useState(false);
 
-  // Manejar mensajes del Extension Host
+  // Handle messages from Extension Host
   const handleMessage = useCallback((message: HostToWebviewMessage) => {
     switch (message.type) {
       case 'DEPENDENCIES_DATA':
@@ -140,20 +140,20 @@ function App() {
 
   useVsCodeMessages(handleMessage);
 
-  // Solicitar dependencias al montar
+  // Request dependencies on mount
   useEffect(() => {
     if (isReady) {
       requestDependencies();
     }
   }, [isReady, requestDependencies]);
 
-  // Función auxiliar para comparar versiones semver
+  // Helper function to compare semver versions
   function isUpdateAvailable(installed: string, latest: string): boolean {
     const clean = (v: string) => v.replace(/^[\^~>=<]+/, '');
     const cleanInstalled = clean(installed);
     const cleanLatest = clean(latest);
     
-    // Comparación semver numérica (no de strings)
+    // Numeric semver comparison (not string comparison)
     const parseVersion = (v: string): number[] => v.split('.').map(Number);
     const installedParts = parseVersion(cleanInstalled);
     const latestParts = parseVersion(cleanLatest);
@@ -164,7 +164,7 @@ function App() {
       if (lat > inst) {return true;}
       if (lat < inst) {return false;}
     }
-    return false; // Son iguales
+    return false; // They are equal
   }
 
   const handleUpdatePackage = (packageName: string, version: string, currentVersion?: string) => {

@@ -1,7 +1,7 @@
 import { useEffect, useRef, useCallback, useState } from 'react';
 import { WebviewToHostMessage, HostToWebviewMessage, Dependency } from '../types';
 
-// Tipo para la API de VS Code adquirida via acquireVsCodeApi
+// Type for the VS Code API acquired via acquireVsCodeApi
 type VSCodeApi = {
   postMessage: (message: WebviewToHostMessage) => void;
   getState: () => unknown;

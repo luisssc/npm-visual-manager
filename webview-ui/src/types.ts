@@ -1,6 +1,6 @@
 /**
- * Tipos compartidos entre Extension Host y Webview
- * (Duplicado de src/types.ts para uso en el webview)
+ * Shared types between Extension Host and Webview
+ * (Duplicate of src/types.ts for use in the webview)
  */
 
 export type SemverUpdateType = 'major' | 'minor' | 'patch' | 'none' | 'unknown';
@@ -20,7 +20,7 @@ export interface SearchResult {
 export interface Dependency {
   name: string;
   installedVersion: string;
-  declaredVersion: string;  // Versión del package.json (ej: "^5", "~1.2.0")
+  declaredVersion: string;  // Version from package.json (e.g. "^5", "~1.2.0")
   latestVersion?: string;
   type: 'dependencies' | 'devDependencies' | 'peerDependencies';
   updateAvailable?: boolean;
@@ -68,13 +68,13 @@ export interface UpdateHistory {
   timestamp: number;
   packages: Array<{
     name: string;
-    previousDeclaredVersion: string;  // ej: "^5" - versión del package.json
-    previousInstalledVersion: string; // ej: "5.9.3" - versión real en node_modules
+    previousDeclaredVersion: string;  // e.g. "^5" - version from package.json
+    previousInstalledVersion: string; // e.g. "5.9.3" - actual version in node_modules
     newVersion: string;
   }>;
 }
 
-// Mensajes desde Webview al Extension Host
+// Messages from Webview to Extension Host
 export type WebviewToHostMessage =
   | { type: 'GET_DEPENDENCIES' }
   | { type: 'SELECT_PROJECT'; path: string }
@@ -92,7 +92,7 @@ export type WebviewToHostMessage =
 
 export type PackageManager = 'npm' | 'yarn' | 'pnpm' | 'bun';
 
-// Mensajes desde Extension Host al Webview
+// Messages from Extension Host to Webview
 export type HostToWebviewMessage =
   | { type: 'DEPENDENCIES_DATA'; dependencies: Dependency[]; packageName: string; columnConfig: ColumnConfig; projects?: ProjectInfo[]; currentProjectPath?: string; packageManager?: PackageManager; versions?: VersionInfo; lastUpdate?: UpdateHistory | null }
   | { type: 'UPDATE_RESULT'; success: boolean; packageName: string; message: string }

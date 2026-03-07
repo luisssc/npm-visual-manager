@@ -4,6 +4,22 @@ All notable changes to the "npm-visual-manager" extension will be documented in 
 
 ## [Unreleased]
 
+## [1.0.0] - Unpublished
+
+### Changed
+- **Reliable command execution**: Replaced fixed `setTimeout` delays (5s/8s) with real process completion detection
+  - Package install, update, uninstall, and rollback operations now wait for the command to actually finish
+  - Output is streamed in real-time to a VS Code OutputChannel instead of using a terminal
+  - The dependency table only reloads after the command has completed, ensuring accurate data
+- **Code quality**: Standardized all code comments from Spanish to English for consistency
+- **Code deduplication**: Extracted shared `getNonce()` utility to `src/utils/nonce.ts` (was duplicated in webviewPanel.ts and sidebarProvider.ts)
+
+### Added
+- New `src/utils/commandRunner.ts` utility for executing shell commands with real-time output streaming
+
+### Removed
+- Removed dedicated terminal (`NPM Visual Manager`) for package operations — now uses OutputChannel
+
 ## [0.9.0] - 2026-03-04
 
 ### Added

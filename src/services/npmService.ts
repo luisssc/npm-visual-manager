@@ -1,6 +1,6 @@
 /**
- * Servicio para interactuar con el registro de NPM
- * Con soporte de caché para modo offline
+ * Service for interacting with the NPM registry
+ * With offline cache support
  */
 
 import * as https from 'https';
@@ -40,8 +40,8 @@ export function setGlobalCache(cache: VersionCache): void {
 }
 
 /**
- * Obtiene la información de un paquete desde el registro de NPM
- * Con soporte de caché
+ * Get package information from the NPM registry
+ * With cache support
  */
 export async function getPackageInfo(
   packageName: string,
@@ -129,8 +129,8 @@ export async function getPackageInfo(
 }
 
 /**
- * Obtiene los detalles de un paquete (versión y fecha)
- * Con soporte de caché
+ * Get package details (version and date)
+ * With cache support
  */
 export async function getPackageDetails(
   packageName: string,
@@ -208,7 +208,7 @@ export async function getPackageDetails(
 }
 
 /**
- * Obtiene la última versión de un paquete
+ * Get the latest version of a package
  */
 export async function getLatestVersion(
   packageName: string,
@@ -235,15 +235,15 @@ function extractRepositoryUrl(repository?: { url?: string } | string): string | 
 }
 
 /**
- * Limpia la versión eliminando prefijos como ^, ~, >=, etc.
+ * Clean version string by removing prefixes like ^, ~, >=, etc.
  */
 export function cleanVersion(version: string): string {
   return version.replace(/^[\^~>=<]+/, '');
 }
 
 /**
- * Compara dos versiones semver (simplificada)
- * Retorna: -1 si v1 < v2, 0 si v1 === v2, 1 si v1 > v2
+ * Compare two semver versions (simplified)
+ * Returns: -1 if v1 < v2, 0 if v1 === v2, 1 if v1 > v2
  */
 export function compareVersions(v1: string, v2: string): number {
   const clean1 = cleanVersion(v1);
@@ -264,14 +264,14 @@ export function compareVersions(v1: string, v2: string): number {
 }
 
 /**
- * Verifica si hay una actualización disponible
+ * Check if an update is available
  */
 export function isUpdateAvailable(installed: string, latest: string): boolean {
   return compareVersions(cleanVersion(installed), latest) < 0;
 }
 
 /**
- * Determina el tipo de actualización semver (major, minor, patch)
+ * Determine the semver update type (major, minor, patch)
  */
 export function getSemverUpdateType(installed: string, latest: string): SemverUpdateType {
   const cleanInstalled = cleanVersion(installed);
