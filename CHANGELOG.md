@@ -4,7 +4,15 @@ All notable changes to the "npm-visual-manager" extension will be documented in 
 
 ## [Unreleased]
 
-## [1.0.0] - Unpublished
+## [1.0.1] - 2026-03-09
+
+### Fixed
+- **Action Column Layout**: Fixed fragile absolute positioning of action buttons (changelog, hide, uninstall)
+  - Replaced absolute positioning with flexbox layout for consistent alignment
+  - Fixed column width to 140px with `table-layout: fixed` to prevent layout stretching
+  - Buttons now align consistently to the right regardless of content
+
+## [1.0.0] - 2026-03-09
 
 ### Changed
 - **Reliable command execution**: Replaced fixed `setTimeout` delays (5s/8s) with real process completion detection

@@ -233,6 +233,7 @@
   width: 100%;
   border-collapse: collapse;
   font-size: 13px;
+  table-layout: fixed;
 }
 
 .dependency-table thead {
@@ -339,6 +340,7 @@
 
 .date-col {
   width: 70px;
+  white-space: nowrap;
 }
 
 .security-col {
@@ -351,12 +353,12 @@
 }
 
 .action-col {
-  width: 160px;
+  width: 140px;
   text-align: center !important;
 }
 
 .action-cell {
-  width: 160px;
+  width: 140px;
   text-align: center !important;
 }
 
@@ -568,11 +570,12 @@
   background: var(--button-bg);
   color: var(--button-fg);
   border: none;
-  padding: 4px 12px;
+  padding: 4px 8px;
   border-radius: 2px;
-  font-size: 12px;
+  font-size: 11px;
   cursor: pointer;
-  min-width: 60px;
+  min-width: 50px;
+  margin-right: 4px;
 }
 
 .update-btn:hover:not(:disabled) {
@@ -587,17 +590,22 @@
 .up-to-date {
   color: var(--success-fg);
   font-size: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
 }
 
 /* Action buttons */
 .action-buttons {
   display: flex;
   align-items: center;
-  justify-content: center;
-  position: relative;
+  justify-content: flex-end;
+  gap: 2px;
   min-height: 28px;
   width: 100%;
-  padding: 0 4px;
+  padding: 0 8px;
 }
 
 .ignore-btn {
@@ -608,13 +616,13 @@
   padding: 4px;
   border-radius: 3px;
   font-size: 12px;
-  position: absolute;
-  right: 4px;
-  top: 50%;
-  transform: translateY(-50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
   opacity: 0;
   transition: opacity 0.2s, background 0.2s;
-  z-index: 2;
 }
 
 tr:hover .ignore-btn {
@@ -639,18 +647,13 @@ tr:hover .ignore-btn {
   padding: 4px;
   border-radius: 3px;
   font-size: 12px;
-  position: absolute;
-  left: 4px;
-  top: 50%;
-  transform: translateY(-50%);
   display: flex;
   align-items: center;
   justify-content: center;
-  opacity: 0;
-  transition: opacity 0.2s, background 0.2s;
   width: 24px;
   height: 24px;
-  z-index: 2;
+  opacity: 0;
+  transition: opacity 0.2s, background 0.2s;
 }
 
 tr:hover .changelog-btn,
@@ -671,10 +674,6 @@ tr:hover .changelog-btn,
   padding: 4px;
   border-radius: 3px;
   font-size: 12px;
-  position: absolute;
-  right: 32px;
-  top: 50%;
-  transform: translateY(-50%);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -682,8 +681,6 @@ tr:hover .changelog-btn,
   height: 24px;
   opacity: 0;
   transition: opacity 0.2s, background 0.2s;
-  pointer-events: auto;
-  z-index: 2;
 }
 
 tr:hover .uninstall-btn,
