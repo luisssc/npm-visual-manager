@@ -4,6 +4,16 @@ All notable changes to the "npm-visual-manager" extension will be documented in 
 
 ## [Unreleased]
 
+## [1.1.0] - 2026-03-11
+
+### Changed
+- **Changelog viewer**: Changed external URL handling to always open in the system's default browser
+  - This improves compatibility with non-VS Code IDEs (e.g., Antigravity, Cursor, Winds)
+  - Previously used `simpleBrowser.show` which is blocked by CSP on some sites like GitHub in certain IDEs
+
+### Fixed
+- **TypeScript configuration**: Added explicit `"types": ["node"]` to `tsconfig.json` to resolve `console` type errors in the editor
+
 ## [1.0.1] - 2026-03-09
 
 ### Fixed

@@ -329,8 +329,9 @@ export class NpmGuiManagerPanel {
         break;
 
       case 'OPEN_EXTERNAL':
-        // Open in VS Code's simple browser (built-in)
-        await vscode.commands.executeCommand('simpleBrowser.show', message.url);
+        // Always open in the system's default browser for maximum compatibility
+        // (simpleBrowser.show uses iframes which are blocked by CSP on some sites like GitHub)
+        await vscode.env.openExternal(vscode.Uri.parse(message.url));
         break;
 
       case 'UNINSTALL_PACKAGE':
