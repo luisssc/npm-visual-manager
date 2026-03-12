@@ -1,6 +1,7 @@
 import { memo, useState, useRef, useMemo } from 'react';
 import type { SearchResult, Dependency } from '../../../types';
 import './SearchPanel.css';
+import { useTranslation, interpolate } from '../i18n/I18nContext';
 
 interface SearchPanelProps {
   results: SearchResult[];
@@ -12,6 +13,7 @@ interface SearchPanelProps {
 }
 
 export const SearchPanel = memo(({ results, onSearch, onInstall, onUninstall, isLoading, installedPackages }: SearchPanelProps) => {
+  const t = useTranslation();
   const [query, setQuery] = useState('');
   const [isCollapsed, setIsCollapsed] = useState(true);
   const [selectedPackage, setSelectedPackage] = useState<SearchResult | null>(null);
@@ -64,11 +66,11 @@ export const SearchPanel = memo(({ results, onSearch, onInstall, onUninstall, is
       <div 
         className="search-header"
         onClick={() => setIsCollapsed(!isCollapsed)}
-        title={isCollapsed ? 'Show search' : 'Hide search'}
+        title={isCollapsed ? t.tooltips.showAllPackages : t.tooltips.showOnlyUpdates}
       >
         <div className="search-header-left">
           <i className="codicon codicon-search" />
-          <span>Install Packages</span>
+          <span>{t.search.title}</span>
         </div>
         <button
           className="search-toggle-btn"
@@ -76,7 +78,7 @@ export const SearchPanel = memo(({ results, onSearch, onInstall, onUninstall, is
             e.stopPropagation();
             setIsCollapsed(!isCollapsed);
           }}
-          title={isCollapsed ? 'Show search' : 'Hide search'}
+          title={isCollapsed ? t.tooltips.showAllPackages : t.tooltips.showOnlyUpdates}
         >
           <i className={`codicon codicon-chevron-${isCollapsed ? 'up' : 'down'}`} />
         </button>
@@ -89,24 +91,26 @@ export const SearchPanel = memo(({ results, onSearch, onInstall, onUninstall, is
             <input
               type="text"
               className="search-input"
-              placeholder="Search npm packages..."
+              placeholder={t.placeholders.searchNpm}
               value={query}
               onChange={(e) => handleSearchChange(e.target.value)}
             />
-            {isLoading && <span className="search-loading">Searching...</span>}
+            {isLoading && <span className="search-loading">{t.states.searching}</span>}
           </div>
 
           {selectedPackage ? (
             <div className="install-confirmation">
               {isPackageInstalled(selectedPackage.name) ? (
                 <>
-                  <h4>{selectedPackage.name} is already installed</h4>
+                  <h4>{interpolate(t.search.alreadyInstalled, { name: selectedPackage.name })}</h4>
                   <p className="install-description">{selectedPackage.description}</p>
                   {showUninstallConfirm ? (
                     <div className="uninstall-confirm">
                       <p className="uninstall-warning">
                         <i className="codicon codicon-warning" />
-                        Are you sure you want to uninstall <strong>{selectedPackage.name}</strong>?
+                        <span dangerouslySetInnerHTML={{ 
+                          __html: interpolate(t.modalMessages.confirmUninstall, { name: selectedPackage.name }) 
+                        }} />
                       </p>
                       <div className="install-actions">
                         <button
@@ -118,13 +122,13 @@ export const SearchPanel = memo(({ results, onSearch, onInstall, onUninstall, is
                             setQuery('');
                           }}
                         >
-                          <i className="codicon codicon-trash" /> Yes, Uninstall
+                          <i className="codicon codicon-trash" /> {t.buttons.yesUninstall}
                         </button>
                         <button
                           className="go-back-btn"
                           onClick={() => setShowUninstallConfirm(false)}
                         >
-                          Cancel
+                          {t.buttons.cancel}
                         </button>
                       </div>
                     </div>
@@ -134,20 +138,20 @@ export const SearchPanel = memo(({ results, onSearch, onInstall, onUninstall, is
                         className="search-uninstall-btn"
                         onClick={() => setShowUninstallConfirm(true)}
                       >
-                        <i className="codicon codicon-trash" /> Uninstall
+                        <i className="codicon codicon-trash" /> {t.buttons.uninstall}
                       </button>
                       <button
                         className="go-back-btn"
                         onClick={() => setSelectedPackage(null)}
                       >
-                        Go Back
+                        {t.buttons.goBack}
                       </button>
                     </div>
                   )}
                 </>
               ) : (
                 <>
-                  <h4>Install {selectedPackage.name}@{selectedPackage.version}?</h4>
+                  <h4>{interpolate(t.search.confirmInstall, { name: selectedPackage.name, version: selectedPackage.version })}</h4>
                   <p className="install-description">{selectedPackage.description}</p>
                   <div className="install-options">
                     <label className="dev-checkbox">
@@ -156,7 +160,7 @@ export const SearchPanel = memo(({ results, onSearch, onInstall, onUninstall, is
                         checked={isDev}
                         onChange={(e) => setIsDev(e.target.checked)}
                       />
-                      Install as dev dependency
+                      {t.search.installAsDev}
                     </label>
                   </div>
                   <div className="install-actions">
@@ -168,13 +172,13 @@ export const SearchPanel = memo(({ results, onSearch, onInstall, onUninstall, is
                         setQuery('');
                       }}
                     >
-                      Install
+                      {t.buttons.install}
                     </button>
                     <button
                       className="cancel-btn"
                       onClick={() => setSelectedPackage(null)}
                     >
-                      Cancel
+                      {t.buttons.cancel}
                     </button>
                   </div>
                 </>
@@ -183,7 +187,7 @@ export const SearchPanel = memo(({ results, onSearch, onInstall, onUninstall, is
           ) : (
             <div className="search-results">
               {results.length === 0 && query && !isLoading && (
-                <div className="search-no-results">No packages found for &quot;{query}&quot;</div>
+                <div className="search-no-results">{interpolate(t.search.noResults, { query })}</div>
               )}
               {results.map((pkg) => (
                 <div
@@ -196,7 +200,7 @@ export const SearchPanel = memo(({ results, onSearch, onInstall, onUninstall, is
                     <span className="result-version">v{pkg.version}</span>
                     <span className="result-downloads">
                       <i className="codicon codicon-cloud-download" />
-                      {formatDownloads(pkg.downloads?.weekly)}/wk
+                      {interpolate(t.search.weeklyDownloads, { downloads: formatDownloads(pkg.downloads?.weekly) })}
                     </span>
                   </div>
                   <div className="result-description">{pkg.description}</div>
@@ -204,7 +208,7 @@ export const SearchPanel = memo(({ results, onSearch, onInstall, onUninstall, is
                     {pkg.keywords && pkg.keywords.slice(0, 3).map((kw) => (
                       <span key={kw} className="result-keyword">{kw}</span>
                     ))}
-                    <span className="result-date">Updated {formatDate(pkg.date)}</span>
+                    <span className="result-date">{interpolate(t.search.updated, { date: formatDate(pkg.date) })}</span>
                   </div>
                 </div>
               ))}

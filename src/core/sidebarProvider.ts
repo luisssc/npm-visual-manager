@@ -5,6 +5,8 @@
 
 import * as vscode from 'vscode';
 import { getNonce } from '../utils/nonce';
+import { getVSCodeLanguage } from '../i18n/getLanguage';
+import { getTranslations } from '../i18n';
 
 export class NpmDependenciesProvider implements vscode.WebviewViewProvider {
   public static readonly viewType = 'npm-visual-manager.sidebar';
@@ -40,6 +42,8 @@ export class NpmDependenciesProvider implements vscode.WebviewViewProvider {
 
   private _getHtmlForWebview(_webview: vscode.Webview): string {
     const nonce = getNonce();
+    const language = getVSCodeLanguage();
+    const t = getTranslations(language);
 
     return `<!DOCTYPE html>
 <html lang="en">
@@ -117,12 +121,11 @@ export class NpmDependenciesProvider implements vscode.WebviewViewProvider {
     <div class="icon">📦</div>
     <p class="title">NPM Visual Manager</p>
     <p class="description">
-      Manage your NPM dependencies with a visual interface.
-      View updates, check versions, and update packages easily.
+      ${t.sidebar.description}
     </p>
-    <button class="open-btn" id="openBtn">Open Package Manager</button>
+    <button class="open-btn" id="openBtn">${t.sidebar.openButton}</button>
     <p class="shortcut">
-      Or use <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>P</kbd> → "Open NPM Package Manager"
+      ${t.sidebar.shortcut}
     </p>
   </div>
   <script nonce="${nonce}">

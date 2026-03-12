@@ -5,7 +5,7 @@ import { getNonce } from '../utils/nonce';
  * Generates the HTML content for the Webview Panel.
  * Sets up the Content Security Policy, links to frontend assets, and injects the initialization script.
  */
-export function getHtmlForWebview(webview: vscode.Webview, extensionUri: vscode.Uri): string {
+export function getHtmlForWebview(webview: vscode.Webview, extensionUri: vscode.Uri, language: string): string {
   const scriptPath = vscode.Uri.joinPath(extensionUri, 'out', 'webview', 'assets', 'index.js');
   const cssPath = vscode.Uri.joinPath(extensionUri, 'out', 'webview', 'assets', 'index.css');
 
@@ -26,6 +26,9 @@ export function getHtmlForWebview(webview: vscode.Webview, extensionUri: vscode.
 </head>
 <body>
   <div id="root"></div>
+  <script nonce="${nonce}">
+    window.initialLanguage = '${language}';
+  </script>
   <script nonce="${nonce}" src="${scriptUri}?v=${cacheBuster}"></script>
 </body>
 </html>`;

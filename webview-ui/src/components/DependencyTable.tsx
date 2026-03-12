@@ -1,6 +1,7 @@
 import { useState, useMemo, ReactNode, useEffect } from 'react';
 import type { Dependency, SemverUpdateType, ColumnConfig, UpdateHistory } from '../../../types';
 import './DependencyTable.css';
+import { useTranslation, interpolate } from '../i18n/I18nContext';
 
 const Tooltip = ({ text, children }: { text: string; children: ReactNode }) => (
   <span className="tooltip-wrapper">
@@ -30,16 +31,16 @@ interface DependencyTableProps {
 type SortColumn = 'name' | 'installedVersion' | 'latestVersion' | 'type' | 'size' | 'lastPublishDate';
 type SortDirection = 'asc' | 'desc';
 
-const getSemverLabel = (type: SemverUpdateType | undefined): string => {
+const getSemverLabel = (t: { semver: { major: string; minor: string; patch: string } }, type: SemverUpdateType | undefined): string => {
   switch (type) {
-    case 'major': return 'MAJOR';
-    case 'minor': return 'MINOR';
-    case 'patch': return 'PATCH';
+    case 'major': return t.semver.major;
+    case 'minor': return t.semver.minor;
+    case 'patch': return t.semver.patch;
     default: return '';
   }
 };
 
-const formatDate = (dateString: string | undefined): string => {
+const formatDate = (t: { timeAgo: { days: string; days_singular: string; months: string; months_singular: string; years: string; years_singular: string } }, dateString: string | undefined): string => {
   if (!dateString) {return '-';}
   const date = new Date(dateString);
   const now = new Date();
@@ -47,11 +48,16 @@ const formatDate = (dateString: string | undefined): string => {
   const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
   
   if (diffDays < 30) {
-    return `${diffDays}d ago`;
+    const key = diffDays === 1 ? 'days_singular' : 'days';
+    return interpolate(t.timeAgo[key], { count: diffDays });
   } else if (diffDays < 365) {
-    return `${Math.floor(diffDays / 30)}mo ago`;
+    const months = Math.floor(diffDays / 30);
+    const key = months === 1 ? 'months_singular' : 'months';
+    return interpolate(t.timeAgo[key], { count: months });
   } else {
-    return `${Math.floor(diffDays / 365)}y ago`;
+    const years = Math.floor(diffDays / 365);
+    const key = years === 1 ? 'years_singular' : 'years';
+    return interpolate(t.timeAgo[key], { count: years });
   }
 };
 
@@ -72,6 +78,7 @@ export const DependencyTable = ({
   onOpenExternal,
   onUninstall
 }: DependencyTableProps) => {
+  const t = useTranslation();
   const [sortColumn, setSortColumn] = useState<SortColumn>('name');
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
   const [filter, setFilter] = useState('');
@@ -279,7 +286,7 @@ export const DependencyTable = ({
         <div className="filters">
           <input
             type="text"
-            placeholder="Filter packages..."
+            placeholder={t.placeholders.filterPackages}
             value={filter}
             onChange={(e) => setFilter(e.target.value)}
             className="filter-input"
@@ -306,9 +313,12 @@ export const DependencyTable = ({
               className="rollback-btn"
               onClick={onRollback}
               disabled={isLoading}
-              title={`Rollback last update (${lastUpdate.packages.length} package${lastUpdate.packages.length > 1 ? 's' : ''})`}
+              title={interpolate(
+                lastUpdate.packages.length === 1 ? t.tooltips.rollbackUpdate : t.tooltips.rollbackUpdate_plural,
+                { count: lastUpdate.packages.length }
+              )}
             >
-              <span>↩</span> Rollback
+              <span>↩</span> {t.buttons.rollback}
             </button>
           )}
           {selectedPackages.size > 0 ? (
@@ -317,7 +327,7 @@ export const DependencyTable = ({
               onClick={handleUpdateSelected}
               disabled={isLoading}
             >
-              Update Selected ({selectedPackages.size})
+              {interpolate(t.buttons.updateSelected, {})} ({selectedPackages.size})
             </button>
           ) : updateCount > 0 && (
             <button 
@@ -325,7 +335,7 @@ export const DependencyTable = ({
               onClick={handleUpdateAll}
               disabled={isLoading}
             >
-              Update All ({updateCount})
+              {t.buttons.updateAll} ({updateCount})
             </button>
           )}
         </div>
@@ -340,40 +350,40 @@ export const DependencyTable = ({
                   type="checkbox"
                   checked={selectedPackages.size > 0 && selectedPackages.size === sortedAndFilteredDeps.filter(d => d.updateAvailable && !d.isIgnored).length}
                   onChange={(e) => handleSelectAll(e.target.checked)}
-                  title="Select all packages with updates"
+                  title={t.tooltips.selectAllUpdates}
                 />
               </th>
               <th onClick={() => handleSort('name')} className="sortable package-col">
-                Package {getSortIndicator('name')}
+                {t.columns.package} {getSortIndicator('name')}
               </th>
               {columnConfig.type && (
                 <th onClick={() => handleSort('type')} className="sortable type-col">
-                  Type {getSortIndicator('type')}
+                  {t.columns.type} {getSortIndicator('type')}
                 </th>
               )}
               <th onClick={() => handleSort('installedVersion')} className="sortable version-col">
-                Installed {getSortIndicator('installedVersion')}
+                {t.columns.installed} {getSortIndicator('installedVersion')}
               </th>
               <th onClick={() => handleSort('latestVersion')} className="sortable version-col">
-                Latest {getSortIndicator('latestVersion')}
+                {t.columns.latest} {getSortIndicator('latestVersion')}
               </th>
               {columnConfig.size && (
                 <th onClick={() => handleSort('size')} className="sortable size-col">
-                  Size {getSortIndicator('size')}
+                  {t.columns.size} {getSortIndicator('size')}
                 </th>
               )}
               {columnConfig.semverUpdate && (
                 <th className="sortable update-type-col">
-                  Update
+                  {t.columns.update}
                 </th>
               )}
               {columnConfig.lastUpdate && (
                 <th onClick={() => handleSort('lastPublishDate')} className="sortable date-col">
-                  Last Update {getSortIndicator('lastPublishDate')}
+                  {t.columns.lastUpdate} {getSortIndicator('lastPublishDate')}
                 </th>
               )}
 
-              <th className="action-col">Action</th>
+              <th className="action-col">{t.columns.action}</th>
             </tr>
           </thead>
           <tbody>
@@ -381,10 +391,10 @@ export const DependencyTable = ({
               <tr>
                 <td colSpan={visibleColumnCount} className="empty-state">
                   {dependencies.length === 0
-                    ? 'No dependencies found in package.json'
+                    ? t.states.noDependencies
                     : !showAllPackages
-                      ? 'All packages are up to date! Click "Show All Packages" to see everything.'
-                      : 'No packages match the current filter'
+                      ? t.states.allUpToDate
+                      : t.states.noMatchFilter
                   }
                 </td>
               </tr>
@@ -401,12 +411,12 @@ export const DependencyTable = ({
                         checked={selectedPackages.has(dep.name)}
                         onChange={(e) => handleSelectPackage(dep.name, e.target.checked)}
                         disabled={!dep.updateAvailable}
-                        title={dep.updateAvailable ? 'Select for update' : 'No update available'}
+                        title={dep.updateAvailable ? t.tooltips.selectForUpdate : t.tooltips.noUpdateAvailable}
                       />
                     </td>
                     <td className="package-name">
                       <div className="package-info">
-                        <Tooltip text="View on npm">
+                        <Tooltip text={t.tooltips.viewOnNpm}>
                           <a
                             href={`https://www.npmjs.com/package/${dep.name}`}
                             target="_blank"
@@ -417,20 +427,20 @@ export const DependencyTable = ({
                           </a>
                         </Tooltip>
                         {dep.isDeprecated && (
-                          <Tooltip text="Deprecated">
+                          <Tooltip text={t.tooltips.deprecated}>
                             <span className="status-badge status-deprecated">
                               <i className="codicon codicon-error" />
                             </span>
                           </Tooltip>
                         )}
                         {dep.hasVulnerabilities ? (
-                          <Tooltip text={`${dep.vulnerabilityCount || 1} vulnerabilities found`}>
+                          <Tooltip text={interpolate(t.tooltips.vulnerabilities, { count: dep.vulnerabilityCount || 1 })}>
                             <span className="status-badge status-danger">
                               <i className="codicon codicon-warning" /> {dep.vulnerabilityCount || 1}
                             </span>
                           </Tooltip>
                         ) : (
-                          <Tooltip text="No security issues detected">
+                          <Tooltip text={t.tooltips.noSecurityIssues}>
                             <span className="status-badge status-safe"><i className="codicon codicon-shield" /></span>
                           </Tooltip>
                         )}
@@ -439,14 +449,14 @@ export const DependencyTable = ({
                     {columnConfig.type && (
                       <td className="type-cell">
                         <span className={`type-badge type-${dep.type}`}>
-                          {dep.type === 'dependencies' ? 'Prod' : dep.type === 'devDependencies' ? 'Dev' : 'Peer'}
+                          {dep.type === 'dependencies' ? t.dependencyTypes.prod : dep.type === 'devDependencies' ? t.dependencyTypes.dev : t.dependencyTypes.peer}
                         </span>
                       </td>
                     )}
                     <td className="version-cell">
                       <code>{dep.declaredVersion}</code>
                       {dep.declaredVersion !== dep.installedVersion && (
-                        <Tooltip text={`Installed: ${dep.installedVersion}`}>
+                        <Tooltip text={`${t.columns.installed}: ${dep.installedVersion}`}>
                           <span className="version-mismatch-icon">*</span>
                         </Tooltip>
                       )}
@@ -457,7 +467,7 @@ export const DependencyTable = ({
                           {dep.latestVersion}
                         </code>
                       ) : (
-                        <span className="checking">checking...</span>
+                        <span className="checking">{t.states.checking}</span>
                       )}
                     </td>
                     {columnConfig.size && (
@@ -468,11 +478,11 @@ export const DependencyTable = ({
                     {columnConfig.semverUpdate && (
                       <td className="update-type-cell">
                         {dep.updateAvailable && dep.semverUpdateType && dep.semverUpdateType !== 'none' && (
-                          <Tooltip text={`${getSemverLabel(dep.semverUpdateType)} update available`}>
+                          <Tooltip text={`${getSemverLabel(t, dep.semverUpdateType)} update available`}>
                             <span
                               className={`semver-badge semver-${dep.semverUpdateType}`}
                             >
-                              {getSemverLabel(dep.semverUpdateType)}
+                              {getSemverLabel(t, dep.semverUpdateType)}
                             </span>
                           </Tooltip>
                         )}
@@ -483,11 +493,11 @@ export const DependencyTable = ({
                         {dep.lastPublishDate ? (
                           <Tooltip text={new Date(dep.lastPublishDate).toLocaleDateString('en-GB')}>
                             <span className="date-text">
-                              {formatDate(dep.lastPublishDate)}
+                              {formatDate(t, dep.lastPublishDate)}
                             </span>
                           </Tooltip>
                         ) : (
-                          <span className="checking">-</span>
+                          <span className="checking">{t.states.checkingShort}</span>
                         )}
                       </td>
                     )}
@@ -500,17 +510,17 @@ export const DependencyTable = ({
                             onClick={() => handleUpdate(dep)}
                             disabled={updatingPackages.has(dep.name) || isLoading}
                           >
-                            {updatingPackages.has(dep.name) ? '...' : 'Update'}
+                            {updatingPackages.has(dep.name) ? '...' : t.buttons.update}
                           </button>
                         ) : (
                           <span className="up-to-date"><i className="codicon codicon-check" /></span>
                         )}
                         {dep.repositoryUrl && (
-                          <Tooltip text="View changelog">
+                          <Tooltip text={t.tooltips.viewChangelog}>
                             <button
                               className="changelog-btn"
                               onClick={() => onOpenExternal?.(`${dep.repositoryUrl}/releases`)}
-                              title="Changelog"
+                              title={t.tooltips.viewChangelog}
                             >
                               <i className="codicon codicon-book" />
                             </button>
@@ -523,7 +533,7 @@ export const DependencyTable = ({
                             setConfirmUninstall(dep.name);
                           }}
                           disabled={isLoading}
-                          title="Uninstall this package"
+                          title={t.tooltips.uninstallPackage}
                           type="button"
                         >
                           <i className="codicon codicon-trash" />
@@ -535,7 +545,7 @@ export const DependencyTable = ({
                             setConfirmIgnore({ name: dep.name, isIgnored: false });
                           }}
                           disabled={isLoading}
-                          title="Ignore this package"
+                          title={t.tooltips.ignorePackage}
                         >
                           <i className="codicon codicon-eye-closed" />
                         </button>
@@ -552,13 +562,13 @@ export const DependencyTable = ({
                     >
                       <td colSpan={visibleColumnCount}>
                         <i className={`codicon codicon-chevron-${showIgnored ? 'down' : 'right'}`} />
-                        {' '}Ignored ({ignoredDeps.length})
+                         {interpolate(t.ignored.title, { count: ignoredDeps.length })}'
                       </td>
                     </tr>
                     {showIgnored && ignoredDeps.map((dep) => (
                       <tr key={dep.name} className="ignored-row">
                         <td className="checkbox-cell">
-                          <input type="checkbox" disabled title="Ignored" />
+                          <input type="checkbox" disabled title={t.columns.action} />
                         </td>
                         <td className="package-name">
                           <div className="package-info">
@@ -579,7 +589,7 @@ export const DependencyTable = ({
                           {dep.latestVersion ? (
                             <code>{dep.latestVersion}</code>
                           ) : (
-                            <span className="checking">-</span>
+                            <span className="checking">{t.states.checkingShort}</span>
                           )}
                         </td>
                         {columnConfig.size && (
@@ -590,12 +600,12 @@ export const DependencyTable = ({
                         {columnConfig.semverUpdate && <td className="update-type-cell" />}
                         {columnConfig.lastUpdate && (
                           <td className="date-cell">
-                            <span className="date-text">{formatDate(dep.lastPublishDate)}</span>
+                            <span className="date-text">{formatDate(t, dep.lastPublishDate)}</span>
                           </td>
                         )}
                         <td className="action-cell">
                           <div className="action-buttons">
-                            <Tooltip text="Unignore package">
+                            <Tooltip text={t.tooltips.unignorePackage}>
                               <button
                                 className="unignore-btn"
                                 onClick={(e) => {
@@ -603,6 +613,7 @@ export const DependencyTable = ({
                                   setConfirmIgnore({ name: dep.name, isIgnored: true });
                                 }}
                                 disabled={isLoading}
+                                title={t.tooltips.unignorePackage}
                               >
                                 <i className="codicon codicon-eye" />
                               </button>
@@ -620,7 +631,7 @@ export const DependencyTable = ({
       </div>
 
       <div className="footer">
-        <span>Showing {sortedAndFilteredDeps.length} of {dependencies.length} packages{ignoredDeps.length > 0 ? ` (${ignoredDeps.length} ignored)` : ''}</span>
+        <span>{interpolate(t.footer.showing, { filtered: sortedAndFilteredDeps.length, total: dependencies.length })}{ignoredDeps.length > 0 ? ` ${interpolate(t.footer.ignored, { count: ignoredDeps.length })}` : ''}</span>
         {rollbackMessage && (
           <span className="rollback-message">
             <i className="codicon codicon-history" /> {rollbackMessage}
@@ -628,7 +639,10 @@ export const DependencyTable = ({
         )}
         {updateCount > 0 && (
           <span className="update-summary">
-            {updateCount} update{updateCount !== 1 ? 's' : ''} available
+            {updateCount === 1 
+              ? interpolate(t.footer.updatesAvailable, { count: updateCount })
+              : interpolate(t.footer.updatesAvailable_plural, { count: updateCount })
+            }
           </span>
         )}
       </div>
@@ -636,14 +650,14 @@ export const DependencyTable = ({
       {confirmUninstall && (
         <div className="modal-overlay" onClick={() => setConfirmUninstall(null)}>
           <div className="modal-content" onClick={e => e.stopPropagation()}>
-            <h3>Uninstall Package</h3>
-            <p>Are you sure you want to uninstall <strong>{confirmUninstall}</strong>?</p>
+            <h3>{t.modals.uninstallTitle}</h3>
+            <p dangerouslySetInnerHTML={{ __html: interpolate(t.modalMessages.confirmUninstall, { name: confirmUninstall }) }} />
             <div className="modal-actions">
               <button 
                 className="modal-btn cancel" 
                 onClick={() => setConfirmUninstall(null)}
               >
-                Cancel
+                {t.buttons.cancel}
               </button>
               <button 
                 className="modal-btn confirm" 
@@ -661,7 +675,7 @@ export const DependencyTable = ({
                   setConfirmUninstall(null);
                 }}
               >
-                Uninstall
+                {t.buttons.uninstall}
               </button>
             </div>
           </div>
@@ -671,10 +685,8 @@ export const DependencyTable = ({
       {confirmUpdate && (
         <div className="modal-overlay" onClick={() => setConfirmUpdate(null)}>
           <div className="modal-content" onClick={e => e.stopPropagation()}>
-            <h3>Update Package</h3>
-            <p>
-              Are you sure you want to update <strong>{confirmUpdate.name}</strong>?
-            </p>
+            <h3>{t.modals.updateTitle}</h3>
+            <p dangerouslySetInnerHTML={{ __html: interpolate(t.modalMessages.confirmUpdate, { name: confirmUpdate.name }) }} />
             <p className="modal-version-info">
               <span className="version-from">{confirmUpdate.declaredVersion}</span>
               <i className="codicon codicon-arrow-right" />
@@ -685,13 +697,13 @@ export const DependencyTable = ({
                 className="modal-btn cancel" 
                 onClick={() => setConfirmUpdate(null)}
               >
-                Cancel
+                {t.buttons.cancel}
               </button>
               <button 
                 className="modal-btn confirm" 
                 onClick={confirmUpdatePackage}
               >
-                Update
+                {t.buttons.update}
               </button>
             </div>
           </div>
@@ -701,10 +713,12 @@ export const DependencyTable = ({
       {confirmUpdateAll && (
         <div className="modal-overlay" onClick={() => setConfirmUpdateAll(null)}>
           <div className="modal-content modal-content-large" onClick={e => e.stopPropagation()}>
-            <h3>Update All Packages</h3>
-            <p>
-              Are you sure you want to update <strong>{confirmUpdateAll.length} package{confirmUpdateAll.length !== 1 ? 's' : ''}</strong>?
-            </p>
+            <h3>{t.modals.updateAllTitle}</h3>
+            <p dangerouslySetInnerHTML={{ 
+              __html: confirmUpdateAll.length === 1 
+                ? interpolate(t.modalMessages.confirmUpdateAll, { count: confirmUpdateAll.length })
+                : interpolate(t.modalMessages.confirmUpdateAll_plural, { count: confirmUpdateAll.length })
+            }} />
             <div className="modal-package-list">
               {confirmUpdateAll.slice(0, 10).map(dep => (
                 <div key={dep.name} className="modal-package-item">
@@ -718,7 +732,7 @@ export const DependencyTable = ({
               ))}
               {confirmUpdateAll.length > 10 && (
                 <div className="modal-package-item more-items">
-                  ...and {confirmUpdateAll.length - 10} more
+                  {interpolate(t.modalMessages.andMore, { count: confirmUpdateAll.length - 10 })}
                 </div>
               )}
             </div>
@@ -727,13 +741,13 @@ export const DependencyTable = ({
                 className="modal-btn cancel" 
                 onClick={() => setConfirmUpdateAll(null)}
               >
-                Cancel
+                {t.buttons.cancel}
               </button>
               <button 
                 className="modal-btn confirm" 
                 onClick={confirmUpdateAllPackages}
               >
-                Update All
+                {t.buttons.updateAll}
               </button>
             </div>
           </div>
@@ -743,10 +757,12 @@ export const DependencyTable = ({
       {confirmUpdateSelected && (
         <div className="modal-overlay" onClick={() => setConfirmUpdateSelected(null)}>
           <div className="modal-content modal-content-large" onClick={e => e.stopPropagation()}>
-            <h3>Update Selected Packages</h3>
-            <p>
-              Are you sure you want to update <strong>{confirmUpdateSelected.length} selected package{confirmUpdateSelected.length !== 1 ? 's' : ''}</strong>?
-            </p>
+            <h3>{t.modals.updateSelectedTitle}</h3>
+            <p dangerouslySetInnerHTML={{ 
+              __html: confirmUpdateSelected.length === 1 
+                ? interpolate(t.modalMessages.confirmUpdateSelected, { count: confirmUpdateSelected.length })
+                : interpolate(t.modalMessages.confirmUpdateSelected_plural, { count: confirmUpdateSelected.length })
+            }} />
             <div className="modal-package-list">
               {confirmUpdateSelected.slice(0, 10).map(dep => (
                 <div key={dep.name} className="modal-package-item">
@@ -760,7 +776,7 @@ export const DependencyTable = ({
               ))}
               {confirmUpdateSelected.length > 10 && (
                 <div className="modal-package-item more-items">
-                  ...and {confirmUpdateSelected.length - 10} more
+                  {interpolate(t.modalMessages.andMore, { count: confirmUpdateSelected.length - 10 })}
                 </div>
               )}
             </div>
@@ -769,13 +785,13 @@ export const DependencyTable = ({
                 className="modal-btn cancel" 
                 onClick={() => setConfirmUpdateSelected(null)}
               >
-                Cancel
+                {t.buttons.cancel}
               </button>
               <button 
                 className="modal-btn confirm" 
                 onClick={confirmUpdateSelectedPackages}
               >
-                Update Selected
+                {t.buttons.updateSelected}
               </button>
             </div>
           </div>
@@ -785,13 +801,15 @@ export const DependencyTable = ({
       {confirmIgnore && (
         <div className="modal-overlay" onClick={() => setConfirmIgnore(null)}>
           <div className="modal-content" onClick={e => e.stopPropagation()}>
-            <h3>{confirmIgnore.isIgnored ? 'Unignore Package' : 'Ignore Package'}</h3>
-            <p>
-              Are you sure you want to {confirmIgnore.isIgnored ? 'unignore' : 'ignore'} <strong>{confirmIgnore.name}</strong>?
-            </p>
+            <h3>{confirmIgnore.isIgnored ? t.modals.unignoreTitle : t.modals.ignoreTitle}</h3>
+            <p dangerouslySetInnerHTML={{ 
+              __html: confirmIgnore.isIgnored 
+                ? interpolate(t.modalMessages.confirmUnignore, { name: confirmIgnore.name })
+                : interpolate(t.modalMessages.confirmIgnore, { name: confirmIgnore.name })
+            }} />
             {!confirmIgnore.isIgnored && (
               <p className="modal-hint">
-                Ignored packages are excluded from update checks and counters.
+                {t.modalMessages.ignoreHint}
               </p>
             )}
             <div className="modal-actions">
@@ -799,7 +817,7 @@ export const DependencyTable = ({
                 className="modal-btn cancel" 
                 onClick={() => setConfirmIgnore(null)}
               >
-                Cancel
+                {t.buttons.cancel}
               </button>
               <button 
                 className="modal-btn confirm" 
@@ -808,7 +826,7 @@ export const DependencyTable = ({
                   setConfirmIgnore(null);
                 }}
               >
-                {confirmIgnore.isIgnored ? 'Unignore' : 'Ignore'}
+                {confirmIgnore.isIgnored ? t.buttons.unignore : t.buttons.ignore}
               </button>
             </div>
           </div>

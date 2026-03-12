@@ -17,6 +17,7 @@ import { searchPackages } from '../services/searchService';
 import { clearPackageSizeCache } from '../services/sizeService';
 import { PackageManager } from '../services/packageManagerService';
 import { getHtmlForWebview } from './htmlProvider';
+import { getVSCodeLanguage } from '../i18n/getLanguage';
 import { PackageOperationsService } from '../services/packageOperationsService';
 
 export class NpmGuiManagerPanel {
@@ -635,7 +636,8 @@ export class NpmGuiManagerPanel {
    * Update the Webview HTML content
    */
   private _update(): void {
-    this._panel.webview.html = getHtmlForWebview(this._panel.webview, this._extensionUri);
+    const language = getVSCodeLanguage();
+    this._panel.webview.html = getHtmlForWebview(this._panel.webview, this._extensionUri, language);
   }
 
   public dispose(): void {

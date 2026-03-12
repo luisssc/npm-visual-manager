@@ -4,8 +4,10 @@ import { SearchPanel } from './components/SearchPanel';
 import { useVsCodeApi, useVsCodeMessages } from './hooks/useVsCodeApi';
 import type { Dependency, HostToWebviewMessage, ColumnConfig, ProjectInfo, PackageManager, VersionInfo, UpdateHistory, SearchResult } from '../../types';
 import './App.css';
+import { useTranslation } from './i18n/I18nContext';
 
 function App() {
+  const t = useTranslation();
   const { requestDependencies, updatePackage, updateAllPackages, selectProject, rollbackLast, toggleIgnorePackage, refreshCache, searchPackages, installNewPackage, openExternal, uninstallPackage, isReady } = useVsCodeApi();
 
   const [dependencies, setDependencies] = useState<Dependency[]>([]);
@@ -201,7 +203,7 @@ function App() {
     return (
       <div className="loading-container">
         <div className="spinner"></div>
-        <span>Loading dependencies...</span>
+        <span>{t.states.loading}</span>
       </div>
     );
   }
@@ -212,7 +214,7 @@ function App() {
         <div className="error-icon"><i className="codicon codicon-error" /></div>
         <p className="error-message">{error}</p>
         <button className="retry-btn" onClick={handleRetry}>
-          Retry
+          {t.buttons.retry}
         </button>
       </div>
     );
@@ -248,18 +250,18 @@ function App() {
           <button 
             className="toggle-packages-btn"
             onClick={() => setShowAllPackages(!showAllPackages)}
-            title={showAllPackages ? "Show only packages with updates" : "Show all packages"}
+            title={showAllPackages ? t.tooltips.showOnlyUpdates : t.tooltips.showAllPackages}
           >
             {showAllPackages
-              ? <><i className="codicon codicon-check" /> Show Updates Only</>
-              : <><i className="codicon codicon-list-flat" /> Show All Packages</>
+              ? <><i className="codicon codicon-check" /> {t.header.showUpdatesOnly}</>
+              : <><i className="codicon codicon-list-flat" /> {t.header.showAllPackages}</>
             }
           </button>
           <button
             className="refresh-btn"
             onClick={handleRetry}
             disabled={isLoading}
-            title="Refresh dependencies (clears cache)"
+            title={t.tooltips.refreshDependencies}
           >
             <i className="codicon codicon-refresh" />
           </button>

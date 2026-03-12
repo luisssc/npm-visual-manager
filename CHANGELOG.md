@@ -4,6 +4,13 @@ All notable changes to the "npm-visual-manager" extension will be documented in 
 
 ## [Unreleased]
 
+### Added
+- **Internationalization (i18n)**: Full UI translation support
+  - Complete Spanish (es) translation for all UI elements, buttons, tooltips, modals, and messages
+  - Automatic language detection based on VS Code display language
+  - New i18n architecture supporting easy addition of new languages
+  - Planned language support: German (de), French (fr), Chinese - Simplified (zh-cn), Japanese (ja), Portuguese/Brazilian (pt-br), Russian (ru), Korean (ko)
+
 ## [1.1.0] - 2026-03-11
 
 ### Changed
