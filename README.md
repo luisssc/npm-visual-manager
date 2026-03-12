@@ -31,28 +31,17 @@ One-click updates for individual packages with automatic version checking.
 - **Compatibility**: Supports npm, yarn, pnpm, and bun with automatic detection.
 - **Security & Info**: Integrated security audit data, package sizes, and deprecation warnings.
 - **Professional Integration**: Theme-aware UI using native VS Code styles and robust ESLint-verified code.
+- **Multi-Language Support**: Automatic language detection with translations for Spanish, German, French, Chinese (Simplified), Japanese, Portuguese (Brazilian), Russian, and Korean.
 
 ## Requirements
 
 - VS Code 1.85.0 or higher
 - Node.js project with a `package.json` file
-- NPM installed
+- Package manager installed (npm, yarn, pnpm, or bun)
 
 ## Installation
 
-1. Install dependencies:
-```bash
-npm run install:all
-```
-
-2. Build the extension:
-```bash
-npm run vscode:prepublish
-```
-
-3. Press `F5` to open a new Extension Development Host window
-
-4. Open a Node.js project and run the command `Open NPM Package Manager`
+Install from the [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=LuisClementDev.npm-visual-manager) or search for "NPM Visual Manager" in the Extensions panel (`Ctrl+Shift+X`).
 
 ## Usage
 
@@ -108,13 +97,6 @@ This extension contributes the following settings:
 - `npm-visual-manager.columns.lastUpdate`: Show Last Update column
 - `npm-visual-manager.columns.security`: Show Security column
 - `npm-visual-manager.columns.semverUpdate`: Show Update Type column
-
-
-
-## Roadmap
-
-- [ ] Export dependency report
-- [ ] Dependency usage analysis (find unused packages)
 
 ## Contributing
 
