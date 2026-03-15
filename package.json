@@ -164,15 +164,20 @@
     "lint": "eslint src --ext ts",
     "lint:fix": "eslint src --ext ts --fix",
     "format": "prettier --write \"src/**/*.ts\" \"types/**/*.d.ts\"",
-    "format:check": "prettier --check \"src/**/*.ts\" \"types/**/*.d.ts\""
+    "format:check": "prettier --check \"src/**/*.ts\" \"types/**/*.d.ts\"",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage"
   },
   "devDependencies": {
     "@types/node": "^20.x",
     "@types/vscode": "^1.110.0",
     "@typescript-eslint/eslint-plugin": "^8.57.0",
     "@typescript-eslint/parser": "^8.57.0",
+    "@vitest/coverage-v8": "^4.1.0",
     "eslint": "^8.57.1",
     "prettier": "^3.8.1",
-    "typescript": "^5.9.3"
+    "typescript": "^5.9.3",
+    "vitest": "^4.1.0"
   }
 }

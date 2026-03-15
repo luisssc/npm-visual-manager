@@ -17,3 +17,7 @@ AGENTS.md
 
 # OS files
 Thumbs.db
+
+# Test config artifacts
+vitest.config.js
+vitest.config.js.map

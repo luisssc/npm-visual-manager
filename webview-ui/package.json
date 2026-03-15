@@ -11,7 +11,10 @@
     "lint": "eslint src --ext ts,tsx",
     "lint:fix": "eslint src --ext ts,tsx --fix",
     "format": "prettier --write \"src/**/*.{ts,tsx}\" \"../types/**/*.d.ts\"",
-    "format:check": "prettier --check \"src/**/*.{ts,tsx}\" \"../types/**/*.d.ts\""
+    "format:check": "prettier --check \"src/**/*.{ts,tsx}\" \"../types/**/*.d.ts\"",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage"
   },
   "dependencies": {
     "@vscode/codicons": "^0.0.45",
@@ -19,6 +22,9 @@
     "react-dom": "^19.2.4"
   },
   "devDependencies": {
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.2",
+    "@testing-library/user-event": "^14.6.1",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
     "@typescript-eslint/eslint-plugin": "^8.57.0",
@@ -27,8 +33,10 @@
     "eslint": "^8.57.1",
     "eslint-plugin-react": "^7.37.5",
     "eslint-plugin-react-hooks": "^5.2.0",
+    "jsdom": "^29.0.0",
     "prettier": "3.8.1",
     "typescript": "^5.9.3",
-    "vite": "^8.0.0"
+    "vite": "^8.0.0",
+    "vitest": "^4.1.0"
   }
 }
