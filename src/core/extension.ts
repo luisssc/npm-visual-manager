@@ -59,7 +59,6 @@ export function activate(context: vscode.ExtensionContext): void {
   // Register refresh command
   const refreshCommand = vscode.commands.registerCommand('npm-visual-manager.refresh', async () => {
     vscode.window.showInformationMessage('Refreshing dependencies...');
-    // The refresh will be handled by the sidebar provider
     vscode.commands.executeCommand('npm-visual-manager.openManager');
   });
 

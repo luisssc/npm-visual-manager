@@ -25,6 +25,7 @@ interface CacheData {
 const CACHE_VERSION = '1.2'; // Bumped for repositoryUrl support
 const DEFAULT_TTL_HOURS = 24; // Cache valid for 24 hours
 const CACHE_FILENAME = '.npm-visual-manager-cache.json';
+const MAX_ENTRIES = 500; // Maximum cache entries to prevent unlimited growth
 
 export class VersionCache {
   private cachePath: string;
@@ -131,12 +132,24 @@ export class VersionCache {
 
   /**
    * Store version data in cache
+   * Implements LRU eviction when cache exceeds MAX_ENTRIES
    */
   set(packageName: string, data: Omit<CacheEntry, 'timestamp'>): void {
     this.cache.entries[packageName] = {
       ...data,
       timestamp: Date.now(),
     };
+
+    // Enforce max size limit with LRU eviction
+    const entries = Object.entries(this.cache.entries);
+    if (entries.length > MAX_ENTRIES) {
+      // Sort by timestamp (oldest first) and remove oldest entries
+      entries.sort((a, b) => a[1].timestamp - b[1].timestamp);
+      const toRemove = entries.length - MAX_ENTRIES;
+      for (let i = 0; i < toRemove; i++) {
+        delete this.cache.entries[entries[i]![0]];
+      }
+    }
   }
 
   /**
