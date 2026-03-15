@@ -1,5 +1,10 @@
 # NPM Visual Manager
 
+[![Open VSX Version](https://img.shields.io/open-vsx/v/LuisClementDev/npm-visual-manager)](https://open-vsx.org/extension/LuisClementDev/npm-visual-manager)
+[![Open VSX Downloads](https://img.shields.io/open-vsx/dt/LuisClementDev/npm-visual-manager)](https://open-vsx.org/extension/LuisClementDev/npm-visual-manager)
+[![Build Status](https://img.shields.io/github/actions/workflow/status/luisssc/npm-visual-manager/ci.yml?branch=main)](https://github.com/luisssc/npm-visual-manager/actions)
+[![License](https://img.shields.io/github/license/luisssc/npm-visual-manager)](LICENSE)
+
 A Visual Studio Code extension that provides a visual interface for managing NPM dependencies, inspired by the NuGet Package Manager in Visual Studio.
 
 ## Screenshots
@@ -21,17 +26,15 @@ One-click updates for individual packages with automatic version checking.
 
 ## Features
 
-- **Dependency Management**: View production, development, and peer dependencies in a clean, sortable table.
-- **Search & Install**: Integrated NPM registry search to install new packages directly from the UI.
-- **Auto-Refresh**: Automatic UI reload when `package.json` is modified manually.
-- **Robust Searching**: Real-time search with intelligent debouncing and request cancellation to prevent race conditions.
-- **Changelog Viewer**: Direct links to GitHub releases for every package.
-- **One-Click Operations**: Bulk or individual updates, uninstalls, and version rollbacks.
-- **Multi-Project Support**: Auto-detects all project folders in monorepos.
-- **Compatibility**: Supports npm, yarn, pnpm, and bun with automatic detection.
-- **Security & Info**: Integrated security audit data, package sizes, and deprecation warnings.
-- **Professional Integration**: Theme-aware UI using native VS Code styles and robust ESLint-verified code.
-- **Multi-Language Support**: Automatic language detection with translations for Spanish, German, French, Chinese (Simplified), Japanese, Portuguese (Brazilian), Russian, and Korean.
+| Category | Capabilities |
+|----------|-------------|
+| **Dependency Management** | Visual table with sorting, filtering by type (prod/dev/peer), auto-refresh on `package.json` changes |
+| **Search & Install** | NPM registry search with debouncing, install as regular or dev dependency |
+| **Updates** | One-click individual or bulk updates, version rollbacks, ignore packages from checks |
+| **Security & Info** | Security audit integration, deprecation warnings, package sizes, direct links to changelogs |
+| **Multi-Project** | Auto-detection in monorepos, supports npm, yarn, pnpm, and bun |
+| **Localization** | 8 languages: Spanish, German, French, Chinese (Simplified), Japanese, Portuguese, Russian, Korean |
+| **UI** | Native VS Code theme integration, customizable columns |
 
 ## Requirements
 
@@ -76,17 +79,6 @@ Click the eye icon 👁️ next to any package to ignore it from update checks. 
 ### Changelog Viewer
 
 Hover over any package row and click the book icon 📖 to open the package's GitHub releases page. This helps you review what changed before updating.
-
-## Architecture
-
-```
-npm-visual-manager/
-├── src/                          # Extension Host (Node.js)
-├── webview-ui/                   # React Application (Vite)
-├── types/                        # Shared types between Host and Webview
-├── out/                          # Compiled output
-└── resources/                    # Icons and assets
-```
 
 ## Extension Settings
 

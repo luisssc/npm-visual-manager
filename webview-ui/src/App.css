@@ -168,3 +168,90 @@ body {
   background: var(--vscode-editor-selectionBackground);
   color: var(--vscode-editor-selectionForeground);
 }
+
+/* Loading and error states */
+.loading-container,
+.error-container {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  color: var(--vscode-foreground);
+}
+
+.spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid var(--vscode-widget-border);
+  border-top-color: var(--vscode-textLink-foreground);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.error-icon {
+  font-size: 48px;
+  color: var(--vscode-errorForeground);
+}
+
+.error-message {
+  max-width: 400px;
+  text-align: center;
+  color: var(--vscode-errorForeground);
+}
+
+.retry-btn {
+  background: var(--vscode-button-background);
+  color: var(--vscode-button-foreground);
+  border: none;
+  padding: 8px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.retry-btn:hover {
+  background: var(--vscode-button-hoverBackground);
+}
+
+/* Progress bar */
+.progress-bar {
+  height: 2px;
+  background: var(--vscode-textLink-foreground);
+  animation: progress 2s ease-in-out infinite;
+}
+
+@keyframes progress {
+  0% {
+    width: 0%;
+    margin-left: 0%;
+  }
+  50% {
+    width: 50%;
+    margin-left: 25%;
+  }
+  100% {
+    width: 0%;
+    margin-left: 100%;
+  }
+}
+
+.progress-message {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: var(--vscode-editor-background);
+  color: var(--vscode-foreground);
+  padding: 12px 24px;
+  border-radius: 4px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  z-index: 1000;
+}
