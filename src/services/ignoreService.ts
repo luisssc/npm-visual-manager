@@ -59,7 +59,7 @@ export class IgnoreService {
     filtered.push({
       name: packageName,
       reason,
-      pinnedVersion
+      pinnedVersion,
     });
 
     await this._getConfig().update(SETTING_KEY, filtered, vscode.ConfigurationTarget.Workspace);

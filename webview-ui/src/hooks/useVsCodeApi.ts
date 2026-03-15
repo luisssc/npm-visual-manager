@@ -37,56 +37,85 @@ export function useVsCodeApi() {
     postMessage({ type: 'GET_DEPENDENCIES' });
   }, [postMessage]);
 
-  const updatePackage = useCallback((packageName: string, version: string, currentVersion?: string) => {
-    postMessage({ type: 'UPDATE_PACKAGE', packageName, version, currentVersion });
-  }, [postMessage]);
+  const updatePackage = useCallback(
+    (packageName: string, version: string, currentVersion?: string) => {
+      postMessage({ type: 'UPDATE_PACKAGE', packageName, version, currentVersion });
+    },
+    [postMessage]
+  );
 
-  const updateAllPackages = useCallback((packages: { name: string; version: string }[]) => {
-    postMessage({ type: 'UPDATE_ALL_PACKAGES', packages });
-  }, [postMessage]);
+  const updateAllPackages = useCallback(
+    (packages: { name: string; version: string }[]) => {
+      postMessage({ type: 'UPDATE_ALL_PACKAGES', packages });
+    },
+    [postMessage]
+  );
 
-  const checkUpdates = useCallback((dependencies: Dependency[]) => {
-    postMessage({ type: 'CHECK_UPDATES', dependencies });
-  }, [postMessage]);
+  const checkUpdates = useCallback(
+    (dependencies: Dependency[]) => {
+      postMessage({ type: 'CHECK_UPDATES', dependencies });
+    },
+    [postMessage]
+  );
 
-  const selectProject = useCallback((path: string) => {
-    postMessage({ type: 'SELECT_PROJECT', path });
-  }, [postMessage]);
+  const selectProject = useCallback(
+    (path: string) => {
+      postMessage({ type: 'SELECT_PROJECT', path });
+    },
+    [postMessage]
+  );
 
   const rollbackLast = useCallback(() => {
     postMessage({ type: 'ROLLBACK_LAST' });
   }, [postMessage]);
 
-  const toggleIgnorePackage = useCallback((packageName: string, currentVersion?: string) => {
-    postMessage({ type: 'TOGGLE_IGNORE_PACKAGE', packageName, currentVersion });
-  }, [postMessage]);
+  const toggleIgnorePackage = useCallback(
+    (packageName: string, currentVersion?: string) => {
+      postMessage({ type: 'TOGGLE_IGNORE_PACKAGE', packageName, currentVersion });
+    },
+    [postMessage]
+  );
 
   const refreshCache = useCallback(() => {
     postMessage({ type: 'REFRESH_CACHE' });
   }, [postMessage]);
 
-  const searchPackages = useCallback((query: string) => {
-    postMessage({ type: 'SEARCH_PACKAGES', query });
-  }, [postMessage]);
+  const searchPackages = useCallback(
+    (query: string) => {
+      postMessage({ type: 'SEARCH_PACKAGES', query });
+    },
+    [postMessage]
+  );
 
-  const installNewPackage = useCallback((packageName: string, version: string, isDev: boolean) => {
-    postMessage({ type: 'INSTALL_NEW_PACKAGE', packageName, version, isDev });
-  }, [postMessage]);
+  const installNewPackage = useCallback(
+    (packageName: string, version: string, isDev: boolean) => {
+      postMessage({ type: 'INSTALL_NEW_PACKAGE', packageName, version, isDev });
+    },
+    [postMessage]
+  );
 
   const runAudit = useCallback(() => {
     postMessage({ type: 'GET_AUDIT' });
   }, [postMessage]);
 
-  const openExternal = useCallback((url: string) => {
-    postMessage({ type: 'OPEN_EXTERNAL', url });
-  }, [postMessage]);
+  const openExternal = useCallback(
+    (url: string) => {
+      postMessage({ type: 'OPEN_EXTERNAL', url });
+    },
+    [postMessage]
+  );
 
-  const uninstallPackage = useCallback((packageName: string) => {
-    postMessage({ type: 'UNINSTALL_PACKAGE', packageName });
-  }, [postMessage]);
+  const uninstallPackage = useCallback(
+    (packageName: string) => {
+      postMessage({ type: 'UNINSTALL_PACKAGE', packageName });
+    },
+    [postMessage]
+  );
 
   return {
-    get vscode() { return vscodeRef.current; },
+    get vscode() {
+      return vscodeRef.current;
+    },
     isReady,
     postMessage,
     requestDependencies,
@@ -101,7 +130,7 @@ export function useVsCodeApi() {
     installNewPackage,
     runAudit,
     openExternal,
-    uninstallPackage
+    uninstallPackage,
   };
 }
 

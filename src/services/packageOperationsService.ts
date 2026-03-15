@@ -18,33 +18,35 @@ export class PackageOperationsService {
    * Update a specific package
    */
   public async updatePackage(
-    packageName: string, 
-    version: string, 
+    packageName: string,
+    version: string,
     currentVersion: string | undefined,
     currentProjectPath: string,
     currentPackageManager: PackageManager
   ): Promise<UpdateHistory | null> {
     let newHistory: UpdateHistory | null = null;
-    
+
     // Get exact installed version from node_modules before updating
     const exactVersion = await getInstalledVersion(currentProjectPath, packageName);
-    
+
     // Save to history before updating (use declared version for rollback)
     if (currentVersion) {
       newHistory = {
         timestamp: Date.now(),
-        packages: [{
-          name: packageName,
-          previousDeclaredVersion: currentVersion,     // e.g. "^5"
-          previousInstalledVersion: exactVersion || currentVersion, // e.g. "5.9.3"
-          newVersion: version
-        }]
+        packages: [
+          {
+            name: packageName,
+            previousDeclaredVersion: currentVersion, // e.g. "^5"
+            previousInstalledVersion: exactVersion || currentVersion, // e.g. "5.9.3"
+            newVersion: version,
+          },
+        ],
       };
     }
 
     this.sendMessage({
       type: 'PROGRESS',
-      message: `Installing ${packageName}@${version}...`
+      message: `Installing ${packageName}@${version}...`,
     });
 
     try {
@@ -54,12 +56,12 @@ export class PackageOperationsService {
         {
           location: vscode.ProgressLocation.Notification,
           title: `Updating ${packageName}...`,
-          cancellable: false
+          cancellable: false,
         },
         async () => {
           return await runCommand(installCmd, {
             cwd: currentProjectPath,
-            label: `Update ${packageName}@${version}`
+            label: `Update ${packageName}@${version}`,
           });
         }
       );
@@ -68,31 +70,34 @@ export class PackageOperationsService {
       if (result.exitCode === 0) {
         this.setUpdateHistory(newHistory);
       }
-      
+
       // Small delay to ensure file system is synced
       await new Promise(resolve => setTimeout(resolve, 300));
       await this.reloadDependencies();
 
       if (result.exitCode !== 0) {
-        vscode.window.showErrorMessage(`Update failed for ${packageName} with exit code ${result.exitCode}. Check the Output channel for details.`);
+        vscode.window.showErrorMessage(
+          `Update failed for ${packageName} with exit code ${result.exitCode}. Check the Output channel for details.`
+        );
       }
 
       this.sendMessage({
         type: 'UPDATE_RESULT',
         success: result.exitCode === 0,
         packageName,
-        message: result.exitCode === 0
-          ? `Successfully updated ${packageName}`
-          : `Update finished with exit code ${result.exitCode}`
+        message:
+          result.exitCode === 0
+            ? `Successfully updated ${packageName}`
+            : `Update finished with exit code ${result.exitCode}`,
       });
-      
+
       return result.exitCode === 0 ? newHistory : null;
     } catch (error) {
       this.sendMessage({
         type: 'UPDATE_RESULT',
         success: false,
         packageName,
-        message: `Failed to update ${packageName}: ${error instanceof Error ? error.message : String(error)}`
+        message: `Failed to update ${packageName}: ${error instanceof Error ? error.message : String(error)}`,
       });
       return null;
     }
@@ -116,7 +121,7 @@ export class PackageOperationsService {
     // Get exact installed versions from node_modules before updating
     const packageNames = packages.map(p => p.name);
     const installedVersions = await getInstalledVersions(currentProjectPath, packageNames);
-    
+
     // Save to history before updating (use declared versions for rollback)
     const newHistory: UpdateHistory = {
       timestamp: Date.now(),
@@ -124,15 +129,15 @@ export class PackageOperationsService {
         .filter(p => p.currentVersion)
         .map(p => ({
           name: p.name,
-          previousDeclaredVersion: p.currentVersion!,  // e.g. "^5"
+          previousDeclaredVersion: p.currentVersion!, // e.g. "^5"
           previousInstalledVersion: installedVersions.get(p.name) || p.currentVersion!,
-          newVersion: p.version
-        }))
+          newVersion: p.version,
+        })),
     };
 
     this.sendMessage({
       type: 'PROGRESS',
-      message: `Updating ${packages.length} package(s)...`
+      message: `Updating ${packages.length} package(s)...`,
     });
 
     try {
@@ -143,12 +148,12 @@ export class PackageOperationsService {
         {
           location: vscode.ProgressLocation.Notification,
           title: `Updating ${packages.length} package(s)...`,
-          cancellable: false
+          cancellable: false,
         },
         async () => {
           return await runCommand(command, {
             cwd: currentProjectPath,
-            label: `Update ${packages.length} package(s)`
+            label: `Update ${packages.length} package(s)`,
           });
         }
       );
@@ -157,33 +162,38 @@ export class PackageOperationsService {
       if (result.exitCode === 0) {
         this.setUpdateHistory(newHistory);
       }
-      
+
       // Small delay to ensure file system is synced
       await new Promise(resolve => setTimeout(resolve, 300));
       await this.reloadDependencies();
 
       if (result.exitCode !== 0) {
-        vscode.window.showErrorMessage(`Update failed for ${packages.length} package(s) with exit code ${result.exitCode}. Check the Output channel for details.`);
+        vscode.window.showErrorMessage(
+          `Update failed for ${packages.length} package(s) with exit code ${result.exitCode}. Check the Output channel for details.`
+        );
       }
 
       this.sendMessage({
         type: 'UPDATE_RESULT',
         success: result.exitCode === 0,
         packageName: packages.map(p => p.name).join(', '),
-        message: result.exitCode === 0
-          ? `Successfully updated ${packages.length} package(s)`
-          : `Update finished with exit code ${result.exitCode}`
+        message:
+          result.exitCode === 0
+            ? `Successfully updated ${packages.length} package(s)`
+            : `Update finished with exit code ${result.exitCode}`,
       });
-      
+
       return result.exitCode === 0 ? newHistory : null;
     } catch (error) {
       this.sendMessage({
         type: 'UPDATE_RESULT',
         success: false,
         packageName: packages.map(p => p.name).join(', '),
-        message: `Failed to update packages: ${error instanceof Error ? error.message : String(error)}`
+        message: `Failed to update packages: ${error instanceof Error ? error.message : String(error)}`,
       });
-      vscode.window.showErrorMessage(`Failed to update packages: ${error instanceof Error ? error.message : String(error)}`);
+      vscode.window.showErrorMessage(
+        `Failed to update packages: ${error instanceof Error ? error.message : String(error)}`
+      );
       return null;
     }
   }
@@ -199,34 +209,38 @@ export class PackageOperationsService {
     try {
       // Get exact installed version before uninstalling so we can rollback
       const exactVersion = await getInstalledVersion(currentProjectPath, packageName);
-      
-      const newHistory: UpdateHistory | null = exactVersion ? {
-        timestamp: Date.now(),
-        packages: [{
-          name: packageName,
-          previousDeclaredVersion: exactVersion,
-          previousInstalledVersion: exactVersion,
-          newVersion: 'uninstalled'
-        }]
-      } : null;
+
+      const newHistory: UpdateHistory | null = exactVersion
+        ? {
+            timestamp: Date.now(),
+            packages: [
+              {
+                name: packageName,
+                previousDeclaredVersion: exactVersion,
+                previousInstalledVersion: exactVersion,
+                newVersion: 'uninstalled',
+              },
+            ],
+          }
+        : null;
 
       const uninstallCmd = getUninstallCommand(currentPackageManager, packageName);
 
       this.sendMessage({
         type: 'PROGRESS',
-        message: `Uninstalling ${packageName}...`
+        message: `Uninstalling ${packageName}...`,
       });
 
       const result = await vscode.window.withProgress(
         {
           location: vscode.ProgressLocation.Notification,
           title: `Uninstalling ${packageName}...`,
-          cancellable: false
+          cancellable: false,
         },
         async () => {
           return await runCommand(uninstallCmd, {
             cwd: currentProjectPath,
-            label: `Uninstall ${packageName}`
+            label: `Uninstall ${packageName}`,
           });
         }
       );
@@ -234,31 +248,36 @@ export class PackageOperationsService {
       if (result.exitCode === 0 && newHistory) {
         this.setUpdateHistory(newHistory);
       }
-      
+
       // Small delay to ensure file system is synced
       await new Promise(resolve => setTimeout(resolve, 300));
       await this.reloadDependencies();
 
       if (result.exitCode !== 0) {
-        vscode.window.showErrorMessage(`Uninstall failed for ${packageName} with exit code ${result.exitCode}. Check the Output channel for details.`);
+        vscode.window.showErrorMessage(
+          `Uninstall failed for ${packageName} with exit code ${result.exitCode}. Check the Output channel for details.`
+        );
       }
 
       this.sendMessage({
         type: 'UNINSTALL_RESULT',
         packageName,
         success: result.exitCode === 0,
-        message: result.exitCode === 0
-          ? `Successfully uninstalled ${packageName}`
-          : `Uninstall finished with exit code ${result.exitCode}`
+        message:
+          result.exitCode === 0
+            ? `Successfully uninstalled ${packageName}`
+            : `Uninstall finished with exit code ${result.exitCode}`,
       });
     } catch (error) {
       this.sendMessage({
         type: 'UNINSTALL_RESULT',
         packageName,
         success: false,
-        message: `Failed to uninstall ${packageName}: ${error instanceof Error ? error.message : String(error)}`
+        message: `Failed to uninstall ${packageName}: ${error instanceof Error ? error.message : String(error)}`,
       });
-      vscode.window.showErrorMessage(`Failed to uninstall package: ${error instanceof Error ? error.message : String(error)}`);
+      vscode.window.showErrorMessage(
+        `Failed to uninstall package: ${error instanceof Error ? error.message : String(error)}`
+      );
     }
   }
 
@@ -266,8 +285,8 @@ export class PackageOperationsService {
    * Install a new package
    */
   public async installNewPackage(
-    packageName: string, 
-    version: string, 
+    packageName: string,
+    version: string,
     isDev: boolean,
     currentProjectPath: string,
     currentPackageManager: PackageManager
@@ -280,19 +299,19 @@ export class PackageOperationsService {
 
       this.sendMessage({
         type: 'PROGRESS',
-        message: `Installing ${packageName}...`
+        message: `Installing ${packageName}...`,
       });
 
       const result = await vscode.window.withProgress(
         {
           location: vscode.ProgressLocation.Notification,
           title: `Installing ${packageName}...`,
-          cancellable: false
+          cancellable: false,
         },
         async () => {
           return await runCommand(command, {
             cwd: currentProjectPath,
-            label: `Install ${packageName}${versionSuffix}`
+            label: `Install ${packageName}${versionSuffix}`,
           });
         }
       );
@@ -302,25 +321,30 @@ export class PackageOperationsService {
       await this.reloadDependencies();
 
       if (result.exitCode !== 0) {
-        vscode.window.showErrorMessage(`Install failed for ${packageName} with exit code ${result.exitCode}. Check the Output channel for details.`);
+        vscode.window.showErrorMessage(
+          `Install failed for ${packageName} with exit code ${result.exitCode}. Check the Output channel for details.`
+        );
       }
 
       this.sendMessage({
         type: 'INSTALL_RESULT',
         success: result.exitCode === 0,
         packageName,
-        message: result.exitCode === 0
-          ? `Successfully installed ${packageName}`
-          : `Install finished with exit code ${result.exitCode}`
+        message:
+          result.exitCode === 0
+            ? `Successfully installed ${packageName}`
+            : `Install finished with exit code ${result.exitCode}`,
       });
     } catch (error) {
       this.sendMessage({
         type: 'INSTALL_RESULT',
         success: false,
         packageName,
-        message: `Failed to install ${packageName}: ${error instanceof Error ? error.message : String(error)}`
+        message: `Failed to install ${packageName}: ${error instanceof Error ? error.message : String(error)}`,
       });
-      vscode.window.showErrorMessage(`Failed to install package: ${error instanceof Error ? error.message : String(error)}`);
+      vscode.window.showErrorMessage(
+        `Failed to install package: ${error instanceof Error ? error.message : String(error)}`
+      );
     }
   }
 
@@ -336,14 +360,14 @@ export class PackageOperationsService {
       this.sendMessage({
         type: 'ROLLBACK_RESULT',
         success: false,
-        message: 'No previous update to rollback'
+        message: 'No previous update to rollback',
       });
       return;
     }
 
     const packagesToRollback = updateHistory.packages;
     const packageList = packagesToRollback.map(p => `${p.name}@${p.previousDeclaredVersion}`).join(', ');
-    
+
     const result = await vscode.window.showWarningMessage(
       `Rollback ${packagesToRollback.length} package(s) to previous versions?\n\n${packageList}`,
       { modal: true },
@@ -357,29 +381,27 @@ export class PackageOperationsService {
 
     this.sendMessage({
       type: 'PROGRESS',
-      message: `Rolling back ${packagesToRollback.length} package(s)...`
+      message: `Rolling back ${packagesToRollback.length} package(s)...`,
     });
 
     try {
       const info = getPackageManagerInfo(currentPackageManager);
-      
+
       // Install using the EXACT installed version to get the right package
       // We'll restore the declared version in package.json after
-      const installArgs = packagesToRollback
-        .map(p => `${p.name}@${p.previousInstalledVersion}`)
-        .join(' ');
+      const installArgs = packagesToRollback.map(p => `${p.name}@${p.previousInstalledVersion}`).join(' ');
       const command = `${info.addCommand} ${installArgs}`;
 
       const result = await vscode.window.withProgress(
         {
           location: vscode.ProgressLocation.Notification,
           title: `Rolling back ${packagesToRollback.length} package(s)...`,
-          cancellable: false
+          cancellable: false,
         },
         async () => {
           return await runCommand(command, {
             cwd: currentProjectPath,
-            label: `Rollback ${packagesToRollback.length} package(s)`
+            label: `Rollback ${packagesToRollback.length} package(s)`,
           });
         }
       );
@@ -400,13 +422,13 @@ export class PackageOperationsService {
         type: 'ROLLBACK_RESULT',
         success: true,
         message: `Successfully rolled back ${packagesToRollback.length} package(s)`,
-        rolledBackPackages
+        rolledBackPackages,
       });
     } catch (error) {
       this.sendMessage({
         type: 'ROLLBACK_RESULT',
         success: false,
-        message: `Failed to rollback: ${error instanceof Error ? error.message : String(error)}`
+        message: `Failed to rollback: ${error instanceof Error ? error.message : String(error)}`,
       });
       vscode.window.showErrorMessage(`Failed to rollback: ${error instanceof Error ? error.message : String(error)}`);
     }
@@ -417,7 +439,12 @@ export class PackageOperationsService {
    * This preserves the original format (^, ~, exact versions, etc.)
    */
   private async restorePackageJsonVersions(
-    packages: Array<{ name: string; previousDeclaredVersion: string; previousInstalledVersion: string; newVersion: string }>,
+    packages: Array<{
+      name: string;
+      previousDeclaredVersion: string;
+      previousInstalledVersion: string;
+      newVersion: string;
+    }>,
     currentProjectPath: string
   ): Promise<void> {
     try {

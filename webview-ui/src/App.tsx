@@ -2,13 +2,35 @@ import { useState, useCallback, useEffect, useRef } from 'react';
 import { DependencyTable } from './components/DependencyTable';
 import { SearchPanel } from './components/SearchPanel';
 import { useVsCodeApi, useVsCodeMessages } from './hooks/useVsCodeApi';
-import type { Dependency, HostToWebviewMessage, ColumnConfig, ProjectInfo, PackageManager, VersionInfo, UpdateHistory, SearchResult } from '../../types';
+import type {
+  Dependency,
+  HostToWebviewMessage,
+  ColumnConfig,
+  ProjectInfo,
+  PackageManager,
+  VersionInfo,
+  UpdateHistory,
+  SearchResult,
+} from '../../types';
 import './App.css';
 import { useTranslation } from './i18n/I18nContext';
 
 function App() {
   const t = useTranslation();
-  const { requestDependencies, updatePackage, updateAllPackages, selectProject, rollbackLast, toggleIgnorePackage, refreshCache, searchPackages, installNewPackage, openExternal, uninstallPackage, isReady } = useVsCodeApi();
+  const {
+    requestDependencies,
+    updatePackage,
+    updateAllPackages,
+    selectProject,
+    rollbackLast,
+    toggleIgnorePackage,
+    refreshCache,
+    searchPackages,
+    installNewPackage,
+    openExternal,
+    uninstallPackage,
+    isReady,
+  } = useVsCodeApi();
 
   const [dependencies, setDependencies] = useState<Dependency[]>([]);
   const [packageName, setPackageName] = useState<string>('');
@@ -20,7 +42,7 @@ function App() {
     type: false,
     lastUpdate: true,
     security: true,
-    semverUpdate: true
+    semverUpdate: true,
   });
   const [projects, setProjects] = useState<ProjectInfo[]>([]);
   const [currentProjectPath, setCurrentProjectPath] = useState<string>('');
@@ -34,111 +56,113 @@ function App() {
   const [isSearching, setIsSearching] = useState(false);
 
   // Handle messages from Extension Host
-  const handleMessage = useCallback((message: HostToWebviewMessage) => {
-    switch (message.type) {
-      case 'DEPENDENCIES_DATA':
-        setDependencies(message.dependencies);
-        setPackageName(message.packageName);
-        setColumnConfig(message.columnConfig);
-        if (message.projects) {
-          setProjects(message.projects);
-        }
-        if (message.currentProjectPath) {
-          setCurrentProjectPath(message.currentProjectPath);
-        }
-        if (message.packageManager) {
-          setPackageManager(message.packageManager);
-        }
-        if (message.versions) {
-          setVersions(message.versions);
-        }
-        if (message.lastUpdate !== undefined) {
-          setLastUpdate(message.lastUpdate);
-        }
-        setIsLoading(false);
-        setError(null);
-        break;
+  const handleMessage = useCallback(
+    (message: HostToWebviewMessage) => {
+      switch (message.type) {
+        case 'DEPENDENCIES_DATA':
+          setDependencies(message.dependencies);
+          setPackageName(message.packageName);
+          setColumnConfig(message.columnConfig);
+          if (message.projects) {
+            setProjects(message.projects);
+          }
+          if (message.currentProjectPath) {
+            setCurrentProjectPath(message.currentProjectPath);
+          }
+          if (message.packageManager) {
+            setPackageManager(message.packageManager);
+          }
+          if (message.versions) {
+            setVersions(message.versions);
+          }
+          if (message.lastUpdate !== undefined) {
+            setLastUpdate(message.lastUpdate);
+          }
+          setIsLoading(false);
+          setError(null);
+          break;
 
-      case 'COLUMN_CONFIG':
-        setColumnConfig(message.config);
-        break;
+        case 'COLUMN_CONFIG':
+          setColumnConfig(message.config);
+          break;
 
-      case 'VERSION_CHECK_RESULT':
-        setDependencies(prev =>
-          prev.map(dep =>
-            dep.name === message.dependency.name
-              ? {
-                  ...dep,
-                  latestVersion: message.latestVersion,
-                  updateAvailable: !!message.semverUpdateType && message.semverUpdateType !== 'none' && message.semverUpdateType !== 'unknown',
-                  semverUpdateType: message.semverUpdateType,
-                  lastPublishDate: message.lastPublishDate,
-                  isDeprecated: message.isDeprecated,
-                  deprecationMessage: message.deprecationMessage,
-                  repositoryUrl: message.repositoryUrl
-                }
-              : dep
-          )
-        );
-        // Track cache status from first package
-        if (message.fromCache !== undefined && !cacheInfoRef.current) {
-          cacheInfoRef.current = { fromCache: message.fromCache, age: message.cacheAge };
-        }
-        break;
+        case 'VERSION_CHECK_RESULT':
+          setDependencies(prev =>
+            prev.map(dep =>
+              dep.name === message.dependency.name
+                ? {
+                    ...dep,
+                    latestVersion: message.latestVersion,
+                    updateAvailable:
+                      !!message.semverUpdateType &&
+                      message.semverUpdateType !== 'none' &&
+                      message.semverUpdateType !== 'unknown',
+                    semverUpdateType: message.semverUpdateType,
+                    lastPublishDate: message.lastPublishDate,
+                    isDeprecated: message.isDeprecated,
+                    deprecationMessage: message.deprecationMessage,
+                    repositoryUrl: message.repositoryUrl,
+                  }
+                : dep
+            )
+          );
+          // Track cache status from first package
+          if (message.fromCache !== undefined && !cacheInfoRef.current) {
+            cacheInfoRef.current = { fromCache: message.fromCache, age: message.cacheAge };
+          }
+          break;
 
-      case 'CACHE_CLEARED':
-        cacheInfoRef.current = null;
-        setProgressMessage(null);
-        break;
+        case 'CACHE_CLEARED':
+          cacheInfoRef.current = null;
+          setProgressMessage(null);
+          break;
 
-      case 'SEARCH_RESULTS':
-        setSearchResults(message.results);
-        setIsSearching(false);
-        break;
+        case 'SEARCH_RESULTS':
+          setSearchResults(message.results);
+          setIsSearching(false);
+          break;
 
-      case 'IGNORE_TOGGLED':
-        setDependencies(prev =>
-          prev.map(dep =>
-            dep.name === message.packageName
-              ? { ...dep, isIgnored: message.isIgnored }
-              : dep
-          )
-        );
-        break;
+        case 'IGNORE_TOGGLED':
+          setDependencies(prev =>
+            prev.map(dep => (dep.name === message.packageName ? { ...dep, isIgnored: message.isIgnored } : dep))
+          );
+          break;
 
-      case 'UPDATE_RESULT':
-        setProgressMessage(null);
-        requestDependencies();
-        break;
+        case 'UPDATE_RESULT':
+          setProgressMessage(null);
+          requestDependencies();
+          break;
 
-      case 'UNINSTALL_RESULT':
-        setProgressMessage(null);
-        requestDependencies();
-        break;
+        case 'UNINSTALL_RESULT':
+          setProgressMessage(null);
+          requestDependencies();
+          break;
 
-      case 'ROLLBACK_RESULT':
-        setProgressMessage(null);
-        if (message.success) {
-          setLastUpdate(null);
-          setRollbackMessage(message.message);
-          setTimeout(() => setRollbackMessage(null), 5000);
-        }
-        break;
+        case 'ROLLBACK_RESULT':
+          setProgressMessage(null);
+          if (message.success) {
+            setLastUpdate(null);
+            setRollbackMessage(message.message);
+            setTimeout(() => setRollbackMessage(null), 5000);
+          }
+          break;
 
-      case 'PROGRESS':
-        setProgressMessage(message.message);
-        break;
+        case 'PROGRESS':
+          setProgressMessage(message.message);
+          break;
 
-      case 'INSTALL_RESULT':
-        setProgressMessage(null);
-        break;
+        case 'INSTALL_RESULT':
+          setProgressMessage(null);
+          break;
 
-      case 'ERROR':
-        setError(message.message);
-        setIsLoading(false);
-        break;
-    }
-  }, [requestDependencies]);
+        case 'ERROR':
+          setError(message.message);
+          setIsLoading(false);
+          break;
+      }
+    },
+    [requestDependencies]
+  );
 
   useVsCodeMessages(handleMessage);
 
@@ -148,8 +172,6 @@ function App() {
       requestDependencies();
     }
   }, [isReady, requestDependencies]);
-
-
 
   const handleUpdatePackage = (packageName: string, version: string, currentVersion?: string) => {
     updatePackage(packageName, version, currentVersion);
@@ -176,28 +198,40 @@ function App() {
     refreshCache();
   };
 
-  const handleSearch = useCallback((query: string) => {
-    if (query.trim().length < 2) {
+  const handleSearch = useCallback(
+    (query: string) => {
+      if (query.trim().length < 2) {
+        setSearchResults([]);
+        setIsSearching(false);
+        return;
+      }
+      setIsSearching(true);
+      searchPackages(query);
+    },
+    [searchPackages]
+  );
+
+  const handleInstallNew = useCallback(
+    (packageName: string, version: string, isDev: boolean) => {
+      installNewPackage(packageName, version, isDev);
       setSearchResults([]);
-      setIsSearching(false);
-      return;
-    }
-    setIsSearching(true);
-    searchPackages(query);
-  }, [searchPackages]);
+    },
+    [installNewPackage]
+  );
 
-  const handleInstallNew = useCallback((packageName: string, version: string, isDev: boolean) => {
-    installNewPackage(packageName, version, isDev);
-    setSearchResults([]);
-  }, [installNewPackage]);
+  const handleOpenExternal = useCallback(
+    (url: string) => {
+      openExternal(url);
+    },
+    [openExternal]
+  );
 
-  const handleOpenExternal = useCallback((url: string) => {
-    openExternal(url);
-  }, [openExternal]);
-
-  const handleUninstall = useCallback((packageName: string) => {
-    uninstallPackage(packageName);
-  }, [uninstallPackage]);
+  const handleUninstall = useCallback(
+    (packageName: string) => {
+      uninstallPackage(packageName);
+    },
+    [uninstallPackage]
+  );
 
   if (isLoading) {
     return (
@@ -211,7 +245,9 @@ function App() {
   if (error) {
     return (
       <div className="error-container">
-        <div className="error-icon"><i className="codicon codicon-error" /></div>
+        <div className="error-icon">
+          <i className="codicon codicon-error" />
+        </div>
         <p className="error-message">{error}</p>
         <button className="retry-btn" onClick={handleRetry}>
           {t.buttons.retry}
@@ -228,15 +264,17 @@ function App() {
           <div className="progress-message">{progressMessage}</div>
         </>
       )}
-      
+
       <header className="app-header">
-        <h1><i className="codicon codicon-package" /> NPM Visual Manager</h1>
+        <h1>
+          <i className="codicon codicon-package" /> NPM Visual Manager
+        </h1>
         <div className="header-controls">
           {projects.length > 1 ? (
-            <select 
+            <select
               className="project-selector"
               value={currentProjectPath}
-              onChange={(e) => handleSelectProject(e.target.value)}
+              onChange={e => handleSelectProject(e.target.value)}
             >
               {projects.map(project => (
                 <option key={project.path} value={project.path}>
@@ -247,15 +285,20 @@ function App() {
           ) : (
             <span className="package-name">{packageName}</span>
           )}
-          <button 
+          <button
             className="toggle-packages-btn"
             onClick={() => setShowAllPackages(!showAllPackages)}
             title={showAllPackages ? t.tooltips.showOnlyUpdates : t.tooltips.showAllPackages}
           >
-            {showAllPackages
-              ? <><i className="codicon codicon-check" /> {t.header.showUpdatesOnly}</>
-              : <><i className="codicon codicon-list-flat" /> {t.header.showAllPackages}</>
-            }
+            {showAllPackages ? (
+              <>
+                <i className="codicon codicon-check" /> {t.header.showUpdatesOnly}
+              </>
+            ) : (
+              <>
+                <i className="codicon codicon-list-flat" /> {t.header.showAllPackages}
+              </>
+            )}
           </button>
           <button
             className="refresh-btn"
@@ -294,7 +337,6 @@ function App() {
           isLoading={isSearching}
           installedPackages={dependencies}
         />
-
       </main>
     </div>
   );

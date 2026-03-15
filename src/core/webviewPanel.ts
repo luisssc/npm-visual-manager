@@ -11,7 +11,13 @@ import { getPackageDetails, getSemverUpdateType, setGlobalCache } from '../servi
 import { getCache, VersionCache } from '../services/cacheService';
 import { getIgnoreService } from '../services/ignoreService';
 import { findAllProjects, Project } from '../services/workspaceService';
-import { runAudit, hasVulnerabilities, getPackageVulnerabilityCount, detectPackageManager, clearAuditCache } from '../services/auditService';
+import {
+  runAudit,
+  hasVulnerabilities,
+  getPackageVulnerabilityCount,
+  detectPackageManager,
+  clearAuditCache,
+} from '../services/auditService';
 import { getVersions } from '../services/nodeVersionService';
 import { searchPackages } from '../services/searchService';
 import { clearPackageSizeCache } from '../services/sizeService';
@@ -25,7 +31,6 @@ export class NpmGuiManagerPanel {
   private readonly _panel: vscode.WebviewPanel;
   private readonly _extensionUri: vscode.Uri;
   private _disposables: vscode.Disposable[] = [];
-  private _workspaceRoot: string;
   private _projects: Project[] = [];
   private _currentProjectPath: string;
   private _currentPackageManager: PackageManager = 'npm';
@@ -42,9 +47,7 @@ export class NpmGuiManagerPanel {
     workspaceRoot: string,
     preferredProjectPath?: string
   ): Promise<void> {
-    const column = vscode.window.activeTextEditor
-      ? vscode.window.activeTextEditor.viewColumn
-      : undefined;
+    const column = vscode.window.activeTextEditor ? vscode.window.activeTextEditor.viewColumn : undefined;
 
     // Find all projects in workspace
     const discoveredProjects = await findAllProjects(workspaceRoot);
@@ -66,13 +69,13 @@ export class NpmGuiManagerPanel {
       NpmGuiManagerPanel.currentPanel._update();
       const currentPath = NpmGuiManagerPanel.currentPanel._currentProjectPath;
       const keepCurrent = projects.some(
-        (project) =>
-          NpmGuiManagerPanel._normalizePath(project.path) ===
-          NpmGuiManagerPanel._normalizePath(currentPath)
+        project => NpmGuiManagerPanel._normalizePath(project.path) === NpmGuiManagerPanel._normalizePath(currentPath)
       );
       const resolvedProjectPath = preferredProjectPath
         ? NpmGuiManagerPanel._resolveProjectPath(projects, preferredProjectPath)
-        : (keepCurrent ? currentPath : projects[0].path);
+        : keepCurrent
+          ? currentPath
+          : projects[0]!.path;
       if (NpmGuiManagerPanel.currentPanel._currentProjectPath !== resolvedProjectPath) {
         await NpmGuiManagerPanel.currentPanel._selectProject(resolvedProjectPath);
       } else {
@@ -89,16 +92,14 @@ export class NpmGuiManagerPanel {
       {
         enableScripts: true,
         retainContextWhenHidden: true,
-        localResourceRoots: [
-          vscode.Uri.joinPath(extensionUri, 'out', 'webview')
-        ]
+        localResourceRoots: [vscode.Uri.joinPath(extensionUri, 'out', 'webview')],
       }
     );
 
     // Set theme-aware icons
     panel.iconPath = {
       light: vscode.Uri.joinPath(extensionUri, 'resources', 'icon-light.svg'),
-      dark: vscode.Uri.joinPath(extensionUri, 'resources', 'icon-dark.svg')
+      dark: vscode.Uri.joinPath(extensionUri, 'resources', 'icon-dark.svg'),
     };
 
     NpmGuiManagerPanel.currentPanel = new NpmGuiManagerPanel(
@@ -113,7 +114,10 @@ export class NpmGuiManagerPanel {
   }
 
   private static _normalizePath(inputPath: string): string {
-    return path.resolve(inputPath).replace(/[\\/]+$/, '').toLowerCase();
+    return path
+      .resolve(inputPath)
+      .replace(/[\\/]+$/, '')
+      .toLowerCase();
   }
 
   private static async _withPreferredProject(
@@ -136,9 +140,7 @@ export class NpmGuiManagerPanel {
     }
 
     const normalizedCandidate = this._normalizePath(candidatePath);
-    const alreadyIncluded = projects.some(
-      (project) => this._normalizePath(project.path) === normalizedCandidate
-    );
+    const alreadyIncluded = projects.some(project => this._normalizePath(project.path) === normalizedCandidate);
     if (alreadyIncluded) {
       return projects;
     }
@@ -166,26 +168,24 @@ export class NpmGuiManagerPanel {
       {
         name,
         path: candidatePath,
-        relativePath
-      }
+        relativePath,
+      },
     ];
   }
 
   private static _resolveProjectPath(projects: Project[], preferredProjectPath?: string): string {
     if (!preferredProjectPath) {
-      return projects[0].path;
+      return projects[0]!.path;
     }
 
     const normalizedPreferred = this._normalizePath(preferredProjectPath);
-    const exactMatch = projects.find(
-      (project) => this._normalizePath(project.path) === normalizedPreferred
-    );
+    const exactMatch = projects.find(project => this._normalizePath(project.path) === normalizedPreferred);
     if (exactMatch) {
       return exactMatch.path;
     }
 
     const containerMatch = projects
-      .filter((project) => {
+      .filter(project => {
         const normalizedProject = this._normalizePath(project.path);
         return (
           normalizedPreferred === normalizedProject ||
@@ -200,33 +200,32 @@ export class NpmGuiManagerPanel {
       return containerMatch.path;
     }
 
-    return projects[0].path;
+    return projects[0]!.path;
   }
-
-  private _globalStorageUri: vscode.Uri;
 
   private constructor(
     panel: vscode.WebviewPanel,
     extensionUri: vscode.Uri,
-    globalStorageUri: vscode.Uri,
-    workspaceRoot: string,
+    _globalStorageUri: vscode.Uri,
+    _workspaceRoot: string,
     projects: Project[],
     preferredProjectPath?: string
   ) {
     this._panel = panel;
     this._extensionUri = extensionUri;
-    this._globalStorageUri = globalStorageUri;
-    this._workspaceRoot = workspaceRoot;
+    // _globalStorageUri and _workspaceRoot are reserved for future use
     this._projects = projects;
     this._currentProjectPath = NpmGuiManagerPanel._resolveProjectPath(projects, preferredProjectPath);
-    
+
     // Initialize Package Operations Service
     this._packageOperationsService = new PackageOperationsService(
-      (msg) => this._sendMessage(msg),
+      msg => this._sendMessage(msg),
       () => this._loadDependencies(),
-      (history) => { this._updateHistory = history; }
+      history => {
+        this._updateHistory = history;
+      }
     );
-    
+
     // Initialize cache for this project
     this._initializeCache();
 
@@ -243,11 +242,7 @@ export class NpmGuiManagerPanel {
     this._update();
 
     // Clean up when panel is closed
-    this._panel.onDidDispose(
-      () => this.dispose(),
-      null,
-      this._disposables
-    );
+    this._panel.onDidDispose(() => this.dispose(), null, this._disposables);
 
     // Initialize file watcher for package.json changes
     this._initFileWatcher();
@@ -256,11 +251,11 @@ export class NpmGuiManagerPanel {
   private _initFileWatcher(): void {
     // Watch for package.json changes in the entire workspace
     this._fileWatcher = vscode.workspace.createFileSystemWatcher('**/package.json');
-    
-    this._fileWatcher.onDidChange((uri) => this._onFileChanged(uri), null, this._disposables);
-    this._fileWatcher.onDidCreate((uri) => this._onFileChanged(uri), null, this._disposables);
-    this._fileWatcher.onDidDelete((uri) => this._onFileChanged(uri), null, this._disposables);
-    
+
+    this._fileWatcher.onDidChange(uri => this._onFileChanged(uri), null, this._disposables);
+    this._fileWatcher.onDidCreate(uri => this._onFileChanged(uri), null, this._disposables);
+    this._fileWatcher.onDidDelete(uri => this._onFileChanged(uri), null, this._disposables);
+
     this._disposables.push(this._fileWatcher);
   }
 
@@ -308,17 +303,31 @@ export class NpmGuiManagerPanel {
         break;
 
       case 'UPDATE_PACKAGE': {
-        await this._packageOperationsService.updatePackage(message.packageName, message.version, message.currentVersion, this._currentProjectPath, this._currentPackageManager);
+        await this._packageOperationsService.updatePackage(
+          message.packageName,
+          message.version,
+          message.currentVersion,
+          this._currentProjectPath,
+          this._currentPackageManager
+        );
         break;
       }
 
       case 'UPDATE_ALL_PACKAGES': {
-        await this._packageOperationsService.updateAllPackages(message.packages, this._currentProjectPath, this._currentPackageManager);
+        await this._packageOperationsService.updateAllPackages(
+          message.packages,
+          this._currentProjectPath,
+          this._currentPackageManager
+        );
         break;
       }
 
       case 'ROLLBACK_LAST':
-        await this._packageOperationsService.rollbackLastUpdate(this._updateHistory, this._currentProjectPath, this._currentPackageManager);
+        await this._packageOperationsService.rollbackLastUpdate(
+          this._updateHistory,
+          this._currentProjectPath,
+          this._currentPackageManager
+        );
         break;
 
       case 'SEARCH_PACKAGES':
@@ -326,7 +335,13 @@ export class NpmGuiManagerPanel {
         break;
 
       case 'INSTALL_NEW_PACKAGE':
-        await this._packageOperationsService.installNewPackage(message.packageName, message.version, message.isDev, this._currentProjectPath, this._currentPackageManager);
+        await this._packageOperationsService.installNewPackage(
+          message.packageName,
+          message.version,
+          message.isDev,
+          this._currentProjectPath,
+          this._currentPackageManager
+        );
         break;
 
       case 'OPEN_EXTERNAL':
@@ -336,7 +351,11 @@ export class NpmGuiManagerPanel {
         break;
 
       case 'UNINSTALL_PACKAGE':
-        await this._packageOperationsService.uninstallPackage(message.packageName, this._currentProjectPath, this._currentPackageManager);
+        await this._packageOperationsService.uninstallPackage(
+          message.packageName,
+          this._currentProjectPath,
+          this._currentPackageManager
+        );
         break;
     }
   }
@@ -364,13 +383,13 @@ export class NpmGuiManagerPanel {
 
     clearAuditCache(this._currentProjectPath);
     clearPackageSizeCache(this._currentProjectPath);
-    
+
     // Reload dependencies with fresh cache
     await this._loadDependencies();
-    
+
     this._sendMessage({
       type: 'CACHE_CLEARED',
-      message: 'Cache refreshed successfully'
+      message: 'Cache refreshed successfully',
     });
   }
 
@@ -380,13 +399,13 @@ export class NpmGuiManagerPanel {
   private async _toggleIgnorePackage(packageName: string, currentVersion?: string): Promise<void> {
     const ignoreService = getIgnoreService();
     const isIgnored = await ignoreService.toggleIgnore(packageName, currentVersion);
-    
+
     this._sendMessage({
       type: 'IGNORE_TOGGLED',
       packageName,
-      isIgnored
+      isIgnored,
     });
-    
+
     // Reload to update UI
     await this._loadDependencies();
   }
@@ -398,11 +417,11 @@ export class NpmGuiManagerPanel {
     const items = this._projects.map(p => ({
       label: p.name,
       description: p.relativePath,
-      path: p.path
+      path: p.path,
     }));
 
     const selected = await vscode.window.showQuickPick(items, {
-      placeHolder: 'Select a project to manage dependencies'
+      placeHolder: 'Select a project to manage dependencies',
     });
 
     if (selected) {
@@ -420,7 +439,7 @@ export class NpmGuiManagerPanel {
       if (!packageJsonPath) {
         this._sendMessage({
           type: 'ERROR',
-          message: 'No package.json found in the selected project'
+          message: 'No package.json found in the selected project',
         });
         return;
       }
@@ -429,21 +448,21 @@ export class NpmGuiManagerPanel {
       const columnConfig = this._getColumnConfig();
       let dependencies = await extractDependencies(packageJson, this._currentProjectPath, {
         includeSize: columnConfig.size,
-        concurrency: 10
+        concurrency: 10,
       });
-      
+
       // Detect package manager for this project
       this._currentPackageManager = await detectPackageManager(this._currentProjectPath);
 
       // Run security audit (silently)
       try {
         const auditResult = await runAudit(this._currentProjectPath);
-        
+
         // Add vulnerability info to dependencies
         dependencies = dependencies.map(dep => ({
           ...dep,
           hasVulnerabilities: hasVulnerabilities(auditResult, dep.name),
-          vulnerabilityCount: getPackageVulnerabilityCount(auditResult, dep.name)
+          vulnerabilityCount: getPackageVulnerabilityCount(auditResult, dep.name),
         }));
       } catch (auditError) {
         console.warn('npm audit failed:', auditError);
@@ -460,7 +479,7 @@ export class NpmGuiManagerPanel {
 
       // Get current project name - show only project name, not path
       const currentProject = this._projects.find(p => p.path === this._currentProjectPath);
-      const displayName = currentProject ? currentProject.name : (packageJson.name || 'Unnamed Package');
+      const displayName = currentProject ? currentProject.name : packageJson.name || 'Unnamed Package';
 
       // Get Node and package manager versions
       const versions = await getVersions(this._currentPackageManager);
@@ -474,7 +493,7 @@ export class NpmGuiManagerPanel {
         currentProjectPath: this._currentProjectPath,
         packageManager: this._currentPackageManager,
         versions,
-        lastUpdate: this._updateHistory
+        lastUpdate: this._updateHistory,
       });
 
       // Update panel title with project name
@@ -486,7 +505,7 @@ export class NpmGuiManagerPanel {
     } catch (error) {
       this._sendMessage({
         type: 'ERROR',
-        message: `Failed to load dependencies: ${error instanceof Error ? error.message : String(error)}`
+        message: `Failed to load dependencies: ${error instanceof Error ? error.message : String(error)}`,
       });
     }
   }
@@ -496,7 +515,7 @@ export class NpmGuiManagerPanel {
     return dependencies.map(dep => ({
       ...dep,
       isIgnored: ignoreService.isIgnored(dep.name),
-      ignoreReason: ignoreService.getIgnoreReason(dep.name)
+      ignoreReason: ignoreService.getIgnoreReason(dep.name),
     }));
   }
 
@@ -510,7 +529,7 @@ export class NpmGuiManagerPanel {
       type: config.get('type', true),
       lastUpdate: config.get('lastUpdate', true),
       security: config.get('security', true),
-      semverUpdate: config.get('semverUpdate', true)
+      semverUpdate: config.get('semverUpdate', true),
     };
   }
 
@@ -520,21 +539,17 @@ export class NpmGuiManagerPanel {
   private async _checkUpdates(dependencies: Dependency[], forceRefresh: boolean = false): Promise<void> {
     const batchSize = 5; // Process in batches to avoid overloading
     const dependenciesToCheck = Array.from(
-      new Map(
-        dependencies
-          .filter(dep => !dep.isIgnored)
-          .map(dep => [dep.name, dep] as const)
-      ).values()
+      new Map(dependencies.filter(dep => !dep.isIgnored).map(dep => [dep.name, dep] as const)).values()
     );
 
     for (let i = 0; i < dependenciesToCheck.length; i += batchSize) {
       const batch = dependenciesToCheck.slice(i, i + batchSize);
-      const promises = batch.map(async (dep) => {
+      const promises = batch.map(async dep => {
         try {
           const details = await getPackageDetails(dep.name, forceRefresh);
           // Compare declared version (from package.json) with latest, not installed version
           const semverUpdateType = getSemverUpdateType(dep.declaredVersion, details.latestVersion);
-          
+
           this._sendMessage({
             type: 'VERSION_CHECK_RESULT',
             dependency: dep,
@@ -545,7 +560,7 @@ export class NpmGuiManagerPanel {
             cacheAge: details.cacheAge,
             isDeprecated: details.isDeprecated,
             deprecationMessage: details.deprecationMessage,
-            repositoryUrl: details.repositoryUrl
+            repositoryUrl: details.repositoryUrl,
           });
         } catch (error) {
           console.warn(`Failed to check version for ${dep.name}:`, error);
@@ -573,7 +588,7 @@ export class NpmGuiManagerPanel {
     if (!query.trim()) {
       this._sendMessage({
         type: 'SEARCH_RESULTS',
-        results: []
+        results: [],
       });
       return;
     }
@@ -585,11 +600,11 @@ export class NpmGuiManagerPanel {
     try {
       this._sendMessage({
         type: 'PROGRESS',
-        message: `Searching for "${query}"...`
+        message: `Searching for "${query}"...`,
       });
-      
+
       const results = await searchPackages(query, 20, signal);
-      
+
       // If signal was aborted, results will be empty or searchPackages handled it.
       // But we double check here to avoid updating UI with stale data if necessary.
       if (signal.aborted) {
@@ -598,12 +613,12 @@ export class NpmGuiManagerPanel {
 
       this._sendMessage({
         type: 'SEARCH_RESULTS',
-        results
+        results,
       });
-      
+
       this._sendMessage({
         type: 'PROGRESS',
-        message: null as any
+        message: null as any,
       });
     } catch (error: any) {
       if (signal.aborted) {
@@ -613,7 +628,7 @@ export class NpmGuiManagerPanel {
       console.error('Search failed:', error);
       this._sendMessage({
         type: 'SEARCH_RESULTS',
-        results: []
+        results: [],
       });
       vscode.window.showErrorMessage(`Search failed: ${error instanceof Error ? error.message : String(error)}`);
     } finally {
@@ -622,8 +637,6 @@ export class NpmGuiManagerPanel {
       }
     }
   }
-
-
 
   /**
    * Send a message to the Webview
@@ -657,5 +670,3 @@ export class NpmGuiManagerPanel {
     }
   }
 }
-
-

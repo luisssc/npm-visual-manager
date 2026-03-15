@@ -49,8 +49,8 @@ const EMPTY_AUDIT_RESULT: AuditResult = {
   vulnerabilities: [],
   metadata: {
     vulnerabilities: { info: 0, low: 0, moderate: 0, high: 0, critical: 0 },
-    totalDependencies: 0
-  }
+    totalDependencies: 0,
+  },
 };
 
 /**
@@ -60,36 +60,36 @@ export async function runAudit(projectPath: string, options: RunAuditOptions = {
   const ttlMs = options.ttlMs ?? DEFAULT_AUDIT_CACHE_TTL_MS;
   const cached = auditCache.get(projectPath);
 
-  if (!options.forceRefresh && cached && (Date.now() - cached.timestamp) < ttlMs) {
+  if (!options.forceRefresh && cached && Date.now() - cached.timestamp < ttlMs) {
     return cached.result;
   }
 
   const packageManager = await detectPackageManager(projectPath);
   const auditCommand = getAuditCommand(packageManager);
-  
+
   try {
     const { stdout } = await execAsync(auditCommand, {
       cwd: projectPath,
       timeout: 60000,
-      maxBuffer: 10 * 1024 * 1024 // 10MB buffer
+      maxBuffer: 10 * 1024 * 1024, // 10MB buffer
     });
 
     const parsed = parseAuditOutput(packageManager, stdout);
-    
+
     const result: AuditResult = {
       vulnerabilities: parsed.vulnerabilities.map(v => ({
         ...v,
-        overview: v.title
+        overview: v.title,
       })),
       metadata: {
         vulnerabilities: parsed.metadata.vulnerabilities,
-        totalDependencies: 0 // Not available in all formats
-      }
+        totalDependencies: 0, // Not available in all formats
+      },
     };
 
     auditCache.set(projectPath, {
       result,
-      timestamp: Date.now()
+      timestamp: Date.now(),
     });
 
     return result;
@@ -103,17 +103,17 @@ export async function runAudit(projectPath: string, options: RunAuditOptions = {
         const result: AuditResult = {
           vulnerabilities: parsed.vulnerabilities.map(v => ({
             ...v,
-            overview: v.title
+            overview: v.title,
           })),
           metadata: {
             vulnerabilities: parsed.metadata.vulnerabilities,
-            totalDependencies: 0
-          }
+            totalDependencies: 0,
+          },
         };
 
         auditCache.set(projectPath, {
           result,
-          timestamp: Date.now()
+          timestamp: Date.now(),
         });
 
         return result;
@@ -124,7 +124,7 @@ export async function runAudit(projectPath: string, options: RunAuditOptions = {
     const emptyResult = { ...EMPTY_AUDIT_RESULT };
     auditCache.set(projectPath, {
       result: emptyResult,
-      timestamp: Date.now()
+      timestamp: Date.now(),
     });
 
     return emptyResult;

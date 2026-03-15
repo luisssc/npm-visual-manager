@@ -62,7 +62,7 @@ export function runCommand(command: string, options: RunCommandOptions): Promise
     const child = spawn(shell, [shellFlag, command], {
       cwd: options.cwd,
       env: { ...process.env },
-      stdio: ['ignore', 'pipe', 'pipe']
+      stdio: ['ignore', 'pipe', 'pipe'],
     });
 
     let stdout = '';
@@ -70,7 +70,9 @@ export function runCommand(command: string, options: RunCommandOptions): Promise
     let settled = false;
 
     const settle = (result: CommandResult | Error) => {
-      if (settled) { return; }
+      if (settled) {
+        return;
+      }
       settled = true;
       clearTimeout(timer);
       if (result instanceof Error) {
@@ -99,12 +101,12 @@ export function runCommand(command: string, options: RunCommandOptions): Promise
       channel.append(text);
     });
 
-    child.on('error', (error) => {
+    child.on('error', error => {
       channel.appendLine(`\n✖ Error: ${error.message}`);
       settle(error);
     });
 
-    child.on('close', (code) => {
+    child.on('close', code => {
       const exitCode = code ?? 1;
       channel.appendLine('');
       channel.appendLine(`─ Finished with exit code ${exitCode}`);

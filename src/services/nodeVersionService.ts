@@ -58,13 +58,10 @@ export async function getPackageManagerVersion(manager: PackageManager): Promise
  * Get both versions
  */
 export async function getVersions(manager: PackageManager): Promise<VersionInfo> {
-  const [nodeVersion, packageManagerVersion] = await Promise.all([
-    getNodeVersion(),
-    getPackageManagerVersion(manager)
-  ]);
-  
+  const [nodeVersion, packageManagerVersion] = await Promise.all([getNodeVersion(), getPackageManagerVersion(manager)]);
+
   return {
     nodeVersion,
-    packageManagerVersion
+    packageManagerVersion,
   };
 }

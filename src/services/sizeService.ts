@@ -93,11 +93,7 @@ export async function getPackageSize(workspaceRoot: string, packageName: string)
     }
 
     const cached = sizeCache.get(cacheKey);
-    if (
-      cached &&
-      cached.packageMtimeMs === stats.mtimeMs &&
-      (Date.now() - cached.timestamp) < SIZE_CACHE_TTL_MS
-    ) {
+    if (cached && cached.packageMtimeMs === stats.mtimeMs && Date.now() - cached.timestamp < SIZE_CACHE_TTL_MS) {
       return cached.formattedSize;
     }
 
@@ -107,7 +103,7 @@ export async function getPackageSize(workspaceRoot: string, packageName: string)
     sizeCache.set(cacheKey, {
       formattedSize,
       timestamp: Date.now(),
-      packageMtimeMs: stats.mtimeMs
+      packageMtimeMs: stats.mtimeMs,
     });
 
     return formattedSize;
@@ -126,7 +122,7 @@ export async function getAllPackageSizes(
   const sizes = new Map<string, string>();
 
   await Promise.all(
-    dependencies.map(async (dep) => {
+    dependencies.map(async dep => {
       const size = await getPackageSize(workspaceRoot, dep.name);
       sizes.set(dep.name, size);
     })

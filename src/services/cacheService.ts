@@ -22,7 +22,7 @@ interface CacheData {
   entries: Record<string, CacheEntry>;
 }
 
-const CACHE_VERSION = '1.2';  // Bumped for repositoryUrl support
+const CACHE_VERSION = '1.2'; // Bumped for repositoryUrl support
 const DEFAULT_TTL_HOURS = 24; // Cache valid for 24 hours
 const CACHE_FILENAME = '.npm-visual-manager-cache.json';
 
@@ -31,11 +31,7 @@ export class VersionCache {
   private cache: CacheData;
   private ttlMs: number;
 
-  constructor(
-    projectPath: string,
-    storageUri: vscode.Uri | null,
-    ttlHours: number = DEFAULT_TTL_HOURS
-  ) {
+  constructor(projectPath: string, storageUri: vscode.Uri | null, ttlHours: number = DEFAULT_TTL_HOURS) {
     // Use global storage if available, fallback to .vscode for backward compatibility
     if (storageUri) {
       // Create a safe filename from project path (replace invalid chars)
@@ -63,7 +59,7 @@ export class VersionCache {
       if (fs.existsSync(this.cachePath)) {
         const content = await fs.promises.readFile(this.cachePath, 'utf-8');
         const data = JSON.parse(content) as CacheData;
-        
+
         // Check version compatibility
         if (data.version === CACHE_VERSION) {
           this.cache = data;
@@ -88,11 +84,8 @@ export class VersionCache {
       if (!fs.existsSync(vscodeDir)) {
         await fs.promises.mkdir(vscodeDir, { recursive: true });
       }
-      
-      await fs.promises.writeFile(
-        this.cachePath,
-        JSON.stringify(this.cache, null, 2)
-      );
+
+      await fs.promises.writeFile(this.cachePath, JSON.stringify(this.cache, null, 2));
     } catch (error) {
       console.warn('[npm-visual-manager] Failed to save cache:', error);
     }
@@ -103,7 +96,9 @@ export class VersionCache {
    */
   get(packageName: string): CacheEntry | null {
     const entry = this.cache.entries[packageName];
-    if (!entry) {return null;}
+    if (!entry) {
+      return null;
+    }
 
     // Check TTL
     const age = Date.now() - entry.timestamp;
@@ -126,8 +121,10 @@ export class VersionCache {
    */
   isStale(packageName: string): boolean {
     const entry = this.cache.entries[packageName];
-    if (!entry) {return false;}
-    
+    if (!entry) {
+      return false;
+    }
+
     const age = Date.now() - entry.timestamp;
     return age > this.ttlMs;
   }
@@ -138,7 +135,7 @@ export class VersionCache {
   set(packageName: string, data: Omit<CacheEntry, 'timestamp'>): void {
     this.cache.entries[packageName] = {
       ...data,
-      timestamp: Date.now()
+      timestamp: Date.now(),
     };
   }
 
@@ -147,10 +144,12 @@ export class VersionCache {
    */
   getAgeHours(packageName: string): number | null {
     const entry = this.cache.entries[packageName];
-    if (!entry) {return null;}
-    
+    if (!entry) {
+      return null;
+    }
+
     const age = Date.now() - entry.timestamp;
-    return Math.round(age / (60 * 60 * 1000) * 10) / 10;
+    return Math.round((age / (60 * 60 * 1000)) * 10) / 10;
   }
 
   /**
@@ -166,12 +165,12 @@ export class VersionCache {
   getStats(): { total: number; valid: number; stale: number } {
     const entries = Object.keys(this.cache.entries);
     const now = Date.now();
-    
+
     let valid = 0;
     let stale = 0;
-    
+
     for (const key of entries) {
-      const entry = this.cache.entries[key];
+      const entry = this.cache.entries[key]!;
       const age = now - entry.timestamp;
       if (age > this.ttlMs) {
         stale++;
@@ -179,7 +178,7 @@ export class VersionCache {
         valid++;
       }
     }
-    
+
     return { total: entries.length, valid, stale };
   }
 

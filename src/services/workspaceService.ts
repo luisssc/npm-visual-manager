@@ -16,7 +16,7 @@ export interface Project {
  */
 export async function findAllProjects(workspaceRoot: string): Promise<Project[]> {
   const projects: Project[] = [];
-  
+
   // Always check root first
   const rootPackageJson = path.join(workspaceRoot, 'package.json');
   if (await fileExists(rootPackageJson)) {
@@ -24,13 +24,13 @@ export async function findAllProjects(workspaceRoot: string): Promise<Project[]>
     projects.push({
       name,
       path: workspaceRoot,
-      relativePath: '.'
+      relativePath: '.',
     });
   }
-  
+
   // Search in subdirectories (max depth 3 for performance)
   await searchDirectories(workspaceRoot, workspaceRoot, 0, 3, projects);
-  
+
   return projects;
 }
 
@@ -44,27 +44,27 @@ async function searchDirectories(
   if (currentDepth >= maxDepth) {
     return;
   }
-  
+
   try {
     const entries = await fs.promises.readdir(currentDir, { withFileTypes: true });
-    
+
     for (const entry of entries) {
       if (entry.isDirectory()) {
         // Skip node_modules and hidden directories
         if (entry.name === 'node_modules' || entry.name.startsWith('.')) {
           continue;
         }
-        
+
         const fullPath = path.join(currentDir, entry.name);
         const packageJsonPath = path.join(fullPath, 'package.json');
-        
+
         if (await fileExists(packageJsonPath)) {
           const name = await getProjectName(packageJsonPath);
           const relativePath = path.relative(workspaceRoot, fullPath);
           projects.push({
             name,
             path: fullPath,
-            relativePath
+            relativePath,
           });
         } else {
           // Recurse into subdirectory

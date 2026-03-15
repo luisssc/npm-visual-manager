@@ -20,11 +20,7 @@ export function I18nProvider({ children }: { children: ReactNode }) {
   const [language] = useState<string>(getInitialLanguage());
   const [t] = useState<Translations>(() => getTranslations(language));
 
-  return (
-    <I18nContext.Provider value={{ t, language }}>
-      {children}
-    </I18nContext.Provider>
-  );
+  return <I18nContext.Provider value={{ t, language }}>{children}</I18nContext.Provider>;
 }
 
 export function useTranslation(): Translations {

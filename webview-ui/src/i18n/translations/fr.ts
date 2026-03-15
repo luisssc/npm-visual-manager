@@ -109,7 +109,8 @@ export const fr: Translations = {
     confirmUpdateAll: 'Êtes-vous sûr de vouloir mettre à jour <strong>{{count}} paquet</strong> ?',
     confirmUpdateAll_plural: 'Êtes-vous sûr de vouloir mettre à jour <strong>{{count}} paquets</strong> ?',
     confirmUpdateSelected: 'Êtes-vous sûr de vouloir mettre à jour <strong>{{count}} paquet sélectionné</strong> ?',
-    confirmUpdateSelected_plural: 'Êtes-vous sûr de vouloir mettre à jour <strong>{{count}} paquets sélectionnés</strong> ?',
+    confirmUpdateSelected_plural:
+      'Êtes-vous sûr de vouloir mettre à jour <strong>{{count}} paquets sélectionnés</strong> ?',
     confirmIgnore: 'Êtes-vous sûr de vouloir ignorer <strong>{{name}}</strong> ?',
     confirmUnignore: 'Êtes-vous sûr de vouloir ne plus ignorer <strong>{{name}}</strong> ?',
     ignoreHint: 'Les paquets ignorés sont exclus des vérifications de mise à jour et des compteurs.',

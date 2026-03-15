@@ -109,7 +109,8 @@ export const ptBr: Translations = {
     confirmUpdateAll: 'Tem certeza de que deseja atualizar <strong>{{count}} pacote</strong>?',
     confirmUpdateAll_plural: 'Tem certeza de que deseja atualizar <strong>{{count}} pacotes</strong>?',
     confirmUpdateSelected: 'Tem certeza de que deseja atualizar <strong>{{count}} pacote selecionado</strong>?',
-    confirmUpdateSelected_plural: 'Tem certeza de que deseja atualizar <strong>{{count}} pacotes selecionados</strong>?',
+    confirmUpdateSelected_plural:
+      'Tem certeza de que deseja atualizar <strong>{{count}} pacotes selecionados</strong>?',
     confirmIgnore: 'Tem certeza de que deseja ignorar <strong>{{name}}</strong>?',
     confirmUnignore: 'Tem certeza de que deseja não ignorar <strong>{{name}}</strong>?',
     ignoreHint: 'Pacotes ignorados são excluídos das verificações de atualização e dos contadores.',

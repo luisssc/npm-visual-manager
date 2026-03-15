@@ -10,34 +10,24 @@ import { getTranslations } from '../i18n';
 
 export class NpmDependenciesProvider implements vscode.WebviewViewProvider {
   public static readonly viewType = 'npm-visual-manager.sidebar';
-  private _view?: vscode.WebviewView;
-  private _extensionUri: vscode.Uri;
-
-  constructor(extensionUri: vscode.Uri) {
-    this._extensionUri = extensionUri;
-  }
 
   public resolveWebviewView(
     webviewView: vscode.WebviewView,
     _context: vscode.WebviewViewResolveContext,
     _token: vscode.CancellationToken
   ): void {
-    this._view = webviewView;
-
     webviewView.webview.options = {
-      enableScripts: true
+      enableScripts: true,
     };
 
     webviewView.webview.html = this._getHtmlForWebview(webviewView.webview);
 
     // Handle messages from webview
-    webviewView.webview.onDidReceiveMessage(
-      async (message) => {
-        if (message.type === 'OPEN_PANEL') {
-          await vscode.commands.executeCommand('npm-visual-manager.openManager');
-        }
+    webviewView.webview.onDidReceiveMessage(async message => {
+      if (message.type === 'OPEN_PANEL') {
+        await vscode.commands.executeCommand('npm-visual-manager.openManager');
       }
-    );
+    });
   }
 
   private _getHtmlForWebview(_webview: vscode.Webview): string {
@@ -138,5 +128,3 @@ export class NpmDependenciesProvider implements vscode.WebviewViewProvider {
 </html>`;
   }
 }
-
-

@@ -5,7 +5,8 @@ export const ptBr: Translations = {
     update: 'Atualizar',
   },
   sidebar: {
-    description: 'Gerencie suas dependências NPM com uma interface visual. Veja atualizações, verifique versões e atualize pacotes facilmente.',
+    description:
+      'Gerencie suas dependências NPM com uma interface visual. Veja atualizações, verifique versões e atualize pacotes facilmente.',
     openButton: 'Abrir Gerenciador de Pacotes',
     shortcut: 'Ou use Ctrl+Shift+P → "Abrir NPM Package Manager"',
   },

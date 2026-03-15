@@ -22,18 +22,20 @@ const translations: Record<string, Translations> = {
 
 export function getTranslations(language: string): Translations {
   // Try exact match first (e.g., "es")
-  if (translations[language]) {
-    return translations[language];
+  const exactMatch = translations[language];
+  if (exactMatch) {
+    return exactMatch;
   }
-  
+
   // Try language code only (e.g., "es-ES" -> "es")
-  const langCode = language.split('-')[0];
-  if (translations[langCode]) {
-    return translations[langCode];
+  const langCode = language.split('-')[0]!;
+  const langMatch = translations[langCode];
+  if (langMatch) {
+    return langMatch;
   }
-  
+
   // Fallback to English
-  return translations.en;
+  return translations.en!;
 }
 
 export type { Translations };

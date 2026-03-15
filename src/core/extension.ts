@@ -10,7 +10,7 @@ import { NpmDependenciesProvider } from './sidebarProvider';
 
 export function activate(context: vscode.ExtensionContext): void {
   console.log('npm-visual-manager extension is now active');
-  
+
   // Set global storage URI for cache service
   setGlobalStorageUri(context.globalStorageUri);
 
@@ -27,7 +27,7 @@ export function activate(context: vscode.ExtensionContext): void {
         return;
       }
 
-      let workspaceRoot = workspaceFolders[0].uri.fsPath;
+      let workspaceRoot = workspaceFolders[0]!.uri.fsPath;
       let preferredProjectPath: string | undefined;
 
       const activeUri = resource || vscode.window.activeTextEditor?.document.uri;
@@ -38,9 +38,7 @@ export function activate(context: vscode.ExtensionContext): void {
         }
 
         const isPackageJson = path.basename(activeUri.fsPath).toLowerCase() === 'package.json';
-        preferredProjectPath = isPackageJson
-          ? path.dirname(activeUri.fsPath)
-          : activeUri.fsPath;
+        preferredProjectPath = isPackageJson ? path.dirname(activeUri.fsPath) : activeUri.fsPath;
       }
 
       try {
@@ -59,26 +57,19 @@ export function activate(context: vscode.ExtensionContext): void {
   );
 
   // Register refresh command
-  const refreshCommand = vscode.commands.registerCommand(
-    'npm-visual-manager.refresh',
-    async () => {
-      vscode.window.showInformationMessage('Refreshing dependencies...');
-      // The refresh will be handled by the sidebar provider
-      vscode.commands.executeCommand('npm-visual-manager.openManager');
-    }
-  );
+  const refreshCommand = vscode.commands.registerCommand('npm-visual-manager.refresh', async () => {
+    vscode.window.showInformationMessage('Refreshing dependencies...');
+    // The refresh will be handled by the sidebar provider
+    vscode.commands.executeCommand('npm-visual-manager.openManager');
+  });
 
   // Register sidebar webview provider
-  const sidebarProvider = new NpmDependenciesProvider(context.extensionUri);
-  const sidebarDisposable = vscode.window.registerWebviewViewProvider(
-    'npm-visual-manager.sidebar',
-    sidebarProvider,
-    {
-      webviewOptions: {
-        retainContextWhenHidden: true
-      }
-    }
-  );
+  const sidebarProvider = new NpmDependenciesProvider();
+  const sidebarDisposable = vscode.window.registerWebviewViewProvider('npm-visual-manager.sidebar', sidebarProvider, {
+    webviewOptions: {
+      retainContextWhenHidden: true,
+    },
+  });
 
   context.subscriptions.push(openManagerCommand);
   context.subscriptions.push(refreshCommand);

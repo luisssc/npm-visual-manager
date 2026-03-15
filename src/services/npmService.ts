@@ -43,10 +43,7 @@ export function setGlobalCache(cache: VersionCache): void {
  * Get package information from the NPM registry
  * With cache support
  */
-export async function getPackageInfo(
-  packageName: string,
-  forceRefresh: boolean = false
-): Promise<NpmPackageInfo> {
+export async function getPackageInfo(packageName: string, forceRefresh: boolean = false): Promise<NpmPackageInfo> {
   // Check cache first if not forcing refresh
   if (!forceRefresh && globalCache) {
     const cached = globalCache.get(packageName);
@@ -56,11 +53,13 @@ export async function getPackageInfo(
         name: packageName,
         'dist-tags': { latest: cached.latestVersion },
         versions: {},
-        time: cached.lastPublishDate ? {
-          created: cached.lastPublishDate,
-          modified: cached.lastPublishDate,
-          [cached.latestVersion]: cached.lastPublishDate
-        } : undefined
+        time: cached.lastPublishDate
+          ? {
+              created: cached.lastPublishDate,
+              modified: cached.lastPublishDate,
+              [cached.latestVersion]: cached.lastPublishDate,
+            }
+          : undefined,
       };
     }
   }
@@ -69,55 +68,67 @@ export async function getPackageInfo(
     const encodedName = encodeURIComponent(packageName).replace('%40', '@');
     const url = `https://registry.npmjs.org/${encodedName}`;
 
-    const req = https.get(url, {
-      headers: {
-        'Accept': 'application/json',
-        'User-Agent': 'npm-visual-manager-vscode-extension'
+    const req = https.get(
+      url,
+      {
+        headers: {
+          Accept: 'application/json',
+          'User-Agent': 'npm-visual-manager-vscode-extension',
+        },
+        timeout: 10000,
       },
-      timeout: 10000
-    }, (res) => {
-      let data = '';
+      res => {
+        let data = '';
 
-      res.on('data', (chunk) => {
-        data += chunk;
-      });
+        res.on('data', chunk => {
+          data += chunk;
+        });
 
-      res.on('end', () => {
-        try {
-          if (res.statusCode === 200) {
-            const packageInfo: NpmPackageInfo = JSON.parse(data);
-            
-            // Save to cache
-            if (globalCache) {
-              const latestVersion = packageInfo['dist-tags'].latest;
-              const lastPublishDate = packageInfo.time?.[latestVersion] || packageInfo.time?.modified;
-              
-              // Check deprecation and repository for caching
-              let isDeprecated = false;
-              let deprecationMessage: string | undefined;
-              const latestVersionInfo = packageInfo.versions[latestVersion] as { deprecated?: string; repository?: { url?: string } | string } | undefined;
-              if (latestVersionInfo?.deprecated) {
-                isDeprecated = true;
-                deprecationMessage = latestVersionInfo.deprecated;
+        res.on('end', () => {
+          try {
+            if (res.statusCode === 200) {
+              const packageInfo: NpmPackageInfo = JSON.parse(data);
+
+              // Save to cache
+              if (globalCache) {
+                const latestVersion = packageInfo['dist-tags'].latest;
+                const lastPublishDate = packageInfo.time?.[latestVersion] || packageInfo.time?.modified;
+
+                // Check deprecation and repository for caching
+                let isDeprecated = false;
+                let deprecationMessage: string | undefined;
+                const latestVersionInfo = packageInfo.versions[latestVersion] as
+                  | { deprecated?: string; repository?: { url?: string } | string }
+                  | undefined;
+                if (latestVersionInfo?.deprecated) {
+                  isDeprecated = true;
+                  deprecationMessage = latestVersionInfo.deprecated;
+                }
+                const repositoryUrl = extractRepositoryUrl(latestVersionInfo?.repository);
+
+                globalCache.set(packageName, {
+                  latestVersion,
+                  lastPublishDate,
+                  isDeprecated,
+                  deprecationMessage,
+                  repositoryUrl,
+                });
               }
-              const repositoryUrl = extractRepositoryUrl(latestVersionInfo?.repository);
-              
-              globalCache.set(packageName, { latestVersion, lastPublishDate, isDeprecated, deprecationMessage, repositoryUrl });
-            }
-            
-            resolve(packageInfo);
-          } else if (res.statusCode === 404) {
-            reject(new Error(`Package "${packageName}" not found in npm registry`));
-          } else {
-            reject(new Error(`HTTP ${res.statusCode}: ${data}`));
-          }
-        } catch (error) {
-          reject(new Error(`Failed to parse npm response: ${error}`));
-        }
-      });
-    });
 
-    req.on('error', (error) => {
+              resolve(packageInfo);
+            } else if (res.statusCode === 404) {
+              reject(new Error(`Package "${packageName}" not found in npm registry`));
+            } else {
+              reject(new Error(`HTTP ${res.statusCode}: ${data}`));
+            }
+          } catch (error) {
+            reject(new Error(`Failed to parse npm response: ${error}`));
+          }
+        });
+      }
+    );
+
+    req.on('error', error => {
       reject(new Error(`Request failed: ${error.message}`));
     });
 
@@ -132,10 +143,7 @@ export async function getPackageInfo(
  * Get package details (version and date)
  * With cache support
  */
-export async function getPackageDetails(
-  packageName: string,
-  forceRefresh: boolean = false
-): Promise<PackageDetails> {
+export async function getPackageDetails(packageName: string, forceRefresh: boolean = false): Promise<PackageDetails> {
   // Check cache first
   if (!forceRefresh && globalCache) {
     const cached = globalCache.get(packageName);
@@ -147,7 +155,7 @@ export async function getPackageDetails(
         cacheAge: globalCache.getAgeHours(packageName) || 0,
         isDeprecated: cached.isDeprecated,
         deprecationMessage: cached.deprecationMessage,
-        repositoryUrl: cached.repositoryUrl
+        repositoryUrl: cached.repositoryUrl,
       };
     }
   }
@@ -155,7 +163,7 @@ export async function getPackageDetails(
   try {
     const info = await getPackageInfo(packageName, forceRefresh);
     const latestVersion = info['dist-tags'].latest;
-    
+
     // Get the publish date for the latest version
     let lastPublishDate: string | undefined;
     if (info.time && info.time[latestVersion]) {
@@ -168,9 +176,11 @@ export async function getPackageDetails(
     // Note: In NPM, deprecation is per-version
     let isDeprecated = false;
     let deprecationMessage: string | undefined;
-    
+
     // Check if latest version is deprecated
-    const latestVersionInfo = info.versions[latestVersion] as { deprecated?: string; repository?: { url?: string } | string } | undefined;
+    const latestVersionInfo = info.versions[latestVersion] as
+      | { deprecated?: string; repository?: { url?: string } | string }
+      | undefined;
     if (latestVersionInfo?.deprecated) {
       isDeprecated = true;
       deprecationMessage = latestVersionInfo.deprecated;
@@ -185,7 +195,7 @@ export async function getPackageDetails(
       fromCache: false,
       isDeprecated,
       deprecationMessage,
-      repositoryUrl
+      repositoryUrl,
     };
   } catch (error) {
     // If network fails, return stale cache as fallback for this package
@@ -199,7 +209,7 @@ export async function getPackageDetails(
           cacheAge: globalCache.getAgeHours(packageName) || 999,
           isDeprecated: staleEntry.isDeprecated,
           deprecationMessage: staleEntry.deprecationMessage,
-          repositoryUrl: staleEntry.repositoryUrl
+          repositoryUrl: staleEntry.repositoryUrl,
         };
       }
     }
@@ -210,10 +220,7 @@ export async function getPackageDetails(
 /**
  * Get the latest version of a package
  */
-export async function getLatestVersion(
-  packageName: string,
-  forceRefresh: boolean = false
-): Promise<string> {
+export async function getLatestVersion(packageName: string, forceRefresh: boolean = false): Promise<string> {
   const details = await getPackageDetails(packageName, forceRefresh);
   return details.latestVersion;
 }
@@ -222,11 +229,15 @@ export async function getLatestVersion(
  * Extract clean repository URL from NPM package info
  */
 function extractRepositoryUrl(repository?: { url?: string } | string): string | undefined {
-  if (!repository) {return undefined;}
-  
+  if (!repository) {
+    return undefined;
+  }
+
   const url = typeof repository === 'string' ? repository : repository.url;
-  if (!url) {return undefined;}
-  
+  if (!url) {
+    return undefined;
+  }
+
   // Clean up git+ prefix and .git suffix
   return url
     .replace(/^git\+/, '')
@@ -256,8 +267,12 @@ export function compareVersions(v1: string, v2: string): number {
     const p1 = parts1[i] || 0;
     const p2 = parts2[i] || 0;
 
-    if (p1 < p2) {return -1;}
-    if (p1 > p2) {return 1;}
+    if (p1 < p2) {
+      return -1;
+    }
+    if (p1 > p2) {
+      return 1;
+    }
   }
 
   return 0;
