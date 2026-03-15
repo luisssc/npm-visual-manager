@@ -37,5 +37,5 @@
       "@shared/*": ["types/*"]
     }
   },
-  "exclude": ["node_modules", "webview-ui"]
+  "exclude": ["node_modules", "webview-ui", "vitest.config.ts", "src/**/*.test.ts"]
 }

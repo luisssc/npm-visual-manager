@@ -1,8 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 import { SearchPanel } from './SearchPanel';
 import { I18nProvider } from '../i18n/I18nContext';
-import type { SearchResult, Dependency } from '../../../types';
+import type { SearchResult } from '../../../types';
 
 const mockSearchResult: SearchResult = {
   name: 'lodash',

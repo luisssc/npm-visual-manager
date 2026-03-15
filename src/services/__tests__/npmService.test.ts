@@ -5,8 +5,6 @@ import {
   isUpdateAvailable,
   getSemverUpdateType,
 } from '../npmService';
-import type { SemverUpdateType } from '../npmService';
-
 describe('cleanVersion', () => {
   it('removes caret prefix', () => {
     expect(cleanVersion('^1.2.3')).toBe('1.2.3');

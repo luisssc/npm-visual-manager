@@ -20,7 +20,7 @@ export const SearchPanel = memo(
     const [selectedPackage, setSelectedPackage] = useState<SearchResult | null>(null);
     const [isDev, setIsDev] = useState(false);
     const [showUninstallConfirm, setShowUninstallConfirm] = useState(false);
-    const debounceRef = useRef<NodeJS.Timeout | null>(null);
+    const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
     const handleSearchChange = (value: string) => {
       setQuery(value);
