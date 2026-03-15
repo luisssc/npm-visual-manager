@@ -2,7 +2,37 @@
 
 All notable changes to the "npm-visual-manager" extension will be documented in this file.
 
-## [Unreleased]
+## [1.3.0] - 2026-03-15
+
+### Added
+- **Enhanced Sidebar**: Redesigned welcome view with improved visuals
+  - Added logo with gradient styling and version badge
+  - Added Quick Links section (Documentation, Report Issue)
+  - Added Tips section with helpful hints
+  - Improved responsive design for narrow sidebars
+- **Testing Infrastructure**: Added Vitest for unit and integration testing
+  - Tests for npmService (semver utilities)
+  - Tests for packageService (file operations)
+  - Tests for cacheService (LRU eviction)
+- **CI/CD**: Added GitHub Actions workflow
+  - Automated testing on push and PR
+  - TypeScript compilation checks
+  - ESLint validation
+- **Cache Size Limit**: Added MAX_ENTRIES (500) to prevent unlimited cache growth
+  - Implements LRU (Least Recently Used) eviction policy
+  - Removes oldest entries when limit is exceeded
+
+### Changed
+- **Dependencies Updated**:
+  - React 18.2.0 → 19.2.4
+  - Vite 5.4.21 → 8.0.0
+  - TypeScript 5.3.0 → 5.9.3
+  - @types/vscode 1.85.0 → 1.110.0
+- **TypeScript Strict Mode**: Enabled additional compiler options
+  - noImplicitReturns, noUncheckedIndexedAccess, noImplicitOverride
+- **Code Quality**: Added Prettier configuration for consistent formatting
+
+## [1.2.0] - 2026-03-12
 
 ### Added
 - **Internationalization (i18n)**: Full UI translation support
