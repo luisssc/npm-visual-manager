@@ -9,20 +9,7 @@ A Visual Studio Code extension that provides a visual interface for managing NPM
 
 ## Screenshots
 
-### Ignore Packages & Show All Packages
-Click the eye icon 👁️ to ignore packages from update checks. Use "Show All Packages" to toggle between outdated-only and all packages view.
-
-![Ignore Packages](screenshots/ignore_package-show_all_packages.gif)
-
-### Search & Install Packages
-Search for new packages in the NPM registry and install them directly from the UI.
-
-![Install Package](screenshots/install_package.gif)
-
-### Update Packages
-One-click updates for individual packages with automatic version checking.
-
-![Update Package](screenshots/update_package.gif)
+![NPM Visual Manager Preview](screenshots/preview.gif)
 
 ## Features
 
