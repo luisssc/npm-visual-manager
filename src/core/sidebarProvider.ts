@@ -8,7 +8,7 @@ import { getNonce } from '../utils/nonce';
 import { getVSCodeLanguage } from '../i18n/getLanguage';
 import { getTranslations } from '../i18n';
 
-const EXTENSION_VERSION = '1.3.0';
+const EXTENSION_VERSION = '1.4.0';
 
 export class NpmDependenciesProvider implements vscode.WebviewViewProvider {
   public static readonly viewType = 'npm-visual-manager.sidebar';

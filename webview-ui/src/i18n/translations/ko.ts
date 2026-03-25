@@ -100,6 +100,7 @@ export const ko: Translations = {
     updateSelectedTitle: '선택한 패키지 업데이트',
     ignoreTitle: '패키지 무시',
     unignoreTitle: '패키지 무시 해제',
+    rollbackTitle: '업데이트 롤백',
   },
 
   // Modal messages
@@ -112,6 +113,9 @@ export const ko: Translations = {
     confirmUpdateSelected_plural: '<strong>{{count}}개 선택한 패키지</strong>를 업데이트하시겠습니까?',
     confirmIgnore: '<strong>{{name}}</strong>을(를) 무시하시겠습니까?',
     confirmUnignore: '<strong>{{name}}</strong>의 무시를 해제하시겠습니까?',
+    confirmRollback: '<strong>{{count}}개 패키지</strong>를 이전 버전으로 롤백하시겠습니까?',
+    confirmRollback_plural: '<strong>{{count}}개 패키지</strong>를 이전 버전으로 롤백하시겠습니까?',
+    rollbackDetails: '다음 패키지가 이전 버전으로 복원됩니다:',
     ignoreHint: '무시된 패키지는 업데이트 확인 및 카운터에서 제외됩니다.',
     andMore: '...그리고 {{count}}개 더',
   },

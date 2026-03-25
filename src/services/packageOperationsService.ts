@@ -44,11 +44,7 @@ export class PackageOperationsService {
       };
     }
 
-    this.sendMessage({
-      type: 'PROGRESS',
-      message: `Installing ${packageName}@${version}...`,
-    });
-
+    // Note: Webview progress message removed - only using VS Code native notifications
     try {
       const installCmd = getInstallCommand(currentPackageManager, packageName, version);
 
@@ -135,11 +131,7 @@ export class PackageOperationsService {
         })),
     };
 
-    this.sendMessage({
-      type: 'PROGRESS',
-      message: `Updating ${packages.length} package(s)...`,
-    });
-
+    // Note: Webview progress message removed - only using VS Code native notifications
     try {
       const info = getPackageManagerInfo(currentPackageManager);
       const command = `${info.addCommand} ${packageList}`;
@@ -226,11 +218,7 @@ export class PackageOperationsService {
 
       const uninstallCmd = getUninstallCommand(currentPackageManager, packageName);
 
-      this.sendMessage({
-        type: 'PROGRESS',
-        message: `Uninstalling ${packageName}...`,
-      });
-
+      // Note: Webview progress message removed - only using VS Code native notifications
       const result = await vscode.window.withProgress(
         {
           location: vscode.ProgressLocation.Notification,
@@ -297,11 +285,7 @@ export class PackageOperationsService {
       const versionSuffix = version ? `@${version}` : '';
       const command = `${info.addCommand} ${packageName}${versionSuffix} ${devFlag}`.trim();
 
-      this.sendMessage({
-        type: 'PROGRESS',
-        message: `Installing ${packageName}...`,
-      });
-
+      // Note: Webview progress message removed - only using VS Code native notifications
       const result = await vscode.window.withProgress(
         {
           location: vscode.ProgressLocation.Notification,
@@ -366,24 +350,8 @@ export class PackageOperationsService {
     }
 
     const packagesToRollback = updateHistory.packages;
-    const packageList = packagesToRollback.map(p => `${p.name}@${p.previousDeclaredVersion}`).join(', ');
 
-    const result = await vscode.window.showWarningMessage(
-      `Rollback ${packagesToRollback.length} package(s) to previous versions?\n\n${packageList}`,
-      { modal: true },
-      'Rollback',
-      'Cancel'
-    );
-
-    if (result !== 'Rollback') {
-      return;
-    }
-
-    this.sendMessage({
-      type: 'PROGRESS',
-      message: `Rolling back ${packagesToRollback.length} package(s)...`,
-    });
-
+    // Note: Webview progress message removed - only using VS Code native notifications
     try {
       const info = getPackageManagerInfo(currentPackageManager);
 

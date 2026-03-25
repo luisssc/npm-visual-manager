@@ -111,6 +111,7 @@ export const DependencyTable = ({
   const [confirmUpdateAll, setConfirmUpdateAll] = useState<Dependency[] | null>(null);
   const [confirmUpdateSelected, setConfirmUpdateSelected] = useState<Dependency[] | null>(null);
   const [confirmIgnore, setConfirmIgnore] = useState<{ name: string; isIgnored: boolean } | null>(null);
+  const [confirmRollback, setConfirmRollback] = useState(false);
 
   // Clear selection for packages that are no longer in the dependencies list (e.g. after uninstall)
   useEffect(() => {
@@ -341,7 +342,7 @@ export const DependencyTable = ({
           {lastUpdate && onRollback && (
             <button
               className="rollback-btn"
-              onClick={onRollback}
+              onClick={() => setConfirmRollback(true)}
               disabled={isLoading}
               title={interpolate(
                 lastUpdate.packages.length === 1 ? t.tooltips.rollbackUpdate : t.tooltips.rollbackUpdate_plural,
@@ -841,6 +842,54 @@ export const DependencyTable = ({
                 }}
               >
                 {confirmIgnore.isIgnored ? t.buttons.unignore : t.buttons.ignore}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {confirmRollback && lastUpdate && (
+        <div className="modal-overlay" onClick={() => setConfirmRollback(false)}>
+          <div className="modal-content modal-content-large" onClick={e => e.stopPropagation()}>
+            <h3>{t.modals.rollbackTitle}</h3>
+            <p
+              dangerouslySetInnerHTML={{
+                __html:
+                  lastUpdate.packages.length === 1
+                    ? interpolate(t.modalMessages.confirmRollback, { count: lastUpdate.packages.length })
+                    : interpolate(t.modalMessages.confirmRollback_plural, { count: lastUpdate.packages.length }),
+              }}
+            />
+            <p className="modal-hint">{t.modalMessages.rollbackDetails}</p>
+            <div className="modal-package-list">
+              {lastUpdate.packages.slice(0, 10).map(pkg => (
+                <div key={pkg.name} className="modal-package-item">
+                  <span className="package-name-text">{pkg.name}</span>
+                  <span className="version-arrow">
+                    <span className="version-from-small">{pkg.previousDeclaredVersion}</span>
+                    <i className="codicon codicon-arrow-small-right" />
+                    <span className="version-to-small">{pkg.newVersion}</span>
+                  </span>
+                </div>
+              ))}
+              {lastUpdate.packages.length > 10 && (
+                <div className="modal-package-item more-items">
+                  {interpolate(t.modalMessages.andMore, { count: lastUpdate.packages.length - 10 })}
+                </div>
+              )}
+            </div>
+            <div className="modal-actions">
+              <button className="modal-btn cancel" onClick={() => setConfirmRollback(false)}>
+                {t.buttons.cancel}
+              </button>
+              <button
+                className="modal-btn confirm"
+                onClick={() => {
+                  onRollback?.();
+                  setConfirmRollback(false);
+                }}
+              >
+                {t.buttons.rollback}
               </button>
             </div>
           </div>

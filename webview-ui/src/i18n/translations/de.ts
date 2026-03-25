@@ -100,6 +100,7 @@ export const de: Translations = {
     updateSelectedTitle: 'Ausgewählte Pakete aktualisieren',
     ignoreTitle: 'Paket ignorieren',
     unignoreTitle: 'Paket nicht ignorieren',
+    rollbackTitle: 'Aktualisierung zurücksetzen',
   },
 
   // Modal messages
@@ -114,6 +115,9 @@ export const de: Translations = {
       'Sind Sie sicher, dass Sie <strong>{{count}} ausgewählte Pakete</strong> aktualisieren möchten?',
     confirmIgnore: 'Sind Sie sicher, dass Sie <strong>{{name}}</strong> ignorieren möchten?',
     confirmUnignore: 'Sind Sie sicher, dass Sie <strong>{{name}}</strong> nicht mehr ignorieren möchten?',
+    confirmRollback: '<strong>{{count}} Paket</strong> auf vorherige Version zurücksetzen?',
+    confirmRollback_plural: '<strong>{{count}} Pakete</strong> auf vorherige Versionen zurücksetzen?',
+    rollbackDetails: 'Die folgenden Pakete werden auf ihre vorherigen Versionen zurückgesetzt:',
     ignoreHint: 'Ignorierte Pakete werden von Aktualisierungsprüfungen und Zählern ausgeschlossen.',
     andMore: '...und {{count}} weitere',
   },

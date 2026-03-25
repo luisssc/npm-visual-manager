@@ -98,6 +98,7 @@ export const en = {
     updateSelectedTitle: 'Update Selected Packages',
     ignoreTitle: 'Ignore Package',
     unignoreTitle: 'Unignore Package',
+    rollbackTitle: 'Rollback Update',
   },
 
   // Modal messages
@@ -110,6 +111,9 @@ export const en = {
     confirmUpdateSelected_plural: 'Are you sure you want to update <strong>{{count}} selected packages</strong>?',
     confirmIgnore: 'Are you sure you want to ignore <strong>{{name}}</strong>?',
     confirmUnignore: 'Are you sure you want to unignore <strong>{{name}}</strong>?',
+    confirmRollback: 'Rollback <strong>{{count}} package</strong> to previous versions?',
+    confirmRollback_plural: 'Rollback <strong>{{count}} packages</strong> to previous versions?',
+    rollbackDetails: 'The following packages will be restored to their previous versions:',
     ignoreHint: 'Ignored packages are excluded from update checks and counters.',
     andMore: '...and {{count}} more',
   },

@@ -2,6 +2,19 @@
 
 All notable changes to the "npm-visual-manager" extension will be documented in this file.
 
+## [1.4.0] - 2026-03-25
+
+### Changed
+- **Unified Rollback Modal**: Rollback confirmation now uses the same styled modal as other actions
+  - Replaced native VS Code `showWarningMessage` modal with custom webview modal
+  - Consistent styling with Update, Uninstall, and Ignore modals
+  - Shows list of packages to rollback with version details
+  - Supports all 8 languages (i18n)
+- **Removed Webview Progress Messages**: Eliminated redundant progress bar at the top of the panel
+  - Progress messages like "Installing package@version..." no longer appear in the webview UI
+  - Only VS Code native notifications are used for operation progress
+  - Cleaner interface during package operations
+
 ## [1.3.0] - 2026-03-15
 
 ### Added

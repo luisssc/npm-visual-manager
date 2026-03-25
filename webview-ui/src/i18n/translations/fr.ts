@@ -100,6 +100,7 @@ export const fr: Translations = {
     updateSelectedTitle: 'Mettre à jour les paquets sélectionnés',
     ignoreTitle: 'Ignorer le paquet',
     unignoreTitle: 'Ne plus ignorer le paquet',
+    rollbackTitle: 'Annuler la Mise à jour',
   },
 
   // Modal messages
@@ -113,6 +114,9 @@ export const fr: Translations = {
       'Êtes-vous sûr de vouloir mettre à jour <strong>{{count}} paquets sélectionnés</strong> ?',
     confirmIgnore: 'Êtes-vous sûr de vouloir ignorer <strong>{{name}}</strong> ?',
     confirmUnignore: 'Êtes-vous sûr de vouloir ne plus ignorer <strong>{{name}}</strong> ?',
+    confirmRollback: 'Annuler la mise à jour de <strong>{{count}} paquet</strong> ?',
+    confirmRollback_plural: 'Annuler la mise à jour de <strong>{{count}} paquets</strong> ?',
+    rollbackDetails: 'Les paquets suivants seront restaurés à leurs versions précédentes :',
     ignoreHint: 'Les paquets ignorés sont exclus des vérifications de mise à jour et des compteurs.',
     andMore: '...et {{count}} de plus',
   },

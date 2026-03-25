@@ -100,6 +100,7 @@ export const ptBr: Translations = {
     updateSelectedTitle: 'Atualizar Pacotes Selecionados',
     ignoreTitle: 'Ignorar Pacote',
     unignoreTitle: 'Não Ignorar Pacote',
+    rollbackTitle: 'Reverter Atualização',
   },
 
   // Modal messages
@@ -113,6 +114,9 @@ export const ptBr: Translations = {
       'Tem certeza de que deseja atualizar <strong>{{count}} pacotes selecionados</strong>?',
     confirmIgnore: 'Tem certeza de que deseja ignorar <strong>{{name}}</strong>?',
     confirmUnignore: 'Tem certeza de que deseja não ignorar <strong>{{name}}</strong>?',
+    confirmRollback: 'Reverter <strong>{{count}} pacote</strong> para versões anteriores?',
+    confirmRollback_plural: 'Reverter <strong>{{count}} pacotes</strong> para versões anteriores?',
+    rollbackDetails: 'Os seguintes pacotes serão restaurados para suas versões anteriores:',
     ignoreHint: 'Pacotes ignorados são excluídos das verificações de atualização e dos contadores.',
     andMore: '...e mais {{count}}',
   },

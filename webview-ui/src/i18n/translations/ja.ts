@@ -100,6 +100,7 @@ export const ja: Translations = {
     updateSelectedTitle: '選択したパッケージを更新',
     ignoreTitle: 'パッケージを無視',
     unignoreTitle: '無視を解除',
+    rollbackTitle: '更新をロールバック',
   },
 
   // Modal messages
@@ -112,6 +113,9 @@ export const ja: Translations = {
     confirmUpdateSelected_plural: '選択した <strong>{{count}}</strong> 件のパッケージを更新してもよろしいですか？',
     confirmIgnore: '<strong>{{name}}</strong> を無視してもよろしいですか？',
     confirmUnignore: '<strong>{{name}}</strong> の無視を解除してもよろしいですか？',
+    confirmRollback: '<strong>{{count}}</strong> 件のパッケージを以前のバージョンにロールバックしますか？',
+    confirmRollback_plural: '<strong>{{count}}</strong> 件のパッケージを以前のバージョンにロールバックしますか？',
+    rollbackDetails: '以下のパッケージは以前のバージョンに復元されます：',
     ignoreHint: '無視されたパッケージは更新チェックとカウンターから除外されます。',
     andMore: '...他 {{count}} 件',
   },

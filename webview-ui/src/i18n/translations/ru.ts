@@ -100,6 +100,7 @@ export const ru: Translations = {
     updateSelectedTitle: 'Обновить выбранные пакеты',
     ignoreTitle: 'Игнорировать пакет',
     unignoreTitle: 'Не игнорировать пакет',
+    rollbackTitle: 'Откат Обновления',
   },
 
   // Modal messages
@@ -112,6 +113,9 @@ export const ru: Translations = {
     confirmUpdateSelected_plural: 'Вы уверены, что хотите обновить <strong>{{count}} выбранных пакетов</strong>?',
     confirmIgnore: 'Вы уверены, что хотите игнорировать <strong>{{name}}</strong>?',
     confirmUnignore: 'Вы уверены, что хотите не игнорировать <strong>{{name}}</strong>?',
+    confirmRollback: 'Откатить <strong>{{count}} пакет</strong> к предыдущим версиям?',
+    confirmRollback_plural: 'Откатить <strong>{{count}} пакетов</strong> к предыдущим версиям?',
+    rollbackDetails: 'Следующие пакеты будут восстановлены до предыдущих версий:',
     ignoreHint: 'Игнорируемые пакеты исключаются из проверок обновлений и счетчиков.',
     andMore: '...и ещё {{count}}',
   },

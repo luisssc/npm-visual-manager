@@ -100,6 +100,7 @@ export const zhCn: Translations = {
     updateSelectedTitle: '更新选中的包',
     ignoreTitle: '忽略包',
     unignoreTitle: '取消忽略包',
+    rollbackTitle: '回滚更新',
   },
 
   // Modal messages
@@ -112,6 +113,9 @@ export const zhCn: Translations = {
     confirmUpdateSelected_plural: '确定要更新 <strong>{{count}}</strong> 个选中的包吗？',
     confirmIgnore: '确定要忽略 <strong>{{name}}</strong> 吗？',
     confirmUnignore: '确定要取消忽略 <strong>{{name}}</strong> 吗？',
+    confirmRollback: '确定要将 <strong>{{count}}</strong> 个包回滚到之前的版本吗？',
+    confirmRollback_plural: '确定要将 <strong>{{count}}</strong> 个包回滚到之前的版本吗？',
+    rollbackDetails: '以下包将恢复到其先前版本：',
     ignoreHint: '已忽略的包将被排除在更新检查和计数器之外。',
     andMore: '...还有 {{count}} 个',
   },
