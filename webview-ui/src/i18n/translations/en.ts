@@ -13,6 +13,8 @@ export const en = {
     goBack: 'Go Back',
     retry: 'Retry',
     yesUninstall: 'Yes, Uninstall',
+    showMore: 'Show {{count}} more',
+    showLess: 'Show less',
   },
 
   // Column headers
@@ -69,6 +71,7 @@ export const en = {
     allUpToDate: 'All packages are up to date! Click "Show All Packages" to see everything.',
     noMatchFilter: 'No packages match the current filter',
     searching: 'Searching...',
+    loadingVersions: 'Loading versions...',
   },
 
   // Footer
@@ -99,6 +102,8 @@ export const en = {
     ignoreTitle: 'Ignore Package',
     unignoreTitle: 'Unignore Package',
     rollbackTitle: 'Rollback Update',
+    selectVersionTitle: 'Select Version for {{name}}',
+    saveExactEnabled: '--save-exact enabled',
   },
 
   // Modal messages
@@ -116,6 +121,14 @@ export const en = {
     rollbackDetails: 'The following packages will be restored to their previous versions:',
     ignoreHint: 'Ignored packages are excluded from update checks and counters.',
     andMore: '...and {{count}} more',
+    selectVersionHint: 'Choose the version you want to install:',
+  },
+
+  // Labels
+  labels: {
+    latest: 'latest',
+    deprecated: 'deprecated',
+    prerelease: 'pre-release',
   },
 
   // Ignored section

@@ -15,6 +15,8 @@ export const fr: Translations = {
     goBack: 'Retour',
     retry: 'Réessayer',
     yesUninstall: 'Oui, désinstaller',
+    showMore: 'Afficher {{count}} de plus',
+    showLess: 'Afficher moins',
   },
 
   // Column headers
@@ -71,6 +73,7 @@ export const fr: Translations = {
     allUpToDate: 'Tous les paquets sont à jour ! Cliquez sur "Afficher tout" pour tout voir.',
     noMatchFilter: 'Aucun paquet ne correspond au filtre actuel',
     searching: 'Recherche...',
+    loadingVersions: 'Chargement des versions...',
   },
 
   // Footer
@@ -101,6 +104,8 @@ export const fr: Translations = {
     ignoreTitle: 'Ignorer le paquet',
     unignoreTitle: 'Ne plus ignorer le paquet',
     rollbackTitle: 'Annuler la Mise à jour',
+    selectVersionTitle: 'Sélectionner la Version pour {{name}}',
+    saveExactEnabled: '--save-exact activé',
   },
 
   // Modal messages
@@ -119,6 +124,14 @@ export const fr: Translations = {
     rollbackDetails: 'Les paquets suivants seront restaurés à leurs versions précédentes :',
     ignoreHint: 'Les paquets ignorés sont exclus des vérifications de mise à jour et des compteurs.',
     andMore: '...et {{count}} de plus',
+    selectVersionHint: 'Choisissez la version que vous souhaitez installer:',
+  },
+
+  // Labels
+  labels: {
+    latest: 'dernière',
+    deprecated: 'obsolète',
+    prerelease: 'pre-release',
   },
 
   // Ignored section

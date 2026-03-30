@@ -1,5 +1,5 @@
 import { useEffect, useRef, useCallback, useState } from 'react';
-import type { WebviewToHostMessage, HostToWebviewMessage, Dependency } from '../../../types';
+import type { WebviewToHostMessage, HostToWebviewMessage, Dependency, PackageVersion } from '../../../types';
 
 // Type for the VS Code API acquired via acquireVsCodeApi
 type VSCodeApi = {
@@ -38,8 +38,8 @@ export function useVsCodeApi() {
   }, [postMessage]);
 
   const updatePackage = useCallback(
-    (packageName: string, version: string, currentVersion?: string) => {
-      postMessage({ type: 'UPDATE_PACKAGE', packageName, version, currentVersion });
+    (packageName: string, version: string, currentVersion?: string, useExactVersion?: boolean) => {
+      postMessage({ type: 'UPDATE_PACKAGE', packageName, version, currentVersion, useExactVersion });
     },
     [postMessage]
   );
@@ -112,6 +112,13 @@ export function useVsCodeApi() {
     [postMessage]
   );
 
+  const getPackageVersions = useCallback(
+    (packageName: string) => {
+      postMessage({ type: 'GET_PACKAGE_VERSIONS', packageName, limit: 20 });
+    },
+    [postMessage]
+  );
+
   return {
     get vscode() {
       return vscodeRef.current;
@@ -131,6 +138,44 @@ export function useVsCodeApi() {
     runAudit,
     openExternal,
     uninstallPackage,
+    getPackageVersions,
+  };
+}
+
+export function usePackageVersions() {
+  const [versions, setVersions] = useState<Map<string, PackageVersion[]>>(new Map());
+  const [loadingVersions, setLoadingVersions] = useState<Set<string>>(new Set());
+
+  const handleVersionsResult = useCallback((packageName: string, packageVersions: PackageVersion[]) => {
+    setVersions(prev => new Map(prev).set(packageName, packageVersions));
+    setLoadingVersions(prev => {
+      const next = new Set(prev);
+      next.delete(packageName);
+      return next;
+    });
+  }, []);
+
+  const requestVersions = useCallback((packageName: string, getPackageVersionsFn: (name: string) => void) => {
+    setLoadingVersions(prev => new Set(prev).add(packageName));
+    getPackageVersionsFn(packageName);
+  }, []);
+
+  const isLoadingVersions = useCallback(
+    (packageName: string) => loadingVersions.has(packageName),
+    [loadingVersions]
+  );
+
+  const getVersionsForPackage = useCallback(
+    (packageName: string) => versions.get(packageName) || [],
+    [versions]
+  );
+
+  return {
+    versions,
+    handleVersionsResult,
+    requestVersions,
+    isLoadingVersions,
+    getVersionsForPackage,
   };
 }
 

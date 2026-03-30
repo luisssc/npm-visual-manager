@@ -16,6 +16,7 @@ export interface PackageManagerInfo {
   lockFile: string;
   runCommand: string;
   devFlag: string;
+  exactFlag: string;
 }
 
 const PACKAGE_MANAGERS: Record<PackageManager, PackageManagerInfo> = {
@@ -28,6 +29,7 @@ const PACKAGE_MANAGERS: Record<PackageManager, PackageManagerInfo> = {
     lockFile: 'package-lock.json',
     runCommand: 'npm run',
     devFlag: '--save-dev',
+    exactFlag: '--save-exact',
   },
   yarn: {
     name: 'yarn',
@@ -38,6 +40,7 @@ const PACKAGE_MANAGERS: Record<PackageManager, PackageManagerInfo> = {
     lockFile: 'yarn.lock',
     runCommand: 'yarn',
     devFlag: '--dev',
+    exactFlag: '--exact',
   },
   pnpm: {
     name: 'pnpm',
@@ -48,6 +51,7 @@ const PACKAGE_MANAGERS: Record<PackageManager, PackageManagerInfo> = {
     lockFile: 'pnpm-lock.yaml',
     runCommand: 'pnpm run',
     devFlag: '--save-dev',
+    exactFlag: '--save-exact',
   },
   bun: {
     name: 'bun',
@@ -58,6 +62,7 @@ const PACKAGE_MANAGERS: Record<PackageManager, PackageManagerInfo> = {
     lockFile: 'bun.lockb',
     runCommand: 'bun run',
     devFlag: '--dev',
+    exactFlag: '--exact',
   },
 };
 
@@ -90,10 +95,16 @@ export function getPackageManagerInfo(manager: PackageManager): PackageManagerIn
 /**
  * Get the install command for a package
  */
-export function getInstallCommand(manager: PackageManager, packageName: string, version?: string): string {
+export function getInstallCommand(
+  manager: PackageManager,
+  packageName: string,
+  version?: string,
+  saveExact: boolean = false
+): string {
   const info = PACKAGE_MANAGERS[manager];
   const versionSuffix = version ? `@${version}` : '';
-  return `${info.addCommand} ${packageName}${versionSuffix}`;
+  const exactFlag = saveExact ? ` ${info.exactFlag}` : '';
+  return `${info.addCommand}${exactFlag} ${packageName}${versionSuffix}`;
 }
 
 /**

@@ -1,5 +1,5 @@
 import { useState, useMemo, ReactNode, useEffect } from 'react';
-import type { Dependency, SemverUpdateType, ColumnConfig, UpdateHistory } from '../../../types';
+import type { Dependency, SemverUpdateType, ColumnConfig, UpdateHistory, PackageVersion } from '../../../types';
 import './DependencyTable.css';
 import { useTranslation, interpolate } from '../i18n/I18nContext';
 
@@ -10,10 +10,71 @@ const Tooltip = ({ text, children }: { text: string; children: ReactNode }) => (
   </span>
 );
 
+// Component for collapsible prerelease versions section
+interface PrereleaseSectionProps {
+  versions: PackageVersion[];
+  selectedVersion: string;
+  onSelect: (version: string) => void;
+  formatDate: (date: string) => string;
+}
+
+const PrereleaseSection = ({ versions, selectedVersion, onSelect, formatDate }: PrereleaseSectionProps) => {
+  const [isExpanded, setIsExpanded] = useState(false);
+  const t = useTranslation();
+  
+  // Show only first 3 by default, or all if expanded
+  const displayedVersions = isExpanded ? versions : versions.slice(0, 3);
+  
+  return (
+    <>
+      <div className="version-separator prerelease-separator">
+        <span>Pre-release versions ({versions.length})</span>
+      </div>
+      {displayedVersions.map(v => (
+        <div
+          key={v.version}
+          className={`version-item prerelease-item ${v.version === selectedVersion ? 'selected' : ''} ${v.isDeprecated ? 'deprecated' : ''}`}
+          onClick={() => onSelect(v.version)}
+        >
+          <div className="version-radio">
+            <input
+              type="radio"
+              name="version"
+              value={v.version}
+              checked={v.version === selectedVersion}
+              onChange={() => onSelect(v.version)}
+            />
+          </div>
+          <div className="version-info">
+            <span className="version-number">
+              {v.version}
+              <span className="prerelease-badge">{t.labels.prerelease || 'pre-release'}</span>
+              {v.isDeprecated && (
+                <span className="deprecated-badge">{t.labels.deprecated || 'deprecated'}</span>
+              )}
+            </span>
+            <span className="version-date">{formatDate(v.date)}</span>
+          </div>
+        </div>
+      ))}
+      {versions.length > 3 && (
+        <button 
+          className="show-more-versions"
+          onClick={() => setIsExpanded(!isExpanded)}
+        >
+          {isExpanded 
+            ? (t.buttons.showLess || 'Show less') 
+            : interpolate(t.buttons.showMore || 'Show {{count}} more', { count: versions.length - 3 })}
+        </button>
+      )}
+    </>
+  );
+};
+
 interface DependencyTableProps {
   dependencies: Dependency[];
-  onUpdatePackage: (packageName: string, version: string, currentVersion?: string) => void;
-  onUpdateAll: (packages: { name: string; version: string; currentVersion?: string }[]) => void;
+  onUpdatePackage: (packageName: string, version: string, currentVersion?: string, useExactVersion?: boolean) => void;
+  onUpdateAll: (packages: { name: string; version: string; currentVersion?: string; useExactVersion?: boolean }[]) => void;
   isLoading: boolean;
   columnConfig: ColumnConfig;
   showAllPackages: boolean;
@@ -26,6 +87,10 @@ interface DependencyTableProps {
   onToggleIgnore?: (packageName: string, currentVersion?: string) => void;
   onOpenExternal?: (url: string) => void;
   onUninstall?: (packageName: string) => void;
+  onGetPackageVersions?: (packageName: string) => void;
+  getVersionsForPackage?: (packageName: string) => PackageVersion[];
+  isLoadingVersions?: (packageName: string) => boolean;
+  saveExact?: boolean;
 }
 
 type SortColumn = 'name' | 'installedVersion' | 'latestVersion' | 'type' | 'size' | 'lastPublishDate';
@@ -98,6 +163,10 @@ export const DependencyTable = ({
   onToggleIgnore,
   onOpenExternal,
   onUninstall,
+  onGetPackageVersions,
+  getVersionsForPackage,
+  isLoadingVersions,
+  saveExact,
 }: DependencyTableProps) => {
   const t = useTranslation();
   const [sortColumn, setSortColumn] = useState<SortColumn>('name');
@@ -107,11 +176,14 @@ export const DependencyTable = ({
   const [selectedPackages, setSelectedPackages] = useState<Set<string>>(new Set());
   const [showIgnored, setShowIgnored] = useState(false);
   const [confirmUninstall, setConfirmUninstall] = useState<string | null>(null);
-  const [confirmUpdate, setConfirmUpdate] = useState<Dependency | null>(null);
   const [confirmUpdateAll, setConfirmUpdateAll] = useState<Dependency[] | null>(null);
   const [confirmUpdateSelected, setConfirmUpdateSelected] = useState<Dependency[] | null>(null);
   const [confirmIgnore, setConfirmIgnore] = useState<{ name: string; isIgnored: boolean } | null>(null);
   const [confirmRollback, setConfirmRollback] = useState(false);
+  const [versionPickerOpen, setVersionPickerOpen] = useState<Dependency | null>(null);
+  const [selectedVersion, setSelectedVersion] = useState<string>('');
+  const [useExactVersion, setUseExactVersion] = useState<boolean>(false);
+  // Note: confirmUpdate was replaced by versionPickerOpen for exact version selection
 
   // Clear selection for packages that are no longer in the dependencies list (e.g. after uninstall)
   useEffect(() => {
@@ -142,24 +214,35 @@ export const DependencyTable = ({
     if (!dep.latestVersion) {
       return;
     }
-    setConfirmUpdate(dep);
+    // Open version picker instead of simple confirmation
+    setVersionPickerOpen(dep);
+    setSelectedVersion(dep.latestVersion || '');
+    setUseExactVersion(saveExact || false); // Default from settings, but user can override
+    onGetPackageVersions?.(dep.name);
   };
 
-  const confirmUpdatePackage = () => {
-    if (!confirmUpdate) {
+  const handleVersionSelect = (version: string) => {
+    setSelectedVersion(version);
+  };
+
+  const confirmVersionUpdate = () => {
+    if (!versionPickerOpen || !selectedVersion) {
       return;
     }
-    setUpdatingPackages(prev => new Set(prev).add(confirmUpdate.name));
-    onUpdatePackage(confirmUpdate.name, 'latest', confirmUpdate.declaredVersion);
-    setConfirmUpdate(null);
+    setUpdatingPackages(prev => new Set(prev).add(versionPickerOpen.name));
+    // Pass useExactVersion flag from the checkbox
+    onUpdatePackage(versionPickerOpen.name, selectedVersion, versionPickerOpen.declaredVersion, useExactVersion);
+    setVersionPickerOpen(null);
     setTimeout(() => {
       setUpdatingPackages(prev => {
         const next = new Set(prev);
-        next.delete(confirmUpdate.name);
+        next.delete(versionPickerOpen.name);
         return next;
       });
     }, 3000);
   };
+
+
 
   const handleSelectPackage = (packageName: string, checked: boolean) => {
     setSelectedPackages(prev => {
@@ -708,25 +791,133 @@ export const DependencyTable = ({
         </div>
       )}
 
-      {confirmUpdate && (
-        <div className="modal-overlay" onClick={() => setConfirmUpdate(null)}>
-          <div className="modal-content" onClick={e => e.stopPropagation()}>
-            <h3>{t.modals.updateTitle}</h3>
-            <p
-              dangerouslySetInnerHTML={{
-                __html: interpolate(t.modalMessages.confirmUpdate, { name: confirmUpdate.name }),
-              }}
-            />
+      {versionPickerOpen && (
+        <div className="modal-overlay" onClick={() => setVersionPickerOpen(null)}>
+          <div className="modal-content modal-content-large" onClick={e => e.stopPropagation()}>
+            <h3>{interpolate(t.modals.selectVersionTitle || 'Select Version for {{name}}', { name: versionPickerOpen.name })}</h3>
             <p className="modal-version-info">
-              <span className="version-from">{confirmUpdate.declaredVersion}</span>
+              <span className="version-from">{versionPickerOpen.declaredVersion}</span>
               <i className="codicon codicon-arrow-right" />
-              <span className="version-to">{confirmUpdate.latestVersion}</span>
+              <span className="version-to">{selectedVersion}</span>
             </p>
+            <div className="exact-version-checkbox">
+              <label className="checkbox-label">
+                <input
+                  type="checkbox"
+                  checked={useExactVersion}
+                  onChange={e => setUseExactVersion(e.target.checked)}
+                />
+                <span className="checkmark"></span>
+                <span className="label-text">
+                  <i className="codicon codicon-pin" /> Pin exact version (--save-exact)
+                </span>
+              </label>
+              <span className="hint">Installs without ^ or ~ prefix</span>
+            </div>
+            <div className="version-list">
+              {/* Latest option */}
+              <div
+                className={`version-item ${selectedVersion === 'latest' ? 'selected' : ''}`}
+                onClick={() => handleVersionSelect('latest')}
+              >
+                <div className="version-radio">
+                  <input
+                    type="radio"
+                    name="version"
+                    value="latest"
+                    checked={selectedVersion === 'latest'}
+                    onChange={() => handleVersionSelect('latest')}
+                  />
+                </div>
+                <div className="version-info">
+                  <span className="version-number">
+                    latest
+                    <span className="latest-badge">dist-tag</span>
+                  </span>
+                  <span className="version-date">Resolves to {versionPickerOpen.latestVersion}</span>
+                </div>
+              </div>
+              
+              <div className="version-separator">Or select a specific version:</div>
+              
+              {isLoadingVersions?.(versionPickerOpen.name) ? (
+                <div className="version-loading">{t.states.loadingVersions || 'Loading versions...'}</div>
+              ) : (
+                (() => {
+                  const versions = getVersionsForPackage?.(versionPickerOpen.name) || [];
+                  if (versions.length === 0) {
+                    return (
+                      <div className="version-loading">
+                        No versions found. Please try again.
+                      </div>
+                    );
+                  }
+                  
+                  // Split into stable and prerelease versions
+                  const stableVersions = versions.filter(v => v.releaseType === 'stable');
+                  const prereleaseVersions = versions.filter(v => v.releaseType === 'prerelease');
+                  
+                  return (
+                    <>
+                      {/* Stable versions first */}
+                      {stableVersions.length > 0 && (
+                        <>
+                          <div className="version-separator">Stable versions</div>
+                          {stableVersions.map(v => (
+                            <div
+                              key={v.version}
+                              className={`version-item ${v.version === selectedVersion ? 'selected' : ''} ${v.isDeprecated ? 'deprecated' : ''} ${v.version === versionPickerOpen.latestVersion ? 'latest' : ''}`}
+                              onClick={() => handleVersionSelect(v.version)}
+                            >
+                              <div className="version-radio">
+                                <input
+                                  type="radio"
+                                  name="version"
+                                  value={v.version}
+                                  checked={v.version === selectedVersion}
+                                  onChange={() => handleVersionSelect(v.version)}
+                                />
+                              </div>
+                              <div className="version-info">
+                                <span className="version-number">
+                                  {v.version}
+                                  {v.version === versionPickerOpen.latestVersion && (
+                                    <span className="latest-badge">{t.labels.latest || 'latest'}</span>
+                                  )}
+                                  {v.isDeprecated && (
+                                    <span className="deprecated-badge">{t.labels.deprecated || 'deprecated'}</span>
+                                  )}
+                                </span>
+                                <span className="version-date">{formatDate(t, v.date)}</span>
+                              </div>
+                            </div>
+                          ))}
+                        </>
+                      )}
+                      
+                      {/* Pre-release versions (collapsible) */}
+                      {prereleaseVersions.length > 0 && (
+                        <PrereleaseSection
+                          versions={prereleaseVersions}
+                          selectedVersion={selectedVersion}
+                          onSelect={handleVersionSelect}
+                          formatDate={(date: string) => formatDate(t, date)}
+                        />
+                      )}
+                    </>
+                  );
+                })()
+              )}
+            </div>
             <div className="modal-actions">
-              <button className="modal-btn cancel" onClick={() => setConfirmUpdate(null)}>
+              <button className="modal-btn cancel" onClick={() => setVersionPickerOpen(null)}>
                 {t.buttons.cancel}
               </button>
-              <button className="modal-btn confirm" onClick={confirmUpdatePackage}>
+              <button
+                className="modal-btn confirm"
+                onClick={confirmVersionUpdate}
+                disabled={!selectedVersion || isLoadingVersions?.(versionPickerOpen.name)}
+              >
                 {t.buttons.update}
               </button>
             </div>

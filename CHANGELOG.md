@@ -2,6 +2,48 @@
 
 All notable changes to the "npm-visual-manager" extension will be documented in this file.
 
+## [1.5.0] - 2026-03-30
+
+### Added
+- **Version Picker**: Complete redesign of the update experience
+  - New modal interface when clicking "Update" button
+  - Shows all available versions from the registry (not just `latest`)
+  - Two main options:
+    - `latest` (dist-tag): Resolves to whatever the registry considers latest
+    - Specific versions: Select exact version number to install
+  - Semantic version ordering (highest version first, e.g., 10.1.0, 10.0.3, 9.39.4)
+  - Release type grouping:
+    - **Stable versions**: Always shows at least 10 stable releases
+    - **Pre-release versions**: Collapsible section for alpha, beta, rc, dev builds
+    - Badge indicators: "latest", "pre-release", "deprecated"
+  - Perfect for private registries (Artifactory, Verdaccio) where `latest` tag may lag
+- **--save-exact Support**: Pin exact versions without `^` or `~` prefix
+  - New setting: `npm-visual-manager.saveExact` (default: `false`)
+  - Per-operation checkbox in version picker modal
+  - Visual indicator with pin icon 📌
+  - Works with all package managers:
+    - npm: `--save-exact`
+    - yarn: `--exact`
+    - pnpm: `--save-exact`
+    - bun: `--exact`
+- **Enhanced Version Display**: Improved version selection UI
+  - Wider modal (550px max-width) for better readability
+  - Version publish dates shown (e.g., "8 days ago", "1 month ago")
+  - Radio button selection for precise version picking
+  - "Show more/less" button for pre-release versions
+
+### Changed
+- **Update Button Behavior**: Now opens version picker instead of immediately updating to `latest`
+- **Version Sorting**: Changed from date-based to semantic version ordering
+  - Ensures 10.0.3 appears before 9.39.4 (higher version first)
+  - Pre-release versions (with `-alpha`, `-beta`, `-dev`) sorted separately
+
+### Fixed
+- **Private Registry Support**: Resolves issue #1
+  - Previously: Extension always resolved `latest` dist-tag, causing issues when private registries had outdated tags
+  - Now: Users can select specific versions directly from the registry
+  - Example: Install `vite@8.0.3` even if Artifactory's `latest` points to `8.0.1`
+
 ## [1.4.0] - 2026-03-25
 
 ### Changed

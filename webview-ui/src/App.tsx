@@ -1,7 +1,7 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { DependencyTable } from './components/DependencyTable';
 import { SearchPanel } from './components/SearchPanel';
-import { useVsCodeApi, useVsCodeMessages } from './hooks/useVsCodeApi';
+import { useVsCodeApi, useVsCodeMessages, usePackageVersions } from './hooks/useVsCodeApi';
 import type {
   Dependency,
   HostToWebviewMessage,
@@ -29,8 +29,16 @@ function App() {
     installNewPackage,
     openExternal,
     uninstallPackage,
+    getPackageVersions,
     isReady,
   } = useVsCodeApi();
+
+  const {
+    handleVersionsResult,
+    requestVersions,
+    isLoadingVersions,
+    getVersionsForPackage,
+  } = usePackageVersions();
 
   const [dependencies, setDependencies] = useState<Dependency[]>([]);
   const [packageName, setPackageName] = useState<string>('');
@@ -54,6 +62,7 @@ function App() {
   const cacheInfoRef = useRef<{ fromCache: boolean; age?: number } | null>(null);
   const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
   const [isSearching, setIsSearching] = useState(false);
+  const [saveExact, setSaveExact] = useState<boolean>(false);
 
   // Handle messages from Extension Host
   const handleMessage = useCallback(
@@ -77,6 +86,9 @@ function App() {
           }
           if (message.lastUpdate !== undefined) {
             setLastUpdate(message.lastUpdate);
+          }
+          if (message.saveExact !== undefined) {
+            setSaveExact(message.saveExact);
           }
           setIsLoading(false);
           setError(null);
@@ -155,13 +167,22 @@ function App() {
           setProgressMessage(null);
           break;
 
+        case 'PACKAGE_VERSIONS_RESULT':
+          console.log(`[App] Received PACKAGE_VERSIONS_RESULT for ${message.packageName}:`, message.versions.length, 'versions');
+          if (message.error) {
+            console.error(`Failed to get versions for ${message.packageName}:`, message.error);
+          } else {
+            handleVersionsResult(message.packageName, message.versions);
+          }
+          break;
+
         case 'ERROR':
           setError(message.message);
           setIsLoading(false);
           break;
       }
     },
-    [requestDependencies]
+    [requestDependencies, handleVersionsResult]
   );
 
   useVsCodeMessages(handleMessage);
@@ -173,8 +194,8 @@ function App() {
     }
   }, [isReady, requestDependencies]);
 
-  const handleUpdatePackage = (packageName: string, version: string, currentVersion?: string) => {
-    updatePackage(packageName, version, currentVersion);
+  const handleUpdatePackage = (packageName: string, version: string, currentVersion?: string, useExactVersion?: boolean) => {
+    updatePackage(packageName, version, currentVersion, useExactVersion);
   };
 
   const handleUpdateAll = (packages: { name: string; version: string; currentVersion?: string }[]) => {
@@ -231,6 +252,13 @@ function App() {
       uninstallPackage(packageName);
     },
     [uninstallPackage]
+  );
+
+  const handleGetPackageVersions = useCallback(
+    (packageName: string) => {
+      requestVersions(packageName, getPackageVersions);
+    },
+    [requestVersions, getPackageVersions]
   );
 
   if (isLoading) {
@@ -328,6 +356,10 @@ function App() {
           onToggleIgnore={toggleIgnorePackage}
           onOpenExternal={handleOpenExternal}
           onUninstall={handleUninstall}
+          onGetPackageVersions={handleGetPackageVersions}
+          getVersionsForPackage={getVersionsForPackage}
+          isLoadingVersions={isLoadingVersions}
+          saveExact={saveExact}
         />
         <SearchPanel
           results={searchResults}

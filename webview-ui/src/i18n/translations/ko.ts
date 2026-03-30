@@ -15,6 +15,8 @@ export const ko: Translations = {
     goBack: '뒤로',
     retry: '재시도',
     yesUninstall: '예, 제거합니다',
+    showMore: '{{count}}개 더 보기',
+    showLess: '접기',
   },
 
   // Column headers
@@ -71,6 +73,7 @@ export const ko: Translations = {
     allUpToDate: '모든 패키지가 최신 상태입니다! "모두 표시"를 클릭하여 모든 것을 확인하세요.',
     noMatchFilter: '현재 필터와 일치하는 패키지가 없음',
     searching: '검색 중...',
+    loadingVersions: '버전 로드 중...',
   },
 
   // Footer
@@ -101,6 +104,8 @@ export const ko: Translations = {
     ignoreTitle: '패키지 무시',
     unignoreTitle: '패키지 무시 해제',
     rollbackTitle: '업데이트 롤백',
+    selectVersionTitle: '{{name}}의 버전 선택',
+    saveExactEnabled: '--save-exact 활성화됨',
   },
 
   // Modal messages
@@ -118,6 +123,7 @@ export const ko: Translations = {
     rollbackDetails: '다음 패키지가 이전 버전으로 복원됩니다:',
     ignoreHint: '무시된 패키지는 업데이트 확인 및 카운터에서 제외됩니다.',
     andMore: '...그리고 {{count}}개 더',
+    selectVersionHint: '설치할 버전을 선택하세요:',
   },
 
   // Ignored section
@@ -146,5 +152,12 @@ export const ko: Translations = {
     major: '주요',
     minor: '부분',
     patch: '패치',
+  },
+
+  // Labels
+  labels: {
+    latest: '최신',
+    deprecated: '지원 중단',
+    prerelease: '프리릴리스',
   },
 };

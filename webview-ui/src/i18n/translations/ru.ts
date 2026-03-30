@@ -15,6 +15,8 @@ export const ru: Translations = {
     goBack: 'Назад',
     retry: 'Повторить',
     yesUninstall: 'Да, удалить',
+    showMore: 'Показать ещё {{count}}',
+    showLess: 'Показать меньше',
   },
 
   // Column headers
@@ -71,6 +73,7 @@ export const ru: Translations = {
     allUpToDate: 'Все пакеты обновлены! Нажмите "Показать все", чтобы увидеть всё.',
     noMatchFilter: 'Нет пакетов, соответствующих текущему фильтру',
     searching: 'Поиск...',
+    loadingVersions: 'Загрузка версий...',
   },
 
   // Footer
@@ -101,6 +104,8 @@ export const ru: Translations = {
     ignoreTitle: 'Игнорировать пакет',
     unignoreTitle: 'Не игнорировать пакет',
     rollbackTitle: 'Откат Обновления',
+    selectVersionTitle: 'Выбрать версию для {{name}}',
+    saveExactEnabled: '--save-exact включен',
   },
 
   // Modal messages
@@ -118,6 +123,7 @@ export const ru: Translations = {
     rollbackDetails: 'Следующие пакеты будут восстановлены до предыдущих версий:',
     ignoreHint: 'Игнорируемые пакеты исключаются из проверок обновлений и счетчиков.',
     andMore: '...и ещё {{count}}',
+    selectVersionHint: 'Выберите версию, которую хотите установить:',
   },
 
   // Ignored section
@@ -146,5 +152,12 @@ export const ru: Translations = {
     major: 'MAJOR',
     minor: 'MINOR',
     patch: 'PATCH',
+  },
+
+  // Labels
+  labels: {
+    latest: 'последняя',
+    deprecated: 'устарело',
+    prerelease: 'пре-релиз',
   },
 };

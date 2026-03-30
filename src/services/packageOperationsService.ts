@@ -22,7 +22,8 @@ export class PackageOperationsService {
     version: string,
     currentVersion: string | undefined,
     currentProjectPath: string,
-    currentPackageManager: PackageManager
+    currentPackageManager: PackageManager,
+    saveExact: boolean = false
   ): Promise<UpdateHistory | null> {
     let newHistory: UpdateHistory | null = null;
 
@@ -46,7 +47,7 @@ export class PackageOperationsService {
 
     // Note: Webview progress message removed - only using VS Code native notifications
     try {
-      const installCmd = getInstallCommand(currentPackageManager, packageName, version);
+      const installCmd = getInstallCommand(currentPackageManager, packageName, version, saveExact);
 
       const result = await vscode.window.withProgress(
         {
@@ -105,7 +106,8 @@ export class PackageOperationsService {
   public async updateAllPackages(
     packages: { name: string; version: string; currentVersion?: string }[],
     currentProjectPath: string,
-    currentPackageManager: PackageManager
+    currentPackageManager: PackageManager,
+    saveExact: boolean = false
   ): Promise<UpdateHistory | null> {
     if (packages.length === 0) {
       vscode.window.showInformationMessage('No packages to update');
@@ -134,7 +136,8 @@ export class PackageOperationsService {
     // Note: Webview progress message removed - only using VS Code native notifications
     try {
       const info = getPackageManagerInfo(currentPackageManager);
-      const command = `${info.addCommand} ${packageList}`;
+      const exactFlag = saveExact ? ` ${info.exactFlag}` : '';
+      const command = `${info.addCommand}${exactFlag} ${packageList}`;
 
       const result = await vscode.window.withProgress(
         {
@@ -277,13 +280,15 @@ export class PackageOperationsService {
     version: string,
     isDev: boolean,
     currentProjectPath: string,
-    currentPackageManager: PackageManager
+    currentPackageManager: PackageManager,
+    saveExact: boolean = false
   ): Promise<void> {
     try {
       const info = getPackageManagerInfo(currentPackageManager);
       const devFlag = isDev ? info.devFlag || '--save-dev' : '';
+      const exactFlag = saveExact ? info.exactFlag : '';
       const versionSuffix = version ? `@${version}` : '';
-      const command = `${info.addCommand} ${packageName}${versionSuffix} ${devFlag}`.trim();
+      const command = `${info.addCommand} ${packageName}${versionSuffix} ${devFlag} ${exactFlag}`.trim();
 
       // Note: Webview progress message removed - only using VS Code native notifications
       const result = await vscode.window.withProgress(

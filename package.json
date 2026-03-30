@@ -2,7 +2,7 @@
   "name": "npm-visual-manager",
   "displayName": "NPM Visual Manager",
   "description": "Visual package manager for NPM dependencies with update checking, security audit, and bulk operations",
-  "version": "1.4.0",
+  "version": "1.5.0",
   "publisher": "LuisClementDev",
   "author": {
     "name": "Luis Clement Cremades"
@@ -149,6 +149,11 @@
               "name"
             ]
           }
+        },
+        "npm-visual-manager.saveExact": {
+          "type": "boolean",
+          "default": false,
+          "description": "Use --save-exact flag when installing/updating packages (pins exact version without ^ or ~ prefix)"
         }
       }
     }

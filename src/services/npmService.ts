@@ -65,7 +65,9 @@ export async function getPackageInfo(packageName: string, forceRefresh: boolean 
   }
 
   return new Promise((resolve, reject) => {
-    const encodedName = encodeURIComponent(packageName).replace('%40', '@');
+    // For scoped packages (@scope/name), encodeURIComponent gives %40scope%2Fname
+    // We need to keep it encoded as %40scope%2Fname for the npm registry
+    const encodedName = encodeURIComponent(packageName);
     const url = `https://registry.npmjs.org/${encodedName}`;
 
     const req = https.get(
@@ -223,6 +225,73 @@ export async function getPackageDetails(packageName: string, forceRefresh: boole
 export async function getLatestVersion(packageName: string, forceRefresh: boolean = false): Promise<string> {
   const details = await getPackageDetails(packageName, forceRefresh);
   return details.latestVersion;
+}
+
+/**
+ * Get all available versions of a package from NPM registry
+ * Returns versions sorted from newest to oldest
+ */
+export interface PackageVersion {
+  version: string;
+  date: string;
+  isDeprecated?: boolean;
+  deprecationMessage?: string;
+  releaseType: 'stable' | 'prerelease';
+}
+
+export async function getPackageVersions(
+  packageName: string,
+  limit: number = 20
+): Promise<PackageVersion[]> {
+  // Always fetch fresh data for version list (cache may not have full version list)
+  const info = await getPackageInfo(packageName, true);
+
+  const versions: PackageVersion[] = [];
+
+  // Get all version keys and sort by date (newest first)
+  const versionEntries = Object.entries(info.versions);
+
+  // Create a map of version to publish date
+  const versionDates = new Map<string, string>();
+  if (info.time) {
+    for (const [version, date] of Object.entries(info.time)) {
+      if (version !== 'created' && version !== 'modified') {
+        versionDates.set(version, date);
+      }
+    }
+  }
+
+  // Build version info array
+  for (const [version, versionData] of versionEntries) {
+    // Skip deprecated versions unless it's the only one
+    const data = versionData as { deprecated?: string };
+    const date = versionDates.get(version) || info.time?.modified || new Date().toISOString();
+    
+    // Detect if it's a pre-release version (contains -alpha, -beta, -rc, -dev, etc.)
+    const isPrerelease = /-\w/.test(version);
+
+    versions.push({
+      version,
+      date,
+      isDeprecated: !!data.deprecated,
+      deprecationMessage: data.deprecated,
+      releaseType: isPrerelease ? 'prerelease' : 'stable',
+    });
+  }
+
+  // Sort by semantic version descending (highest version first, e.g., 10.1.0, 10.0.3, 9.39.4)
+  versions.sort((a, b) => compareVersions(b.version, a.version));
+
+  // Split into stable and prerelease
+  const stableVersions = versions.filter(v => v.releaseType === 'stable');
+  const prereleaseVersions = versions.filter(v => v.releaseType === 'prerelease');
+
+  // Always show at least 10 stable versions (if available) + prereleases up to the limit
+  const stableLimit = Math.max(10, limit - Math.min(prereleaseVersions.length, 10));
+  const selectedStables = stableVersions.slice(0, stableLimit);
+  const selectedPrereleases = prereleaseVersions.slice(0, Math.max(0, limit - selectedStables.length));
+
+  return [...selectedStables, ...selectedPrereleases];
 }
 
 /**

@@ -15,6 +15,8 @@ export const zhCn: Translations = {
     goBack: '返回',
     retry: '重试',
     yesUninstall: '是的，卸载',
+    showMore: '显示更多 {{count}} 个',
+    showLess: '显示更少',
   },
 
   // Column headers
@@ -71,6 +73,7 @@ export const zhCn: Translations = {
     allUpToDate: '所有包都是最新的！点击"显示全部"查看所有内容。',
     noMatchFilter: '没有包符合当前筛选条件',
     searching: '搜索中...',
+    loadingVersions: '正在加载版本...',
   },
 
   // Footer
@@ -101,6 +104,8 @@ export const zhCn: Translations = {
     ignoreTitle: '忽略包',
     unignoreTitle: '取消忽略包',
     rollbackTitle: '回滚更新',
+    selectVersionTitle: '为 {{name}} 选择版本',
+    saveExactEnabled: '--save-exact 已启用',
   },
 
   // Modal messages
@@ -118,6 +123,7 @@ export const zhCn: Translations = {
     rollbackDetails: '以下包将恢复到其先前版本：',
     ignoreHint: '已忽略的包将被排除在更新检查和计数器之外。',
     andMore: '...还有 {{count}} 个',
+    selectVersionHint: '选择您要安装的版本：',
   },
 
   // Ignored section
@@ -146,5 +152,12 @@ export const zhCn: Translations = {
     major: '主要',
     minor: '次要',
     patch: '补丁',
+  },
+
+  // Labels
+  labels: {
+    latest: '最新',
+    deprecated: '已弃用',
+    prerelease: '预发布',
   },
 };

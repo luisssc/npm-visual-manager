@@ -7,7 +7,7 @@ import * as path from 'path';
 import * as fs from 'fs';
 import type { Dependency, WebviewToHostMessage, HostToWebviewMessage, ColumnConfig, UpdateHistory } from '../../types';
 import { findPackageJson, readPackageJson, extractDependencies } from '../services/packageService';
-import { getPackageDetails, getSemverUpdateType, setGlobalCache } from '../services/npmService';
+import { getPackageDetails, getPackageVersions, getSemverUpdateType, setGlobalCache } from '../services/npmService';
 import { getCache, VersionCache } from '../services/cacheService';
 import { getIgnoreService } from '../services/ignoreService';
 import { findAllProjects, Project } from '../services/workspaceService';
@@ -38,6 +38,7 @@ export class NpmGuiManagerPanel {
   private _cache: VersionCache | null = null;
   private _packageOperationsService: PackageOperationsService;
   private _searchAbortController: AbortController | null = null;
+  private _saveExact: boolean = false;
   private _fileWatcher: vscode.FileSystemWatcher | undefined;
   private _fileWatcherDebounce: NodeJS.Timeout | undefined;
 
@@ -303,21 +304,29 @@ export class NpmGuiManagerPanel {
         break;
 
       case 'UPDATE_PACKAGE': {
+        // Use the explicit flag from the message if provided, otherwise use the global setting
+        const saveExact = message.useExactVersion !== undefined ? message.useExactVersion : this._saveExact;
         await this._packageOperationsService.updatePackage(
           message.packageName,
           message.version,
           message.currentVersion,
           this._currentProjectPath,
-          this._currentPackageManager
+          this._currentPackageManager,
+          saveExact
         );
         break;
       }
 
       case 'UPDATE_ALL_PACKAGES': {
+        // Check if any package has useExactVersion flag, otherwise use global setting
+        const saveExact = message.packages[0]?.useExactVersion !== undefined 
+          ? message.packages[0].useExactVersion 
+          : this._saveExact;
         await this._packageOperationsService.updateAllPackages(
           message.packages,
           this._currentProjectPath,
-          this._currentPackageManager
+          this._currentPackageManager,
+          saveExact
         );
         break;
       }
@@ -340,7 +349,8 @@ export class NpmGuiManagerPanel {
           message.version,
           message.isDev,
           this._currentProjectPath,
-          this._currentPackageManager
+          this._currentPackageManager,
+          this._saveExact
         );
         break;
 
@@ -356,6 +366,10 @@ export class NpmGuiManagerPanel {
           this._currentProjectPath,
           this._currentPackageManager
         );
+        break;
+
+      case 'GET_PACKAGE_VERSIONS':
+        await this._getPackageVersions(message.packageName, message.limit);
         break;
     }
   }
@@ -484,6 +498,10 @@ export class NpmGuiManagerPanel {
       // Get Node and package manager versions
       const versions = await getVersions(this._currentPackageManager);
 
+      // Get extension config
+      const extensionConfig = this._getExtensionConfig();
+      this._saveExact = extensionConfig.saveExact;
+
       this._sendMessage({
         type: 'DEPENDENCIES_DATA',
         dependencies,
@@ -494,6 +512,7 @@ export class NpmGuiManagerPanel {
         packageManager: this._currentPackageManager,
         versions,
         lastUpdate: this._updateHistory,
+        saveExact: this._saveExact,
       });
 
       // Update panel title with project name
@@ -531,6 +550,40 @@ export class NpmGuiManagerPanel {
       security: config.get('security', true),
       semverUpdate: config.get('semverUpdate', true),
     };
+  }
+
+  /**
+   * Get extension configuration
+   */
+  private _getExtensionConfig(): { saveExact: boolean } {
+    const config = vscode.workspace.getConfiguration('npm-visual-manager');
+    return {
+      saveExact: config.get('saveExact', false),
+    };
+  }
+
+  /**
+   * Get available versions for a package
+   */
+  private async _getPackageVersions(packageName: string, limit?: number): Promise<void> {
+    console.log(`[npm-visual-manager] Fetching versions for ${packageName}...`);
+    try {
+      const versions = await getPackageVersions(packageName, limit || 20);
+      console.log(`[npm-visual-manager] Found ${versions.length} versions for ${packageName}`);
+      this._sendMessage({
+        type: 'PACKAGE_VERSIONS_RESULT',
+        packageName,
+        versions,
+      });
+    } catch (error) {
+      console.error(`[npm-visual-manager] Error fetching versions for ${packageName}:`, error);
+      this._sendMessage({
+        type: 'PACKAGE_VERSIONS_RESULT',
+        packageName,
+        versions: [],
+        error: error instanceof Error ? error.message : String(error),
+      });
+    }
   }
 
   /**

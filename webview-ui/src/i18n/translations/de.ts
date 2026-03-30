@@ -15,6 +15,8 @@ export const de: Translations = {
     goBack: 'Zurück',
     retry: 'Wiederholen',
     yesUninstall: 'Ja, deinstallieren',
+    showMore: '{{count}} weitere anzeigen',
+    showLess: 'Weniger anzeigen',
   },
 
   // Column headers
@@ -71,6 +73,7 @@ export const de: Translations = {
     allUpToDate: 'Alle Pakete sind auf dem neuesten Stand! Klicken Sie auf "Alle anzeigen", um alles zu sehen.',
     noMatchFilter: 'Keine Pakete entsprechen dem aktuellen Filter',
     searching: 'Wird gesucht...',
+    loadingVersions: 'Versionen werden geladen...',
   },
 
   // Footer
@@ -101,6 +104,8 @@ export const de: Translations = {
     ignoreTitle: 'Paket ignorieren',
     unignoreTitle: 'Paket nicht ignorieren',
     rollbackTitle: 'Aktualisierung zurücksetzen',
+    selectVersionTitle: 'Version für {{name}} auswählen',
+    saveExactEnabled: '--save-exakt aktiviert',
   },
 
   // Modal messages
@@ -120,6 +125,7 @@ export const de: Translations = {
     rollbackDetails: 'Die folgenden Pakete werden auf ihre vorherigen Versionen zurückgesetzt:',
     ignoreHint: 'Ignorierte Pakete werden von Aktualisierungsprüfungen und Zählern ausgeschlossen.',
     andMore: '...und {{count}} weitere',
+    selectVersionHint: 'Wählen Sie die Version, die Sie installieren möchten:',
   },
 
   // Ignored section
@@ -148,5 +154,12 @@ export const de: Translations = {
     major: 'MAJOR',
     minor: 'MINOR',
     patch: 'PATCH',
+  },
+
+  // Labels
+  labels: {
+    latest: 'neueste',
+    deprecated: 'veraltet',
+    prerelease: 'pre-release',
   },
 };

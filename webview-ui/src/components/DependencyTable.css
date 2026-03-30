@@ -809,8 +809,8 @@ tr:hover .uninstall-btn,
 
 /* Large modal for Update All / Update Selected */
 .modal-content-large {
-  max-width: 450px;
-  min-width: 350px;
+  max-width: 550px;
+  min-width: 450px;
 }
 
 .modal-package-list {
@@ -1066,4 +1066,221 @@ tr:hover .ignore-btn,
   border-radius: 3px;
   font-size: 12px;
   z-index: 100;
+}
+
+/* Version Picker Styles */
+.save-exact-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: var(--vscode-badge-background);
+  color: var(--vscode-badge-foreground);
+  padding: 4px 8px;
+  border-radius: 3px;
+  font-size: 11px;
+  margin-bottom: 12px;
+}
+
+.version-list {
+  max-height: 300px;
+  overflow-y: auto;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  margin: 12px 0;
+}
+
+.version-loading {
+  padding: 20px;
+  text-align: center;
+  color: var(--vscode-descriptionForeground);
+  font-style: italic;
+}
+
+.version-item {
+  display: flex;
+  align-items: center;
+  padding: 8px 12px;
+  cursor: pointer;
+  border-bottom: 1px solid var(--border-color);
+  transition: background 0.15s;
+}
+
+.version-item:last-child {
+  border-bottom: none;
+}
+
+.version-item:hover {
+  background: var(--row-hover-bg);
+}
+
+.version-item.selected {
+  background: var(--vscode-list-activeSelectionBackground);
+  color: var(--vscode-list-activeSelectionForeground);
+}
+
+.version-item.deprecated {
+  opacity: 0.6;
+}
+
+.version-item.latest .version-number {
+  font-weight: 600;
+}
+
+.version-radio {
+  margin-right: 10px;
+}
+
+.version-radio input[type="radio"] {
+  margin: 0;
+}
+
+.version-info {
+  display: flex;
+  flex: 1;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+
+.version-number {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--vscode-editor-font-family);
+  font-size: 13px;
+}
+
+.latest-badge {
+  background: var(--success-fg);
+  color: var(--vscode-badge-foreground);
+  padding: 1px 5px;
+  border-radius: 3px;
+  font-size: 10px;
+  text-transform: uppercase;
+  font-weight: 600;
+}
+
+.deprecated-badge {
+  background: var(--error-fg);
+  color: var(--vscode-badge-foreground);
+  padding: 1px 5px;
+  border-radius: 3px;
+  font-size: 10px;
+  text-transform: uppercase;
+  font-weight: 600;
+}
+
+.version-date {
+  font-size: 12px;
+  color: var(--vscode-descriptionForeground);
+}
+
+.version-item.selected .version-date {
+  color: var(--vscode-list-activeSelectionForeground);
+  opacity: 0.8;
+}
+
+/* Version separator */
+.version-separator {
+  padding: 8px 12px;
+  font-size: 11px;
+  color: var(--vscode-descriptionForeground);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  background: var(--vscode-editor-inactiveSelectionBackground);
+  border-bottom: 1px solid var(--border-color);
+  border-top: 1px solid var(--border-color);
+}
+
+/* Dist-tag badge */
+.latest-badge {
+  background: var(--success-fg);
+  color: var(--vscode-badge-foreground);
+  padding: 1px 5px;
+  border-radius: 3px;
+  font-size: 10px;
+  text-transform: uppercase;
+  font-weight: 600;
+}
+
+/* Exact version checkbox */
+.exact-version-checkbox {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px;
+  background: var(--vscode-editor-inactiveSelectionBackground);
+  border-radius: 4px;
+  margin: 12px 0;
+}
+
+.checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  font-size: 13px;
+  color: var(--vscode-foreground);
+}
+
+.checkbox-label input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+}
+
+.label-text {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.label-text .codicon {
+  color: var(--vscode-textLink-foreground);
+}
+
+.hint {
+  font-size: 11px;
+  color: var(--vscode-descriptionForeground);
+  margin-left: 24px;
+}
+
+/* Prerelease section styles */
+.prerelease-separator {
+  background: var(--vscode-editorWarning-background, rgba(255, 152, 0, 0.1));
+  color: var(--vscode-editorWarning-foreground, #ff9800);
+}
+
+.prerelease-item {
+  opacity: 0.85;
+}
+
+.prerelease-item:hover {
+  opacity: 1;
+}
+
+.prerelease-badge {
+  background: var(--vscode-editorWarning-foreground, #ff9800);
+  color: var(--vscode-badge-foreground);
+  padding: 1px 5px;
+  border-radius: 3px;
+  font-size: 10px;
+  text-transform: uppercase;
+  font-weight: 600;
+}
+
+.show-more-versions {
+  width: 100%;
+  padding: 8px 12px;
+  background: transparent;
+  border: none;
+  border-top: 1px solid var(--border-color);
+  color: var(--vscode-textLink-foreground);
+  font-size: 12px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.show-more-versions:hover {
+  background: var(--row-hover-bg);
 }

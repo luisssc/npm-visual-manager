@@ -18,6 +18,14 @@ export interface SearchResult {
   score?: { final: number; quality: number; popularity: number; maintenance: number };
 }
 
+export interface PackageVersion {
+  version: string;
+  date: string;
+  isDeprecated?: boolean;
+  deprecationMessage?: string;
+  releaseType: 'stable' | 'prerelease';
+}
+
 export interface Dependency {
   name: string;
   installedVersion: string;
@@ -79,8 +87,8 @@ export interface UpdateHistory {
 export type WebviewToHostMessage =
   | { type: 'GET_DEPENDENCIES' }
   | { type: 'SELECT_PROJECT'; path: string }
-  | { type: 'UPDATE_PACKAGE'; packageName: string; version: string; currentVersion?: string }
-  | { type: 'UPDATE_ALL_PACKAGES'; packages: { name: string; version: string; currentVersion?: string }[] }
+  | { type: 'UPDATE_PACKAGE'; packageName: string; version: string; currentVersion?: string; useExactVersion?: boolean }
+  | { type: 'UPDATE_ALL_PACKAGES'; packages: { name: string; version: string; currentVersion?: string; useExactVersion?: boolean }[] }
   | { type: 'ROLLBACK_LAST' }
   | { type: 'CHECK_UPDATES'; dependencies: Dependency[]; forceRefresh?: boolean }
   | { type: 'REFRESH_CACHE' }
@@ -89,7 +97,8 @@ export type WebviewToHostMessage =
   | { type: 'INSTALL_NEW_PACKAGE'; packageName: string; version: string; isDev: boolean }
   | { type: 'GET_AUDIT' }
   | { type: 'OPEN_EXTERNAL'; url: string }
-  | { type: 'UNINSTALL_PACKAGE'; packageName: string };
+  | { type: 'UNINSTALL_PACKAGE'; packageName: string }
+  | { type: 'GET_PACKAGE_VERSIONS'; packageName: string; limit?: number };
 
 // Messages from Extension Host to Webview
 export type HostToWebviewMessage =
@@ -103,6 +112,7 @@ export type HostToWebviewMessage =
       packageManager?: PackageManager;
       versions?: VersionInfo;
       lastUpdate?: UpdateHistory | null;
+      saveExact?: boolean;
     }
   | { type: 'UPDATE_RESULT'; success: boolean; packageName: string; message: string }
   | { type: 'ROLLBACK_RESULT'; success: boolean; message: string; rolledBackPackages?: string[] }
@@ -125,4 +135,5 @@ export type HostToWebviewMessage =
   | { type: 'COLUMN_CONFIG'; config: ColumnConfig }
   | { type: 'INSTALL_RESULT'; packageName: string; success: boolean; message: string }
   | { type: 'ERROR'; message: string }
-  | { type: 'PROGRESS'; message: string };
+  | { type: 'PROGRESS'; message: string }
+  | { type: 'PACKAGE_VERSIONS_RESULT'; packageName: string; versions: PackageVersion[]; error?: string };

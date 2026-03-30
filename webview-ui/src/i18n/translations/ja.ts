@@ -15,6 +15,8 @@ export const ja: Translations = {
     goBack: '戻る',
     retry: '再試行',
     yesUninstall: 'はい、アンインストールします',
+    showMore: 'さらに {{count}} 件表示',
+    showLess: '少なく表示',
   },
 
   // Column headers
@@ -71,6 +73,7 @@ export const ja: Translations = {
     allUpToDate: 'すべてのパッケージは最新です！「すべて表示」をクリックしてすべてを表示します。',
     noMatchFilter: '現在のフィルタに一致するパッケージがありません',
     searching: '検索中...',
+    loadingVersions: 'バージョンを読み込み中...',
   },
 
   // Footer
@@ -101,6 +104,8 @@ export const ja: Translations = {
     ignoreTitle: 'パッケージを無視',
     unignoreTitle: '無視を解除',
     rollbackTitle: '更新をロールバック',
+    selectVersionTitle: '{{name}}のバージョンを選択',
+    saveExactEnabled: '--save-exact 有効',
   },
 
   // Modal messages
@@ -118,6 +123,7 @@ export const ja: Translations = {
     rollbackDetails: '以下のパッケージは以前のバージョンに復元されます：',
     ignoreHint: '無視されたパッケージは更新チェックとカウンターから除外されます。',
     andMore: '...他 {{count}} 件',
+    selectVersionHint: 'インストールするバージョンを選択してください：',
   },
 
   // Ignored section
@@ -146,5 +152,12 @@ export const ja: Translations = {
     major: 'メジャー',
     minor: 'マイナー',
     patch: 'パッチ',
+  },
+
+  // Labels
+  labels: {
+    latest: '最新',
+    deprecated: '非推奨',
+    prerelease: 'プレリリース',
   },
 };
