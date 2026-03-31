@@ -10,7 +10,7 @@ import { findPackageJson, readPackageJson, extractDependencies } from '../servic
 import { getPackageDetails, getPackageVersions, getSemverUpdateType, setGlobalCache } from '../services/npmService';
 import { getCache, VersionCache } from '../services/cacheService';
 import { getIgnoreService } from '../services/ignoreService';
-import { findAllProjects, Project } from '../services/workspaceService';
+import { findAllProjectsMultiRoot, Project } from '../services/workspaceService';
 import {
   runAudit,
   hasVulnerabilities,
@@ -45,13 +45,16 @@ export class NpmGuiManagerPanel {
   public static async createOrShow(
     extensionUri: vscode.Uri,
     globalStorageUri: vscode.Uri,
-    workspaceRoot: string,
+    workspaceRoots: string | string[],
     preferredProjectPath?: string
   ): Promise<void> {
     const column = vscode.window.activeTextEditor ? vscode.window.activeTextEditor.viewColumn : undefined;
 
-    // Find all projects in workspace
-    const discoveredProjects = await findAllProjects(workspaceRoot);
+    const roots = Array.isArray(workspaceRoots) ? workspaceRoots : [workspaceRoots];
+    const workspaceRoot = roots[0]!;
+
+    // Find all projects across all workspace roots (multi-root workspace support)
+    const discoveredProjects = await findAllProjectsMultiRoot(roots);
     const projects = await NpmGuiManagerPanel._withPreferredProject(
       discoveredProjects,
       workspaceRoot,
