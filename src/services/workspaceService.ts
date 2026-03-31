@@ -66,6 +66,8 @@ async function searchDirectories(
             path: fullPath,
             relativePath,
           });
+          // Continue recursing into this directory to find nested packages (e.g. monorepo workspaces)
+          await searchDirectories(fullPath, workspaceRoot, currentDepth + 1, maxDepth, projects);
         } else {
           // Recurse into subdirectory
           await searchDirectories(fullPath, workspaceRoot, currentDepth + 1, maxDepth, projects);
@@ -84,6 +86,27 @@ async function fileExists(filePath: string): Promise<boolean> {
   } catch {
     return false;
   }
+}
+
+/**
+ * Find all projects across multiple workspace roots (multi-root workspace support)
+ */
+export async function findAllProjectsMultiRoot(workspaceRoots: string[]): Promise<Project[]> {
+  const allProjects: Project[] = [];
+  const seen = new Set<string>();
+
+  for (const root of workspaceRoots) {
+    const projects = await findAllProjects(root);
+    for (const project of projects) {
+      const normalized = path.normalize(project.path).toLowerCase();
+      if (!seen.has(normalized)) {
+        seen.add(normalized);
+        allProjects.push(project);
+      }
+    }
+  }
+
+  return allProjects;
 }
 
 async function getProjectName(packageJsonPath: string): Promise<string> {

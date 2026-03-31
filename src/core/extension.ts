@@ -27,16 +27,12 @@ export function activate(context: vscode.ExtensionContext): void {
         return;
       }
 
-      let workspaceRoot = workspaceFolders[0]!.uri.fsPath;
+      // Collect all workspace folder paths for multi-root workspace support
+      const allWorkspaceRoots = workspaceFolders.map(f => f.uri.fsPath);
       let preferredProjectPath: string | undefined;
 
       const activeUri = resource || vscode.window.activeTextEditor?.document.uri;
       if (activeUri && activeUri.scheme === 'file') {
-        const folder = vscode.workspace.getWorkspaceFolder(activeUri);
-        if (folder) {
-          workspaceRoot = folder.uri.fsPath;
-        }
-
         const isPackageJson = path.basename(activeUri.fsPath).toLowerCase() === 'package.json';
         preferredProjectPath = isPackageJson ? path.dirname(activeUri.fsPath) : activeUri.fsPath;
       }
@@ -45,7 +41,7 @@ export function activate(context: vscode.ExtensionContext): void {
         await NpmGuiManagerPanel.createOrShow(
           context.extensionUri,
           context.globalStorageUri,
-          workspaceRoot,
+          allWorkspaceRoots,
           preferredProjectPath
         );
       } catch (error) {

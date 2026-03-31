@@ -2,6 +2,14 @@
 
 All notable changes to the "npm-visual-manager" extension will be documented in this file.
 
+## [1.6.0] - 2026-03-31
+
+### Fixed
+- **Multi-root Workspace Support**: Resolves issue #2
+  - Previously: Only the first workspace folder was scanned, so projects in other roots were never shown
+  - Now: All workspace folders in a `.code-workspace` are scanned and their packages are listed together
+  - Also fixed: Subdirectories with a `package.json` are now recursed into, so nested packages inside monorepo workspaces are correctly detected
+
 ## [1.5.0] - 2026-03-30
 
 ### Added
