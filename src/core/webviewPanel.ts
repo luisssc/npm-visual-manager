@@ -651,11 +651,6 @@ export class NpmGuiManagerPanel {
     const signal = this._searchAbortController.signal;
 
     try {
-      this._sendMessage({
-        type: 'PROGRESS',
-        message: `Searching for "${query}"...`,
-      });
-
       const results = await searchPackages(query, 20, signal);
 
       // If signal was aborted, results will be empty or searchPackages handled it.
@@ -667,11 +662,6 @@ export class NpmGuiManagerPanel {
       this._sendMessage({
         type: 'SEARCH_RESULTS',
         results,
-      });
-
-      this._sendMessage({
-        type: 'PROGRESS',
-        message: null as any,
       });
     } catch (error: any) {
       if (signal.aborted) {
