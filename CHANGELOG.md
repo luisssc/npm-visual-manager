@@ -2,6 +2,11 @@
 
 All notable changes to the "npm-visual-manager" extension will be documented in this file.
 
+## [1.6.2] - 2026-04-08
+
+### Fixed
+- Version bump to 1.6.2
+
 ## [1.6.0] - 2026-03-31
 
 ### Fixed

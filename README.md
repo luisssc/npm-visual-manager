@@ -1,7 +1,8 @@
 # NPM Visual Manager
 
+[![VS Code Marketplace Version](https://img.shields.io/visual-studio-marketplace/v/LuisClementDev.npm-visual-manager)](https://marketplace.visualstudio.com/items?itemName=LuisClementDev.npm-visual-manager)
+[![VS Code Marketplace Downloads](https://img.shields.io/visual-studio-marketplace/d/LuisClementDev.npm-visual-manager)](https://marketplace.visualstudio.com/items?itemName=LuisClementDev.npm-visual-manager)
 [![Open VSX Version](https://img.shields.io/open-vsx/v/LuisClementDev/npm-visual-manager)](https://open-vsx.org/extension/LuisClementDev/npm-visual-manager)
-[![Open VSX Downloads](https://img.shields.io/open-vsx/dt/LuisClementDev/npm-visual-manager)](https://open-vsx.org/extension/LuisClementDev/npm-visual-manager)
 [![Build Status](https://img.shields.io/github/actions/workflow/status/luisssc/npm-visual-manager/ci.yml?branch=main)](https://github.com/luisssc/npm-visual-manager/actions)
 [![License](https://img.shields.io/github/license/luisssc/npm-visual-manager)](LICENSE)
 
@@ -32,6 +33,8 @@ A Visual Studio Code extension that provides a visual interface for managing NPM
 ## Installation
 
 Install from the [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=LuisClementDev.npm-visual-manager) or search for "NPM Visual Manager" in the Extensions panel (`Ctrl+Shift+X`).
+
+Also available on [Open VSX Registry](https://open-vsx.org/extension/LuisClementDev/npm-visual-manager) for VSCodium and other compatible editors.
 
 ## Usage
 

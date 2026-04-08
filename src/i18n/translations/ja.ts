@@ -12,8 +12,10 @@ export const ja: Translations = {
     quickLinks: 'クイックリンク',
     documentation: 'ドキュメント',
     reportIssue: '問題を報告',
+    giveStar: 'GitHub でスターを付ける',
     proTips: 'ヒント',
     tip1: 'package.json を右クリックで開く',
     tip2: '目のアイコンをクリックして更新を無視',
+    madeBy: 'Luis Clement Cremades 制作',
   },
 };

@@ -8,7 +8,7 @@ import { getNonce } from '../utils/nonce';
 import { getVSCodeLanguage } from '../i18n/getLanguage';
 import { getTranslations } from '../i18n';
 
-const EXTENSION_VERSION = '1.6.0';
+const EXTENSION_VERSION = '1.6.2';
 
 export class NpmDependenciesProvider implements vscode.WebviewViewProvider {
   public static readonly viewType = 'npm-visual-manager.sidebar';
@@ -35,6 +35,9 @@ export class NpmDependenciesProvider implements vscode.WebviewViewProvider {
           break;
         case 'OPEN_ISSUES':
           await vscode.env.openExternal(vscode.Uri.parse('https://github.com/luisssc/npm-visual-manager/issues'));
+          break;
+        case 'OPEN_GITHUB':
+          await vscode.env.openExternal(vscode.Uri.parse('https://github.com/luisssc/npm-visual-manager'));
           break;
       }
     });
@@ -233,6 +236,21 @@ export class NpmDependenciesProvider implements vscode.WebviewViewProvider {
       content: "💡";
       font-size: 10px;
     }
+    
+    .footer {
+      width: 100%;
+      margin-top: 16px;
+      padding-top: 12px;
+      border-top: 1px solid var(--vscode-widget-border);
+      text-align: center;
+      opacity: 0.7;
+    }
+    
+    .made-by {
+      font-size: 11px;
+      color: var(--vscode-descriptionForeground);
+      font-style: italic;
+    }
   </style>
 </head>
 <body>
@@ -257,6 +275,9 @@ export class NpmDependenciesProvider implements vscode.WebviewViewProvider {
     
     <div class="links-section">
       <span class="links-title">${t.sidebar.quickLinks}</span>
+      <button class="link-btn" id="starBtn">
+        ⭐ ${t.sidebar.giveStar}
+      </button>
       <button class="link-btn" id="docsBtn">
         📖 ${t.sidebar.documentation}
       </button>
@@ -269,6 +290,10 @@ export class NpmDependenciesProvider implements vscode.WebviewViewProvider {
       <div class="tips-title">${t.sidebar.proTips}</div>
       <div class="tip-item">${t.sidebar.tip1}</div>
       <div class="tip-item">${t.sidebar.tip2}</div>
+    </div>
+    
+    <div class="footer">
+      <span class="made-by">${t.sidebar.madeBy}</span>
     </div>
   </div>
   
@@ -285,6 +310,10 @@ export class NpmDependenciesProvider implements vscode.WebviewViewProvider {
     
     document.getElementById('issuesBtn').addEventListener('click', () => {
       vscode.postMessage({ type: 'OPEN_ISSUES' });
+    });
+    
+    document.getElementById('starBtn').addEventListener('click', () => {
+      vscode.postMessage({ type: 'OPEN_GITHUB' });
     });
   </script>
 </body>

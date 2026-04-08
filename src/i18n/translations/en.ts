@@ -10,9 +10,11 @@ export const en = {
     quickLinks: 'Quick Links',
     documentation: 'Documentation',
     reportIssue: 'Report Issue',
+    giveStar: 'Give a Star on GitHub',
     proTips: 'Tips',
     tip1: 'Right-click package.json to open',
     tip2: 'Click the eye icon to ignore package updates',
+    madeBy: 'Made by Luis Clement Cremades',
   },
 };
 

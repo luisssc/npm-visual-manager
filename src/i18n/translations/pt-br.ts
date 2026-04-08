@@ -12,8 +12,10 @@ export const ptBr: Translations = {
     quickLinks: 'Links Rápidos',
     documentation: 'Documentação',
     reportIssue: 'Reportar Problema',
+    giveStar: 'Dar uma estrela no GitHub',
     proTips: 'Dicas',
     tip1: 'Clique direito no package.json para abrir',
     tip2: 'Clique no ícone de olho para ignorar atualizações',
+    madeBy: 'Feito por Luis Clement Cremades',
   },
 };

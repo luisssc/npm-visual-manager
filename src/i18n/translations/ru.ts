@@ -12,8 +12,10 @@ export const ru: Translations = {
     quickLinks: 'Быстрые ссылки',
     documentation: 'Документация',
     reportIssue: 'Сообщить о проблеме',
+    giveStar: 'Поставить звезду на GitHub',
     proTips: 'Советы',
     tip1: 'Правый клик по package.json для открытия',
     tip2: 'Нажмите на иконку глаза, чтобы игнорировать обновления',
+    madeBy: 'Сделано Luis Clement Cremades',
   },
 };

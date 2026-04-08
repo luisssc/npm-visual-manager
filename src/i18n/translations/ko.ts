@@ -12,8 +12,10 @@ export const ko: Translations = {
     quickLinks: '빠른 링크',
     documentation: '문서',
     reportIssue: '문제 보고',
+    giveStar: 'GitHub에서 별점 주기',
     proTips: '팁',
     tip1: 'package.json을 우클릭하여 열기',
     tip2: '눈 아이콘을 클릭하여 업데이트 무시',
+    madeBy: 'Luis Clement Cremades 제작',
   },
 };

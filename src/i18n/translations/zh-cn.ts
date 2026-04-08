@@ -11,8 +11,10 @@ export const zhCn: Translations = {
     quickLinks: '快速链接',
     documentation: '文档',
     reportIssue: '报告问题',
+    giveStar: '在 GitHub 上给我们点赞',
     proTips: '提示',
     tip1: '右键点击 package.json 打开',
     tip2: '点击眼睛图标忽略更新',
+    madeBy: 'Luis Clement Cremades 制作',
   },
 };

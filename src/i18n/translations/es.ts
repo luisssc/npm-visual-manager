@@ -12,8 +12,10 @@ export const es: Translations = {
     quickLinks: 'Enlaces Rápidos',
     documentation: 'Documentación',
     reportIssue: 'Reportar Problema',
+    giveStar: 'Dar una estrella en GitHub',
     proTips: 'Consejos',
     tip1: 'Clic derecho en package.json para abrir',
     tip2: 'Clica el icono del ojo para ignorar actualizaciones',
+    madeBy: 'Hecho por Luis Clement Cremades',
   },
 };

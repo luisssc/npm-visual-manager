@@ -12,8 +12,10 @@ export const de: Translations = {
     quickLinks: 'Schnelllinks',
     documentation: 'Dokumentation',
     reportIssue: 'Problem melden',
+    giveStar: 'Auf GitHub einen Stern geben',
     proTips: 'Tipps',
     tip1: 'Rechtsklick auf package.json zum Öffnen',
     tip2: 'Klicken Sie auf das Augen-Symbol, um Updates zu ignorieren',
+    madeBy: 'Gemacht von Luis Clement Cremades',
   },
 };
