@@ -112,6 +112,27 @@ const getSemverLabel = (
   }
 };
 
+const parseSize = (sizeStr: string | undefined): number => {
+  if (!sizeStr || sizeStr === '-') {
+    return 0;
+  }
+  const parts = sizeStr.split(' ');
+  if (parts.length !== 2) {
+    return 0;
+  }
+  const value = parseFloat(parts[0]!);
+  if (Number.isNaN(value)) {
+    return 0;
+  }
+  const unit = parts[1]!.toUpperCase();
+  const units = ['B', 'KB', 'MB', 'GB'];
+  const index = units.indexOf(unit);
+  if (index === -1) {
+    return 0;
+  }
+  return value * Math.pow(1024, index);
+};
+
 const formatDate = (
   t: {
     timeAgo: {
@@ -338,7 +359,7 @@ export const DependencyTable = ({
             comparison = a.type.localeCompare(b.type);
             break;
           case 'size':
-            comparison = (a.size || '').localeCompare(b.size || '');
+            comparison = parseSize(a.size) - parseSize(b.size);
             break;
           case 'lastPublishDate':
             comparison = (a.lastPublishDate || '').localeCompare(b.lastPublishDate || '');

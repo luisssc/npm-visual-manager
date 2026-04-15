@@ -2,6 +2,13 @@
 
 All notable changes to the "npm-visual-manager" extension will be documented in this file.
 
+## [1.6.3] - 2026-04-15
+
+### Fixed
+- **Size column sorting**: Fixed incorrect sorting in the dependency table size column.
+  - Previously: Sizes were sorted alphabetically as formatted strings (e.g. `1 MB` < `100 B`, `10 KB` < `9 KB`).
+  - Now: Sizes are parsed to bytes and compared numerically, so the order reflects actual package sizes correctly.
+
 ## [1.6.2] - 2026-04-08
 
 ### Fixed
