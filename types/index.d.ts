@@ -43,6 +43,7 @@ export interface Dependency {
   isIgnored?: boolean;
   ignoreReason?: string;
   repositoryUrl?: string;
+  checkError?: string;
 }
 
 export interface ColumnConfig {
@@ -127,6 +128,7 @@ export type HostToWebviewMessage =
       isDeprecated?: boolean;
       deprecationMessage?: string;
       repositoryUrl?: string;
+      error?: string;
     }
   | { type: 'CACHE_CLEARED'; message: string }
   | { type: 'IGNORE_TOGGLED'; packageName: string; isIgnored: boolean }

@@ -602,6 +602,17 @@ export class NpmGuiManagerPanel {
       const batch = dependenciesToCheck.slice(i, i + batchSize);
       const promises = batch.map(async dep => {
         try {
+          // Skip registry check for local/workspace/git packages
+          if (/^(file:|link:|workspace:|github:|git\+|git:|https?:|bitbucket:|gitlab:)/i.test(dep.declaredVersion)) {
+            this._sendMessage({
+              type: 'VERSION_CHECK_RESULT',
+              dependency: dep,
+              latestVersion: '',
+              error: 'Local or workspace package',
+            });
+            return;
+          }
+
           const details = await getPackageDetails(dep.name, forceRefresh);
           // Compare declared version (from package.json) with latest, not installed version
           const semverUpdateType = getSemverUpdateType(dep.declaredVersion, details.latestVersion);
@@ -620,6 +631,12 @@ export class NpmGuiManagerPanel {
           });
         } catch (error) {
           console.warn(`Failed to check version for ${dep.name}:`, error);
+          this._sendMessage({
+            type: 'VERSION_CHECK_RESULT',
+            dependency: dep,
+            latestVersion: '',
+            error: error instanceof Error ? error.message : String(error),
+          });
         }
       });
 

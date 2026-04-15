@@ -104,16 +104,18 @@ function App() {
               dep.name === message.dependency.name
                 ? {
                     ...dep,
-                    latestVersion: message.latestVersion,
-                    updateAvailable:
-                      !!message.semverUpdateType &&
-                      message.semverUpdateType !== 'none' &&
-                      message.semverUpdateType !== 'unknown',
-                    semverUpdateType: message.semverUpdateType,
-                    lastPublishDate: message.lastPublishDate,
-                    isDeprecated: message.isDeprecated,
-                    deprecationMessage: message.deprecationMessage,
-                    repositoryUrl: message.repositoryUrl,
+                    latestVersion: message.error ? undefined : message.latestVersion,
+                    updateAvailable: message.error
+                      ? false
+                      : !!message.semverUpdateType &&
+                        message.semverUpdateType !== 'none' &&
+                        message.semverUpdateType !== 'unknown',
+                    semverUpdateType: message.error ? undefined : message.semverUpdateType,
+                    lastPublishDate: message.error ? undefined : message.lastPublishDate,
+                    isDeprecated: message.error ? undefined : message.isDeprecated,
+                    deprecationMessage: message.error ? undefined : message.deprecationMessage,
+                    repositoryUrl: message.error ? undefined : message.repositoryUrl,
+                    checkError: message.error,
                   }
                 : dep
             )

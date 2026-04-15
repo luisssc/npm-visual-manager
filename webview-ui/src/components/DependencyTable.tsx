@@ -587,7 +587,7 @@ export const DependencyTable = ({
                       </td>
                     )}
                     <td className="version-cell">
-                      <code>{dep.declaredVersion}</code>
+                      <code title={dep.declaredVersion}>{dep.declaredVersion}</code>
                       {dep.declaredVersion !== dep.installedVersion && (
                         <Tooltip text={`${t.columns.installed}: ${dep.installedVersion}`}>
                           <span className="version-mismatch-icon">*</span>
@@ -597,6 +597,10 @@ export const DependencyTable = ({
                     <td className="version-cell">
                       {dep.latestVersion ? (
                         <code className={dep.updateAvailable ? 'latest-version' : ''}>{dep.latestVersion}</code>
+                      ) : dep.checkError ? (
+                        <Tooltip text={dep.checkError}>
+                          <span className="not-available">-</span>
+                        </Tooltip>
                       ) : (
                         <span className="checking">{t.states.checking}</span>
                       )}
@@ -622,6 +626,10 @@ export const DependencyTable = ({
                         {dep.lastPublishDate ? (
                           <Tooltip text={new Date(dep.lastPublishDate).toLocaleDateString('en-GB')}>
                             <span className="date-text">{formatDate(t, dep.lastPublishDate)}</span>
+                          </Tooltip>
+                        ) : dep.checkError ? (
+                          <Tooltip text={dep.checkError}>
+                            <span className="not-available">-</span>
                           </Tooltip>
                         ) : (
                           <span className="checking">{t.states.checkingShort}</span>
@@ -710,11 +718,15 @@ export const DependencyTable = ({
                             </td>
                           )}
                           <td className="version-cell">
-                            <code>{dep.declaredVersion}</code>
+                            <code title={dep.declaredVersion}>{dep.declaredVersion}</code>
                           </td>
                           <td className="version-cell">
                             {dep.latestVersion ? (
                               <code>{dep.latestVersion}</code>
+                            ) : dep.checkError ? (
+                              <Tooltip text={dep.checkError}>
+                                <span className="not-available">-</span>
+                              </Tooltip>
                             ) : (
                               <span className="checking">{t.states.checkingShort}</span>
                             )}
@@ -727,7 +739,15 @@ export const DependencyTable = ({
                           {columnConfig.semverUpdate && <td className="update-type-cell" />}
                           {columnConfig.lastUpdate && (
                             <td className="date-cell">
-                              <span className="date-text">{formatDate(t, dep.lastPublishDate)}</span>
+                              {dep.lastPublishDate ? (
+                                <span className="date-text">{formatDate(t, dep.lastPublishDate)}</span>
+                              ) : dep.checkError ? (
+                                <Tooltip text={dep.checkError}>
+                                  <span className="not-available">-</span>
+                                </Tooltip>
+                              ) : (
+                                <span className="checking">{t.states.checkingShort}</span>
+                              )}
                             </td>
                           )}
                           <td className="action-cell">
