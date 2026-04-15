@@ -1,7 +1,6 @@
 # NPM Visual Manager
 
-[![VS Code Marketplace Version](https://img.shields.io/visual-studio-marketplace/v/LuisClementDev.npm-visual-manager)](https://marketplace.visualstudio.com/items?itemName=LuisClementDev.npm-visual-manager)
-[![VS Code Marketplace Downloads](https://img.shields.io/visual-studio-marketplace/d/LuisClementDev.npm-visual-manager)](https://marketplace.visualstudio.com/items?itemName=LuisClementDev.npm-visual-manager)
+[![VS Code Marketplace Version](https://img.shields.io/github/package-json/v/luisssc/npm-visual-manager?label=VS%20Code%20Marketplace&color=blue&logo=visualstudiocode)](https://marketplace.visualstudio.com/items?itemName=LuisClementDev.npm-visual-manager)
 [![Open VSX Version](https://img.shields.io/open-vsx/v/LuisClementDev/npm-visual-manager)](https://open-vsx.org/extension/LuisClementDev/npm-visual-manager)
 [![Build Status](https://img.shields.io/github/actions/workflow/status/luisssc/npm-visual-manager/ci.yml?branch=main)](https://github.com/luisssc/npm-visual-manager/actions)
 [![License](https://img.shields.io/github/license/luisssc/npm-visual-manager)](LICENSE)
