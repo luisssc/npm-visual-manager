@@ -4,6 +4,7 @@
  */
 
 import * as https from 'https';
+import type { PackageVersion } from '../../types';
 import { VersionCache } from './cacheService';
 
 export interface NpmPackageInfo {
@@ -231,14 +232,6 @@ export async function getLatestVersion(packageName: string, forceRefresh: boolea
  * Get all available versions of a package from NPM registry
  * Returns versions sorted from newest to oldest
  */
-export interface PackageVersion {
-  version: string;
-  date: string;
-  isDeprecated?: boolean;
-  deprecationMessage?: string;
-  releaseType: 'stable' | 'prerelease';
-}
-
 export async function getPackageVersions(
   packageName: string,
   limit: number = 20

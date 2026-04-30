@@ -4,11 +4,22 @@
  */
 
 import * as vscode from 'vscode';
+import * as path from 'path';
+import * as fs from 'fs';
 import { getNonce } from '../utils/nonce';
 import { getVSCodeLanguage } from '../i18n/getLanguage';
 import { getTranslations } from '../i18n';
 
-const EXTENSION_VERSION = '1.6.3';
+function getExtensionVersion(): string {
+  try {
+    const packageJsonPath = path.join(__dirname, '..', '..', 'package.json');
+    const content = fs.readFileSync(packageJsonPath, 'utf-8');
+    const pkg = JSON.parse(content) as { version?: string };
+    return pkg.version || '1.7.0';
+  } catch {
+    return '1.7.0';
+  }
+}
 
 export class NpmDependenciesProvider implements vscode.WebviewViewProvider {
   public static readonly viewType = 'npm-visual-manager.sidebar';
@@ -257,7 +268,7 @@ export class NpmDependenciesProvider implements vscode.WebviewViewProvider {
   <div class="welcome-container">
     <div class="logo">📦</div>
     <p class="title">NPM Visual Manager</p>
-    <span class="version">v${EXTENSION_VERSION}</span>
+    <span class="version">v${getExtensionVersion()}</span>
     
     <p class="description">
       ${t.sidebar.description}

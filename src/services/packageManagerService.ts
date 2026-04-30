@@ -4,8 +4,7 @@
 
 import * as fs from 'fs';
 import * as path from 'path';
-
-export type PackageManager = 'npm' | 'yarn' | 'pnpm' | 'bun';
+import type { PackageManager } from '../../types';
 
 export interface PackageManagerInfo {
   name: PackageManager;

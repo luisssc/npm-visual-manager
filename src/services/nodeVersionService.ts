@@ -4,7 +4,7 @@
 
 import { exec } from 'child_process';
 import { promisify } from 'util';
-import { PackageManager } from './packageManagerService';
+import type { PackageManager } from '../../types';
 
 const execAsync = promisify(exec);
 

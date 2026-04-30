@@ -21,7 +21,7 @@ import {
 import { getVersions } from '../services/nodeVersionService';
 import { searchPackages } from '../services/searchService';
 import { clearPackageSizeCache } from '../services/sizeService';
-import { PackageManager } from '../services/packageManagerService';
+import type { PackageManager } from '../../types';
 import { getHtmlForWebview } from './htmlProvider';
 import { getVSCodeLanguage } from '../i18n/getLanguage';
 import { PackageOperationsService } from '../services/packageOperationsService';

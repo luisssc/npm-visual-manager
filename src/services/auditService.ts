@@ -4,7 +4,7 @@
 
 import { exec } from 'child_process';
 import { promisify } from 'util';
-import { detectPackageManager, getAuditCommand, parseAuditOutput, PackageManager } from './packageManagerService';
+import { detectPackageManager, getAuditCommand, parseAuditOutput } from './packageManagerService';
 
 const execAsync = promisify(exec);
 const DEFAULT_AUDIT_CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
@@ -155,4 +155,4 @@ export function getPackageVulnerabilityCount(auditResult: AuditResult, packageNa
 }
 
 // Re-export for convenience
-export { detectPackageManager, PackageManager };
+export { detectPackageManager };

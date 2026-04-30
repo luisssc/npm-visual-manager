@@ -1,10 +1,10 @@
 import * as vscode from 'vscode';
 import * as path from 'path';
 import * as fs from 'fs';
-import type { HostToWebviewMessage, UpdateHistory } from '../../types';
+import type { HostToWebviewMessage, UpdateHistory, PackageManager } from '../../types';
 import { runCommand } from '../utils/commandRunner';
 import { clearAuditCache } from './auditService';
-import { getInstallCommand, getPackageManagerInfo, getUninstallCommand, PackageManager } from './packageManagerService';
+import { getInstallCommand, getPackageManagerInfo, getUninstallCommand } from './packageManagerService';
 import { getInstalledVersion, getInstalledVersions } from './installedVersionService';
 
 export class PackageOperationsService {
