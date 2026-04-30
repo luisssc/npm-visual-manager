@@ -15,6 +15,7 @@ export const en = {
     yesUninstall: 'Yes, Uninstall',
     showMore: 'Show {{count}} more',
     showLess: 'Show less',
+    viewAdvisory: 'View Advisory',
   },
 
   // Column headers

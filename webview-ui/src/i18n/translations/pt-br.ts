@@ -17,6 +17,7 @@ export const ptBr: Translations = {
     yesUninstall: 'Sim, Desinstalar',
     showMore: 'Mostrar mais {{count}}',
     showLess: 'Mostrar menos',
+    viewAdvisory: 'Ver Aviso',
   },
 
   // Column headers

@@ -2,6 +2,15 @@
 
 All notable changes to the "npm-visual-manager" extension will be documented in this file.
 
+## [1.7.0] - 2026-04-30
+
+### Added
+- **Vulnerability Details**: Click the warning icon on any package with known vulnerabilities to view details and open the official advisory directly. Closes #5.
+  - Extracts real advisory URLs from `npm audit` output (npm v6, v7+, and yarn)
+  - Modal shows severity level and advisory title for each vulnerability
+  - "View Advisory" button opens the official advisory page (GitHub Advisories / npm) in your default browser
+  - Works even when no update is available yet, so users can assess whether manual action is needed
+
 ## [1.6.3] - 2026-04-15
 
 ### Fixed

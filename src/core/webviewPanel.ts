@@ -15,6 +15,7 @@ import {
   runAudit,
   hasVulnerabilities,
   getPackageVulnerabilityCount,
+  getPackageVulnerabilities,
   detectPackageManager,
   clearAuditCache,
 } from '../services/auditService';
@@ -480,6 +481,12 @@ export class NpmGuiManagerPanel {
           ...dep,
           hasVulnerabilities: hasVulnerabilities(auditResult, dep.name),
           vulnerabilityCount: getPackageVulnerabilityCount(auditResult, dep.name),
+          vulnerabilities: getPackageVulnerabilities(auditResult, dep.name).map(v => ({
+            id: v.id,
+            title: v.title,
+            severity: v.severity,
+            url: v.url,
+          })),
         }));
       } catch (auditError) {
         console.warn('npm audit failed:', auditError);

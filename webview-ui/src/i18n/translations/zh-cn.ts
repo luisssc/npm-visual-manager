@@ -17,6 +17,7 @@ export const zhCn: Translations = {
     yesUninstall: '是的，卸载',
     showMore: '显示更多 {{count}} 个',
     showLess: '显示更少',
+    viewAdvisory: '查看公告',
   },
 
   // Column headers

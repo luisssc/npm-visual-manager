@@ -17,6 +17,7 @@ export const fr: Translations = {
     yesUninstall: 'Oui, désinstaller',
     showMore: 'Afficher {{count}} de plus',
     showLess: 'Afficher moins',
+    viewAdvisory: "Voir l'avis",
   },
 
   // Column headers

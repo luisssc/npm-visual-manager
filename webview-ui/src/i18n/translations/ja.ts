@@ -17,6 +17,7 @@ export const ja: Translations = {
     yesUninstall: 'はい、アンインストールします',
     showMore: 'さらに {{count}} 件表示',
     showLess: '少なく表示',
+    viewAdvisory: 'アドバイザリを表示',
   },
 
   // Column headers

@@ -147,6 +147,7 @@ export function parseAuditOutput(
     packageName: string;
     vulnerableVersions: string;
     patchedVersions: string;
+    url?: string;
   }>;
   metadata: {
     vulnerabilities: {
@@ -203,6 +204,7 @@ function parseNpmAudit(data: any) {
         packageName: adv.module_name,
         vulnerableVersions: adv.vulnerable_versions,
         patchedVersions: adv.patched_versions,
+        url: adv.url,
       });
     }
   }
@@ -216,6 +218,8 @@ function parseNpmAudit(data: any) {
           : `Vulnerability in ${packageName}`;
       const vulnerableVersions =
         Array.isArray(v.via) && v.via.length > 0 && typeof v.via[0] === 'object' ? v.via[0].range : '*';
+      const url =
+        Array.isArray(v.via) && v.via.length > 0 && typeof v.via[0] === 'object' ? v.via[0].url : undefined;
 
       vulnerabilities.push({
         id: `${packageName}-${v.severity}`,
@@ -224,6 +228,7 @@ function parseNpmAudit(data: any) {
         packageName,
         vulnerableVersions,
         patchedVersions: v.fixAvailable ? 'Available' : 'Not available',
+        url,
       });
     }
   }
@@ -250,6 +255,7 @@ function parseYarnAudit(data: any) {
         packageName: advisory.module_name,
         vulnerableVersions: advisory.vulnerable_versions,
         patchedVersions: advisory.patched_versions,
+        url: advisory.url,
       });
     }
   }

@@ -17,6 +17,7 @@ export const ru: Translations = {
     yesUninstall: 'Да, удалить',
     showMore: 'Показать ещё {{count}}',
     showLess: 'Показать меньше',
+    viewAdvisory: 'Просмотреть рекомендацию',
   },
 
   // Column headers

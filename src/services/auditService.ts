@@ -17,6 +17,7 @@ export interface Vulnerability {
   vulnerableVersions: string;
   patchedVersions: string;
   overview: string;
+  url?: string;
 }
 
 export interface AuditResult {
@@ -152,6 +153,13 @@ export function hasVulnerabilities(auditResult: AuditResult, packageName: string
  */
 export function getPackageVulnerabilityCount(auditResult: AuditResult, packageName: string): number {
   return auditResult.vulnerabilities.filter(v => v.packageName === packageName).length;
+}
+
+/**
+ * Get vulnerability details for a specific package
+ */
+export function getPackageVulnerabilities(auditResult: AuditResult, packageName: string): Vulnerability[] {
+  return auditResult.vulnerabilities.filter(v => v.packageName === packageName);
 }
 
 // Re-export for convenience

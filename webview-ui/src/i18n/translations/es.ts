@@ -17,6 +17,7 @@ export const es: Translations = {
     yesUninstall: 'Sí, Desinstalar',
     showMore: 'Mostrar {{count}} más',
     showLess: 'Mostrar menos',
+    viewAdvisory: 'Ver Aviso',
   },
 
   // Column headers

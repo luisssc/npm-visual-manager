@@ -399,6 +399,13 @@
   color: var(--vscode-editor-background);
 }
 
+button.vulnerability-btn {
+  border: none;
+  font-family: inherit;
+  font-size: inherit;
+  cursor: pointer;
+}
+
 .status-safe {
   color: var(--vscode-testing-iconPassed, #4caf50);
   opacity: 0.7;

@@ -17,6 +17,7 @@ export const ko: Translations = {
     yesUninstall: '예, 제거합니다',
     showMore: '{{count}}개 더 보기',
     showLess: '접기',
+    viewAdvisory: '권고 보기',
   },
 
   // Column headers

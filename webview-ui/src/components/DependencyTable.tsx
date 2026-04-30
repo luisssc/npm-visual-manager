@@ -204,6 +204,7 @@ export const DependencyTable = ({
   const [versionPickerOpen, setVersionPickerOpen] = useState<Dependency | null>(null);
   const [selectedVersion, setSelectedVersion] = useState<string>('');
   const [useExactVersion, setUseExactVersion] = useState<boolean>(false);
+  const [vulnerabilityModalPackage, setVulnerabilityModalPackage] = useState<string | null>(null);
   // Note: confirmUpdate was replaced by versionPickerOpen for exact version selection
 
   // Clear selection for packages that are no longer in the dependencies list (e.g. after uninstall)
@@ -562,9 +563,13 @@ export const DependencyTable = ({
                           <Tooltip
                             text={interpolate(t.tooltips.vulnerabilities, { count: dep.vulnerabilityCount || 1 })}
                           >
-                            <span className="status-badge status-danger">
+                            <button
+                              className="status-badge status-danger vulnerability-btn"
+                              onClick={() => setVulnerabilityModalPackage(dep.name)}
+                              title="View vulnerability details"
+                            >
                               <i className="codicon codicon-warning" /> {dep.vulnerabilityCount || 1}
-                            </span>
+                            </button>
                           </Tooltip>
                         ) : (
                           <Tooltip text={t.tooltips.noSecurityIssues}>
@@ -1122,6 +1127,59 @@ export const DependencyTable = ({
                 }}
               >
                 {t.buttons.rollback}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {vulnerabilityModalPackage && (
+        <div className="modal-overlay" onClick={() => setVulnerabilityModalPackage(null)}>
+          <div className="modal-content" onClick={e => e.stopPropagation()}>
+            <h3>Vulnerabilities: {vulnerabilityModalPackage}</h3>
+            <div className="modal-package-list">
+              {dependencies
+                .find(d => d.name === vulnerabilityModalPackage)
+                ?.vulnerabilities?.map(v => (
+                  <div key={v.id} className="modal-package-item">
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+                      <span
+                        className={`semver-badge semver-${
+                          v.severity === 'critical' || v.severity === 'high'
+                            ? 'major'
+                            : v.severity === 'moderate'
+                              ? 'minor'
+                              : 'patch'
+                        }`}
+                      >
+                        {v.severity}
+                      </span>
+                      <span className="package-name-text">{v.title}</span>
+                    </div>
+                    <div
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px',
+                        justifyContent: 'flex-end',
+                      }}
+                    >
+                      {v.url && (
+                        <button
+                          className="modal-btn confirm"
+                          onClick={() => onOpenExternal?.(v.url!)}
+                          title="View advisory"
+                        >
+                          <i className="codicon codicon-link-external" /> {t.buttons.viewAdvisory}
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                ))}
+            </div>
+            <div className="modal-actions">
+              <button className="modal-btn cancel" onClick={() => setVulnerabilityModalPackage(null)}>
+                {t.buttons.cancel}
               </button>
             </div>
           </div>

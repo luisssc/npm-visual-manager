@@ -6,6 +6,13 @@ export type PackageManager = 'npm' | 'yarn' | 'pnpm' | 'bun';
 
 export type SemverUpdateType = 'major' | 'minor' | 'patch' | 'none' | 'unknown';
 
+export interface VulnerabilityInfo {
+  id: string;
+  title: string;
+  severity: 'info' | 'low' | 'moderate' | 'high' | 'critical';
+  url?: string;
+}
+
 export interface SearchResult {
   name: string;
   version: string;
@@ -44,6 +51,7 @@ export interface Dependency {
   ignoreReason?: string;
   repositoryUrl?: string;
   checkError?: string;
+  vulnerabilities?: VulnerabilityInfo[];
 }
 
 export interface ColumnConfig {
