@@ -2,6 +2,17 @@
 
 All notable changes to the "npm-visual-manager" extension will be documented in this file.
 
+## [1.7.1] - 2026-05-08
+
+### Fixed
+- **npm not found on Linux with nvm** (Resolves issue #6)
+  - Previously: Users who installed Node via nvm/fnm/volta and launched VS Code from the desktop got `/bin/sh: 1: npm: not found` when updating packages.
+  - Now: The extension automatically resolves the absolute path of package manager binaries (`npm`, `yarn`, `pnpm`, `bun`, `node`) before running commands.
+  - Resolution order:
+    1. User's login shell (`bash -lc "which npm"`) — loads nvm and other version managers automatically.
+    2. Common installation directories: nvm (`~/.nvm/versions/node/...`), fnm, Volta, asdf, and system paths.
+  - If a binary still cannot be found, a helpful hint is printed in the Output channel explaining the PATH issue and how to fix it.
+
 ## [1.7.0] - 2026-04-30
 
 ### Added

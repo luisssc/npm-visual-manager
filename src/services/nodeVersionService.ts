@@ -5,6 +5,7 @@
 import { exec } from 'child_process';
 import { promisify } from 'util';
 import type { PackageManager } from '../../types';
+import { resolveExecutable } from '../utils/resolveExecutable';
 
 const execAsync = promisify(exec);
 
@@ -18,7 +19,8 @@ export interface VersionInfo {
  */
 export async function getNodeVersion(): Promise<string> {
   try {
-    const { stdout } = await execAsync('node --version', { timeout: 5000 });
+    const nodePath = (await resolveExecutable('node')) || 'node';
+    const { stdout } = await execAsync(`${nodePath} --version`, { timeout: 5000 });
     return stdout.trim().replace(/^v/, '');
   } catch {
     return 'unknown';
@@ -30,24 +32,28 @@ export async function getNodeVersion(): Promise<string> {
  */
 export async function getPackageManagerVersion(manager: PackageManager): Promise<string> {
   try {
-    let command: string;
+    let binaryName: string;
     switch (manager) {
       case 'npm':
-        command = 'npm --version';
+        binaryName = 'npm';
         break;
       case 'yarn':
-        command = 'yarn --version';
+        binaryName = 'yarn';
         break;
       case 'pnpm':
-        command = 'pnpm --version';
+        binaryName = 'pnpm';
         break;
       case 'bun':
-        command = 'bun --version';
+        binaryName = 'bun';
         break;
       default:
         return 'unknown';
     }
-    const { stdout } = await execAsync(command, { timeout: 5000 });
+    const binaryPath = await resolveExecutable(binaryName);
+    if (!binaryPath) {
+      return 'unknown';
+    }
+    const { stdout } = await execAsync(`${binaryPath} --version`, { timeout: 5000 });
     return stdout.trim().replace(/^v/, '');
   } catch {
     return 'unknown';

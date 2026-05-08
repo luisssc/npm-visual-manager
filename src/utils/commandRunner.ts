@@ -6,6 +6,7 @@
 
 import * as vscode from 'vscode';
 import { spawn } from 'child_process';
+import { resolveCommandPath } from './resolveExecutable';
 
 export interface CommandResult {
   exitCode: number;
@@ -38,7 +39,9 @@ function getOutputChannel(): vscode.OutputChannel {
  * Run a shell command and wait for it to finish.
  * Output is streamed in real-time to the VS Code OutputChannel.
  */
-export function runCommand(command: string, options: RunCommandOptions): Promise<CommandResult> {
+export async function runCommand(command: string, options: RunCommandOptions): Promise<CommandResult> {
+  const resolvedCommand = await resolveCommandPath(command);
+
   return new Promise((resolve, reject) => {
     const channel = getOutputChannel();
     const timeout = options.timeout ?? DEFAULT_TIMEOUT;
@@ -59,7 +62,7 @@ export function runCommand(command: string, options: RunCommandOptions): Promise
     const shell = isWindows ? 'cmd.exe' : '/bin/sh';
     const shellFlag = isWindows ? '/c' : '-c';
 
-    const child = spawn(shell, [shellFlag, command], {
+    const child = spawn(shell, [shellFlag, resolvedCommand], {
       cwd: options.cwd,
       env: { ...process.env },
       stdio: ['ignore', 'pipe', 'pipe'],
@@ -110,6 +113,19 @@ export function runCommand(command: string, options: RunCommandOptions): Promise
       const exitCode = code ?? 1;
       channel.appendLine('');
       channel.appendLine(`─ Finished with exit code ${exitCode}`);
+
+      // Provide a helpful hint when the binary cannot be found
+      if (exitCode === 127 || stderr.includes('not found') || stderr.includes('No such file or directory')) {
+        const firstToken = command.match(/^(\S+)/)?.[0] ?? command;
+        channel.appendLine(`\n✖ ${firstToken}: command not found`);
+        channel.appendLine(
+          '  Hint: If you use nvm, fnm, or volta, make sure the package manager is available in your PATH.'
+        );
+        channel.appendLine(
+          '        Try launching VS Code from a terminal where the package manager works, or install Node globally.'
+        );
+      }
+
       settle({ exitCode, stdout, stderr });
     });
   });

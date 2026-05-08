@@ -15,9 +15,9 @@ function getExtensionVersion(): string {
     const packageJsonPath = path.join(__dirname, '..', '..', 'package.json');
     const content = fs.readFileSync(packageJsonPath, 'utf-8');
     const pkg = JSON.parse(content) as { version?: string };
-    return pkg.version || '1.7.0';
+    return pkg.version || '1.7.1';
   } catch {
-    return '1.7.0';
+    return '1.7.1';
   }
 }
 
