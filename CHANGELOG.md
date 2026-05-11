@@ -2,6 +2,13 @@
 
 All notable changes to the "npm-visual-manager" extension will be documented in this file.
 
+## [1.7.2] - 2026-05-11
+
+### Fixed
+- **Package manager version showing "npmvunknown" on Windows**
+  - Previously: The toolbar badge displayed `npm`/`yarn`/`pnpm`/`bun` followed by `vunknown` because `resolveExecutable` (Unix-only: relies on `which`, `$SHELL`, and `~/.nvm`-style paths) returned `null` on Windows, and `getPackageManagerVersion` bailed out without trying the bare command.
+  - Now: When `resolveExecutable` cannot locate the binary, the service falls back to the bare command name (`npm --version`, etc.), which resolves via PATH on typical Windows installs — matching the behavior already used for `getNodeVersion`.
+
 ## [1.7.1] - 2026-05-08
 
 ### Fixed

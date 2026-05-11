@@ -49,10 +49,7 @@ export async function getPackageManagerVersion(manager: PackageManager): Promise
       default:
         return 'unknown';
     }
-    const binaryPath = await resolveExecutable(binaryName);
-    if (!binaryPath) {
-      return 'unknown';
-    }
+    const binaryPath = (await resolveExecutable(binaryName)) || binaryName;
     const { stdout } = await execAsync(`${binaryPath} --version`, { timeout: 5000 });
     return stdout.trim().replace(/^v/, '');
   } catch {
