@@ -2,7 +2,7 @@
   "name": "npm-visual-manager",
   "displayName": "NPM Visual Manager",
   "description": "Visual package manager for NPM dependencies with update checking, security audit, and bulk operations",
-  "version": "1.7.2",
+  "version": "1.8.0",
   "publisher": "LuisClementDev",
   "author": {
     "name": "Luis Clement Cremades"
@@ -154,6 +154,11 @@
           "type": "boolean",
           "default": false,
           "description": "Use --save-exact flag when installing/updating packages (pins exact version without ^ or ~ prefix)"
+        },
+        "npm-visual-manager.badge.enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show a badge on the activity bar icon with the number of available updates and vulnerable packages"
         }
       }
     }

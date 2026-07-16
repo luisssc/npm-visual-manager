@@ -17,5 +17,6 @@ export const ru: Translations = {
     tip1: 'Правый клик по package.json для открытия',
     tip2: 'Нажмите на иконку глаза, чтобы игнорировать обновления',
     madeBy: 'Сделано Luis Clement Cremades',
+    badgeTooltip: 'Доступно обновлений: {updates} · Уязвимых пакетов: {vulnerable}',
   },
 };

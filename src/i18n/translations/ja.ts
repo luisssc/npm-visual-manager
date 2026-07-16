@@ -17,5 +17,6 @@ export const ja: Translations = {
     tip1: 'package.json を右クリックで開く',
     tip2: '目のアイコンをクリックして更新を無視',
     madeBy: 'Luis Clement Cremades 制作',
+    badgeTooltip: '利用可能な更新 {updates} 件 · 脆弱なパッケージ {vulnerable} 件',
   },
 };

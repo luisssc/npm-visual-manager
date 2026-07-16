@@ -24,6 +24,7 @@ import { searchPackages } from '../services/searchService';
 import { clearPackageSizeCache } from '../services/sizeService';
 import type { PackageManager } from '../../types';
 import { getHtmlForWebview } from './htmlProvider';
+import { isLocalPackageVersion } from '../utils/localPackage';
 import { getVSCodeLanguage } from '../i18n/getLanguage';
 import { PackageOperationsService } from '../services/packageOperationsService';
 
@@ -610,7 +611,7 @@ export class NpmGuiManagerPanel {
       const promises = batch.map(async dep => {
         try {
           // Skip registry check for local/workspace/git packages
-          if (/^(file:|link:|workspace:|github:|git\+|git:|https?:|bitbucket:|gitlab:)/i.test(dep.declaredVersion)) {
+          if (isLocalPackageVersion(dep.declaredVersion)) {
             this._sendMessage({
               type: 'VERSION_CHECK_RESULT',
               dependency: dep,

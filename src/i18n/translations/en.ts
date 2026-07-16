@@ -15,6 +15,7 @@ export const en = {
     tip1: 'Right-click package.json to open',
     tip2: 'Click the eye icon to ignore package updates',
     madeBy: 'Made by Luis Clement Cremades',
+    badgeTooltip: '{updates} updates available · {vulnerable} vulnerable packages',
   },
 };
 

@@ -17,5 +17,6 @@ export const ko: Translations = {
     tip1: 'package.json을 우클릭하여 열기',
     tip2: '눈 아이콘을 클릭하여 업데이트 무시',
     madeBy: 'Luis Clement Cremades 제작',
+    badgeTooltip: '업데이트 가능 {updates}개 · 취약한 패키지 {vulnerable}개',
   },
 };

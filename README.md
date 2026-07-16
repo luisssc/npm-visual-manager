@@ -21,7 +21,7 @@ A Visual Studio Code extension that provides a visual interface for managing NPM
 | **Security & Info** | Security audit integration, deprecation warnings, package sizes, direct links to changelogs |
 | **Multi-Project** | Auto-detection in monorepos, supports npm, yarn, pnpm, and bun |
 | **Localization** | 8 languages: Spanish, German, French, Chinese (Simplified), Japanese, Portuguese, Russian, Korean |
-| **UI** | Native VS Code theme integration, customizable columns |
+| **UI** | Native VS Code theme integration, customizable columns, activity bar badge with pending updates/vulnerabilities |
 
 ## Requirements
 
@@ -78,6 +78,7 @@ This extension contributes the following settings:
 - `npm-visual-manager.columns.lastUpdate`: Show Last Update column
 - `npm-visual-manager.columns.security`: Show Security column
 - `npm-visual-manager.columns.semverUpdate`: Show Update Type column
+- `npm-visual-manager.badge.enabled`: Show a badge on the activity bar icon with the number of available updates and vulnerable packages
 
 ## Contributing
 

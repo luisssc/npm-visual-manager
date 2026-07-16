@@ -24,11 +24,33 @@ function getExtensionVersion(): string {
 export class NpmDependenciesProvider implements vscode.WebviewViewProvider {
   public static readonly viewType = 'npm-visual-manager.sidebar';
 
+  private _view: vscode.WebviewView | undefined;
+  private _badge: vscode.ViewBadge | undefined;
+
+  /**
+   * Set (or clear with undefined) the badge shown on the activity bar icon.
+   * If the view has not been resolved yet, the badge is applied on resolve.
+   */
+  public setBadge(badge: vscode.ViewBadge | undefined): void {
+    this._badge = badge;
+    if (this._view) {
+      this._view.badge = badge;
+    }
+  }
+
   public resolveWebviewView(
     webviewView: vscode.WebviewView,
     _context: vscode.WebviewViewResolveContext,
     _token: vscode.CancellationToken
   ): void {
+    this._view = webviewView;
+    webviewView.badge = this._badge;
+    webviewView.onDidDispose(() => {
+      if (this._view === webviewView) {
+        this._view = undefined;
+      }
+    });
+
     webviewView.webview.options = {
       enableScripts: true,
     };

@@ -2,6 +2,16 @@
 
 All notable changes to the "npm-visual-manager" extension will be documented in this file.
 
+## [1.8.0] - Unreleased
+
+### Added
+- **Activity Bar Badge**: The extension icon in the activity bar now shows a badge with the number of available updates, computed in the background on startup — no need to open the panel to know if something needs attention. Vulnerable package count is shown in the badge tooltip.
+  - Aggregates every project in the workspace (multi-root and monorepos included), so the number can be higher than the panel's counter, which shows a single project
+  - Ignored packages and local/workspace/git dependencies are excluded from the update count
+  - Vulnerabilities are detected via the package manager's audit run per project (so projects with their own lockfile are covered) and matched against direct dependencies
+  - Refreshes automatically when any `package.json` changes or the ignore list is edited
+  - Can be disabled with the new `npm-visual-manager.badge.enabled` setting
+
 ## [1.7.2] - 2026-05-11
 
 ### Fixed
