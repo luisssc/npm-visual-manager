@@ -149,6 +149,20 @@ export const ptBr: Translations = {
     years_singular: 'há {{count}} ano',
   },
 
+  // Why installed modal
+  whyInstalled: {
+    tooltip: 'Por que este pacote está instalado?',
+    title: 'Por que {{name}} está instalado?',
+    loading: 'Analisando árvore de dependências...',
+    directBadge: 'Direta',
+    direct: 'Declarada diretamente no seu package.json',
+    noResults: 'Nenhuma cadeia de dependências encontrada para este pacote.',
+    unsupported: 'Esta visualização ainda não é suportada em projetos bun.',
+    close: 'Fechar',
+    alsoRequiredBy: 'Também é exigido por outros pacotes:',
+    onlyDirect: 'Nenhum outro pacote instalado depende dele — se não estiver em uso, pode ser removido com segurança.',
+  },
+
   // Semver update types
   semver: {
     major: 'MAJOR',

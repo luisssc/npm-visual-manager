@@ -148,6 +148,20 @@ export const ru: Translations = {
     years_singular: '{{count}} год назад',
   },
 
+  // Why installed modal
+  whyInstalled: {
+    tooltip: 'Почему этот пакет установлен?',
+    title: 'Почему установлен {{name}}?',
+    loading: 'Анализ дерева зависимостей...',
+    directBadge: 'Прямая',
+    direct: 'Объявлен напрямую в вашем package.json',
+    noResults: 'Цепочки зависимостей для этого пакета не найдены.',
+    unsupported: 'Это представление пока не поддерживается для проектов bun.',
+    close: 'Закрыть',
+    alsoRequiredBy: 'Также требуется другим пакетам:',
+    onlyDirect: 'Ни один другой установленный пакет от него не зависит — если он не используется, его можно безопасно удалить.',
+  },
+
   // Semver update types
   semver: {
     major: 'MAJOR',

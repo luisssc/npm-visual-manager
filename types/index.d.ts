@@ -107,7 +107,8 @@ export type WebviewToHostMessage =
   | { type: 'GET_AUDIT' }
   | { type: 'OPEN_EXTERNAL'; url: string }
   | { type: 'UNINSTALL_PACKAGE'; packageName: string }
-  | { type: 'GET_PACKAGE_VERSIONS'; packageName: string; limit?: number };
+  | { type: 'GET_PACKAGE_VERSIONS'; packageName: string; limit?: number }
+  | { type: 'GET_WHY_INSTALLED'; packageName: string };
 
 // Messages from Extension Host to Webview
 export type HostToWebviewMessage =
@@ -146,4 +147,12 @@ export type HostToWebviewMessage =
   | { type: 'INSTALL_RESULT'; packageName: string; success: boolean; message: string }
   | { type: 'ERROR'; message: string }
   | { type: 'PROGRESS'; message: string }
-  | { type: 'PACKAGE_VERSIONS_RESULT'; packageName: string; versions: PackageVersion[]; error?: string };
+  | { type: 'PACKAGE_VERSIONS_RESULT'; packageName: string; versions: PackageVersion[]; error?: string }
+  | {
+      type: 'WHY_INSTALLED_RESULT';
+      packageName: string;
+      /** Each chain is the path from a direct dependency to the target package */
+      chains: string[][];
+      unsupported?: boolean;
+      error?: string;
+    };

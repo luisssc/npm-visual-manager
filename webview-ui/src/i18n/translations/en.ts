@@ -153,6 +153,20 @@ export const en = {
     years_singular: '{{count}} year ago',
   },
 
+  // Why installed modal
+  whyInstalled: {
+    tooltip: 'Why is this package installed?',
+    title: 'Why is {{name}} installed?',
+    loading: 'Analyzing dependency tree...',
+    directBadge: 'Direct',
+    direct: 'Declared directly in your package.json',
+    noResults: 'No dependency chains found for this package.',
+    unsupported: 'This view is not supported for bun projects yet.',
+    close: 'Close',
+    alsoRequiredBy: 'Also required by other packages:',
+    onlyDirect: 'No other installed package depends on it — if you stop using it, it can be removed safely.',
+  },
+
   // Semver update types
   semver: {
     major: 'MAJOR',

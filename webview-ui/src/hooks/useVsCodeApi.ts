@@ -119,6 +119,13 @@ export function useVsCodeApi() {
     [postMessage]
   );
 
+  const getWhyInstalled = useCallback(
+    (packageName: string) => {
+      postMessage({ type: 'GET_WHY_INSTALLED', packageName });
+    },
+    [postMessage]
+  );
+
   return {
     get vscode() {
       return vscodeRef.current;
@@ -139,6 +146,7 @@ export function useVsCodeApi() {
     openExternal,
     uninstallPackage,
     getPackageVersions,
+    getWhyInstalled,
   };
 }
 

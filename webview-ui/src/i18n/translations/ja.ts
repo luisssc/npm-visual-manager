@@ -148,6 +148,20 @@ export const ja: Translations = {
     years_singular: '{{count}} 年前',
   },
 
+  // Why installed modal
+  whyInstalled: {
+    tooltip: 'このパッケージがインストールされている理由',
+    title: '{{name}} がインストールされている理由',
+    loading: '依存関係ツリーを解析中...',
+    directBadge: '直接',
+    direct: 'package.json に直接宣言されています',
+    noResults: 'このパッケージの依存関係チェーンが見つかりませんでした。',
+    unsupported: 'このビューは bun プロジェクトではまだサポートされていません。',
+    close: '閉じる',
+    alsoRequiredBy: '他のパッケージからも必要とされています:',
+    onlyDirect: '他にこのパッケージに依存するパッケージはありません。使用していなければ安全に削除できます。',
+  },
+
   // Semver update types
   semver: {
     major: 'メジャー',

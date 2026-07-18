@@ -18,7 +18,7 @@ A Visual Studio Code extension that provides a visual interface for managing NPM
 | **Dependency Management** | Visual table with sorting, filtering by type (prod/dev/peer), auto-refresh on `package.json` changes |
 | **Search & Install** | NPM registry search with debouncing, install as regular or dev dependency |
 | **Updates** | One-click individual or bulk updates, version rollbacks, ignore packages from checks |
-| **Security & Info** | Security audit integration, deprecation warnings, package sizes, direct links to changelogs |
+| **Security & Info** | Security audit integration, deprecation warnings, package sizes, direct links to changelogs, "why is it installed?" reverse dependency view |
 | **Multi-Project** | Auto-detection in monorepos, supports npm, yarn, pnpm, and bun |
 | **Localization** | 8 languages: Spanish, German, French, Chinese (Simplified), Japanese, Portuguese, Russian, Korean |
 | **UI** | Native VS Code theme integration, customizable columns, activity bar badge with pending updates/vulnerabilities |

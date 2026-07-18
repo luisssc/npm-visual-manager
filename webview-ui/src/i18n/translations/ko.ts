@@ -148,6 +148,20 @@ export const ko: Translations = {
     years_singular: '{{count}}년 전',
   },
 
+  // Why installed modal
+  whyInstalled: {
+    tooltip: '이 패키지가 설치된 이유',
+    title: '{{name}}이(가) 설치된 이유',
+    loading: '의존성 트리 분석 중...',
+    directBadge: '직접',
+    direct: 'package.json에 직접 선언됨',
+    noResults: '이 패키지의 의존성 체인을 찾을 수 없습니다.',
+    unsupported: '이 보기는 bun 프로젝트에서 아직 지원되지 않습니다.',
+    close: '닫기',
+    alsoRequiredBy: '다른 패키지에서도 필요로 합니다:',
+    onlyDirect: '이 패키지에 의존하는 다른 패키지가 없습니다. 사용하지 않는다면 안전하게 제거할 수 있습니다.',
+  },
+
   // Semver update types
   semver: {
     major: '주요',

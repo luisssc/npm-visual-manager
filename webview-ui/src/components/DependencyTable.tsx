@@ -91,6 +91,10 @@ interface DependencyTableProps {
   getVersionsForPackage?: (packageName: string) => PackageVersion[];
   isLoadingVersions?: (packageName: string) => boolean;
   saveExact?: boolean;
+  onWhyInstalled?: (packageName: string) => void;
+  whyResult?: { packageName: string; chains: string[][]; unsupported?: boolean; error?: string } | null;
+  whyLoadingPackage?: string | null;
+  onCloseWhy?: () => void;
 }
 
 type SortColumn = 'name' | 'installedVersion' | 'latestVersion' | 'type' | 'size' | 'lastPublishDate';
@@ -188,6 +192,10 @@ export const DependencyTable = ({
   getVersionsForPackage,
   isLoadingVersions,
   saveExact,
+  onWhyInstalled,
+  whyResult,
+  whyLoadingPackage,
+  onCloseWhy,
 }: DependencyTableProps) => {
   const t = useTranslation();
   const [sortColumn, setSortColumn] = useState<SortColumn>('name');
@@ -668,6 +676,21 @@ export const DependencyTable = ({
                             </button>
                           </Tooltip>
                         )}
+                        {onWhyInstalled && (
+                          <Tooltip text={t.whyInstalled.tooltip}>
+                            <button
+                              className="why-btn"
+                              onClick={e => {
+                                e.stopPropagation();
+                                onWhyInstalled(dep.name);
+                              }}
+                              disabled={isLoading}
+                              title={t.whyInstalled.tooltip}
+                            >
+                              <i className="codicon codicon-type-hierarchy" />
+                            </button>
+                          </Tooltip>
+                        )}
                         <button
                           className="uninstall-btn"
                           onClick={e => {
@@ -1127,6 +1150,75 @@ export const DependencyTable = ({
                 }}
               >
                 {t.buttons.rollback}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {(whyLoadingPackage || whyResult) && (
+        <div className="modal-overlay" onClick={() => onCloseWhy?.()}>
+          <div className="modal-content modal-content-large" onClick={e => e.stopPropagation()}>
+            <h3>
+              {interpolate(t.whyInstalled.title, {
+                name: whyResult?.packageName || whyLoadingPackage || '',
+              })}
+            </h3>
+            {whyLoadingPackage && !whyResult ? (
+              <div className="why-loading">
+                <div className="spinner"></div>
+                <span>{t.whyInstalled.loading}</span>
+              </div>
+            ) : whyResult?.error ? (
+              <p className="why-error">{whyResult.error}</p>
+            ) : whyResult?.unsupported ? (
+              <p className="why-empty">{t.whyInstalled.unsupported}</p>
+            ) : whyResult && whyResult.chains.length === 0 ? (
+              <p className="why-empty">{t.whyInstalled.noResults}</p>
+            ) : whyResult ? (
+              (() => {
+                const isDirect = whyResult.chains.some(chain => chain.length === 1);
+                const otherChains = whyResult.chains.filter(chain => chain.length > 1);
+                return (
+                  <div className="why-chain-list">
+                    {isDirect && (
+                      <div className="why-chain">
+                        <span className="why-direct-badge">
+                          <i className="codicon codicon-package" /> {t.whyInstalled.directBadge}
+                        </span>
+                        <span className="why-direct-text">{t.whyInstalled.direct}</span>
+                      </div>
+                    )}
+                    {otherChains.length > 0 ? (
+                      <>
+                        <div className="why-section-title">{t.whyInstalled.alsoRequiredBy}</div>
+                        {otherChains.map((chain, index) => (
+                          <div key={index} className="why-chain">
+                            {chain.map((segment, segmentIndex) => (
+                              <span key={segmentIndex} className="why-segment-wrapper">
+                                {segmentIndex > 0 && <i className="codicon codicon-arrow-small-right" />}
+                                <code
+                                  className={`why-segment ${segmentIndex === chain.length - 1 ? 'why-target' : ''}`}
+                                >
+                                  {segment}
+                                </code>
+                              </span>
+                            ))}
+                          </div>
+                        ))}
+                      </>
+                    ) : (
+                      <p className="why-empty why-only-direct">
+                        <i className="codicon codicon-check" /> {t.whyInstalled.onlyDirect}
+                      </p>
+                    )}
+                  </div>
+                );
+              })()
+            ) : null}
+            <div className="modal-actions">
+              <button className="modal-btn cancel" onClick={() => onCloseWhy?.()}>
+                {t.whyInstalled.close}
               </button>
             </div>
           </div>

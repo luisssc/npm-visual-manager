@@ -30,6 +30,7 @@ function App() {
     openExternal,
     uninstallPackage,
     getPackageVersions,
+    getWhyInstalled,
     isReady,
   } = useVsCodeApi();
 
@@ -63,6 +64,13 @@ function App() {
   const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [saveExact, setSaveExact] = useState<boolean>(false);
+  const [whyResult, setWhyResult] = useState<{
+    packageName: string;
+    chains: string[][];
+    unsupported?: boolean;
+    error?: string;
+  } | null>(null);
+  const [whyLoadingPackage, setWhyLoadingPackage] = useState<string | null>(null);
 
   // Handle messages from Extension Host
   const handleMessage = useCallback(
@@ -178,6 +186,16 @@ function App() {
           }
           break;
 
+        case 'WHY_INSTALLED_RESULT':
+          setWhyResult({
+            packageName: message.packageName,
+            chains: message.chains,
+            unsupported: message.unsupported,
+            error: message.error,
+          });
+          setWhyLoadingPackage(null);
+          break;
+
         case 'ERROR':
           setError(message.message);
           setIsLoading(false);
@@ -262,6 +280,20 @@ function App() {
     },
     [requestVersions, getPackageVersions]
   );
+
+  const handleWhyInstalled = useCallback(
+    (packageName: string) => {
+      setWhyResult(null);
+      setWhyLoadingPackage(packageName);
+      getWhyInstalled(packageName);
+    },
+    [getWhyInstalled]
+  );
+
+  const handleCloseWhy = useCallback(() => {
+    setWhyResult(null);
+    setWhyLoadingPackage(null);
+  }, []);
 
   if (isLoading) {
     return (
@@ -362,6 +394,10 @@ function App() {
           getVersionsForPackage={getVersionsForPackage}
           isLoadingVersions={isLoadingVersions}
           saveExact={saveExact}
+          onWhyInstalled={handleWhyInstalled}
+          whyResult={whyResult}
+          whyLoadingPackage={whyLoadingPackage}
+          onCloseWhy={handleCloseWhy}
         />
         <SearchPanel
           results={searchResults}

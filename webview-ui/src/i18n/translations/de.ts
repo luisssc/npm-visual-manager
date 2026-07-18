@@ -150,6 +150,20 @@ export const de: Translations = {
     years_singular: 'vor {{count}} Jahr',
   },
 
+  // Why installed modal
+  whyInstalled: {
+    tooltip: 'Warum ist dieses Paket installiert?',
+    title: 'Warum ist {{name}} installiert?',
+    loading: 'Abhängigkeitsbaum wird analysiert...',
+    directBadge: 'Direkt',
+    direct: 'Direkt in Ihrer package.json deklariert',
+    noResults: 'Keine Abhängigkeitsketten für dieses Paket gefunden.',
+    unsupported: 'Diese Ansicht wird für Bun-Projekte noch nicht unterstützt.',
+    close: 'Schließen',
+    alsoRequiredBy: 'Wird auch von anderen Paketen benötigt:',
+    onlyDirect: 'Kein anderes installiertes Paket hängt davon ab — wenn Sie es nicht mehr verwenden, kann es sicher entfernt werden.',
+  },
+
   // Semver update types
   semver: {
     major: 'MAJOR',

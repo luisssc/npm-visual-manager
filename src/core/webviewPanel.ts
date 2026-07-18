@@ -25,6 +25,7 @@ import { clearPackageSizeCache } from '../services/sizeService';
 import type { PackageManager } from '../../types';
 import { getHtmlForWebview } from './htmlProvider';
 import { isLocalPackageVersion } from '../utils/localPackage';
+import { getWhyInstalled } from '../services/whyService';
 import { getVSCodeLanguage } from '../i18n/getLanguage';
 import { PackageOperationsService } from '../services/packageOperationsService';
 
@@ -376,6 +377,33 @@ export class NpmGuiManagerPanel {
       case 'GET_PACKAGE_VERSIONS':
         await this._getPackageVersions(message.packageName, message.limit);
         break;
+
+      case 'GET_WHY_INSTALLED':
+        await this._getWhyInstalled(message.packageName);
+        break;
+    }
+  }
+
+  /**
+   * Get the reverse dependency chains explaining why a package is installed
+   */
+  private async _getWhyInstalled(packageName: string): Promise<void> {
+    try {
+      const result = await getWhyInstalled(this._currentProjectPath, this._currentPackageManager, packageName);
+      this._sendMessage({
+        type: 'WHY_INSTALLED_RESULT',
+        packageName,
+        chains: result.chains,
+        unsupported: result.unsupported,
+      });
+    } catch (error) {
+      console.warn(`[npm-visual-manager] why-installed failed for ${packageName}:`, error);
+      this._sendMessage({
+        type: 'WHY_INSTALLED_RESULT',
+        packageName,
+        chains: [],
+        error: error instanceof Error ? error.message : String(error),
+      });
     }
   }
 

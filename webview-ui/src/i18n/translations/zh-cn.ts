@@ -148,6 +148,20 @@ export const zhCn: Translations = {
     years_singular: '{{count}} 年前',
   },
 
+  // Why installed modal
+  whyInstalled: {
+    tooltip: '为什么安装了这个包？',
+    title: '为什么安装了 {{name}}？',
+    loading: '正在分析依赖树...',
+    directBadge: '直接',
+    direct: '直接声明在您的 package.json 中',
+    noResults: '未找到该包的依赖链。',
+    unsupported: '此视图暂不支持 bun 项目。',
+    close: '关闭',
+    alsoRequiredBy: '也被其他包依赖：',
+    onlyDirect: '没有其他已安装的包依赖它——如果不再使用，可以安全移除。',
+  },
+
   // Semver update types
   semver: {
     major: '主要',

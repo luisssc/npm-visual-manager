@@ -156,6 +156,20 @@ export const fr: Translations = {
     years_singular: 'il y a {{count}} an',
   },
 
+  // Why installed modal
+  whyInstalled: {
+    tooltip: 'Pourquoi ce paquet est-il installé ?',
+    title: 'Pourquoi {{name}} est-il installé ?',
+    loading: "Analyse de l'arbre des dépendances...",
+    directBadge: 'Directe',
+    direct: 'Déclarée directement dans votre package.json',
+    noResults: 'Aucune chaîne de dépendances trouvée pour ce paquet.',
+    unsupported: "Cette vue n'est pas encore prise en charge pour les projets bun.",
+    close: 'Fermer',
+    alsoRequiredBy: "Également requis par d'autres paquets :",
+    onlyDirect: "Aucun autre paquet installé n'en dépend — s'il n'est plus utilisé, il peut être supprimé sans risque.",
+  },
+
   // Semver update types
   semver: {
     major: 'MAJOR',
