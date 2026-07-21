@@ -68,6 +68,7 @@ function App() {
     packageName: string;
     chains: string[][];
     unsupported?: boolean;
+    notInstalled?: boolean;
     error?: string;
   } | null>(null);
   const [whyLoadingPackage, setWhyLoadingPackage] = useState<string | null>(null);
@@ -191,6 +192,7 @@ function App() {
             packageName: message.packageName,
             chains: message.chains,
             unsupported: message.unsupported,
+            notInstalled: message.notInstalled,
             error: message.error,
           });
           setWhyLoadingPackage(null);

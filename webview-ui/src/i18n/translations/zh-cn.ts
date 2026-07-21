@@ -157,6 +157,7 @@ export const zhCn: Translations = {
     direct: '直接声明在您的 package.json 中',
     noResults: '未找到该包的依赖链。',
     unsupported: '此视图暂不支持 bun 项目。',
+    notInstalled: '此项目未安装依赖，因此无法分析依赖树。这在共享库中很常见——其依赖由使用它的项目安装。请在此处运行安装以启用此视图。',
     close: '关闭',
     alsoRequiredBy: '也被其他包依赖：',
     onlyDirect: '没有其他已安装的包依赖它——如果不再使用，可以安全移除。',

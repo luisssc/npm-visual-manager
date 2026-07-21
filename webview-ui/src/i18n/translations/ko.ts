@@ -157,6 +157,7 @@ export const ko: Translations = {
     direct: 'package.json에 직접 선언됨',
     noResults: '이 패키지의 의존성 체인을 찾을 수 없습니다.',
     unsupported: '이 보기는 bun 프로젝트에서 아직 지원되지 않습니다.',
+    notInstalled: '이 프로젝트에 의존성이 설치되어 있지 않아 트리를 분석할 수 없습니다. 의존성을 사용하는 프로젝트가 설치하는 공유 라이브러리에서 흔히 발생합니다. 이 보기를 사용하려면 여기에서 설치를 실행하세요.',
     close: '닫기',
     alsoRequiredBy: '다른 패키지에서도 필요로 합니다:',
     onlyDirect: '이 패키지에 의존하는 다른 패키지가 없습니다. 사용하지 않는다면 안전하게 제거할 수 있습니다.',

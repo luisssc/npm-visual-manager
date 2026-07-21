@@ -154,5 +154,6 @@ export type HostToWebviewMessage =
       /** Each chain is the path from a direct dependency to the target package */
       chains: string[][];
       unsupported?: boolean;
+      notInstalled?: boolean;
       error?: string;
     };

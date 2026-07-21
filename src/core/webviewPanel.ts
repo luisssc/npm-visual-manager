@@ -26,6 +26,7 @@ import type { PackageManager } from '../../types';
 import { getHtmlForWebview } from './htmlProvider';
 import { isLocalPackageVersion } from '../utils/localPackage';
 import { getWhyInstalled } from '../services/whyService';
+import { requestBadgeRefresh } from '../services/badgeEvents';
 import { getVSCodeLanguage } from '../i18n/getLanguage';
 import { PackageOperationsService } from '../services/packageOperationsService';
 
@@ -320,6 +321,7 @@ export class NpmGuiManagerPanel {
           this._currentPackageManager,
           saveExact
         );
+        requestBadgeRefresh();
         break;
       }
 
@@ -334,6 +336,7 @@ export class NpmGuiManagerPanel {
           this._currentPackageManager,
           saveExact
         );
+        requestBadgeRefresh();
         break;
       }
 
@@ -343,6 +346,7 @@ export class NpmGuiManagerPanel {
           this._currentProjectPath,
           this._currentPackageManager
         );
+        requestBadgeRefresh();
         break;
 
       case 'SEARCH_PACKAGES':
@@ -358,6 +362,7 @@ export class NpmGuiManagerPanel {
           this._currentPackageManager,
           this._saveExact
         );
+        requestBadgeRefresh();
         break;
 
       case 'OPEN_EXTERNAL':
@@ -372,6 +377,7 @@ export class NpmGuiManagerPanel {
           this._currentProjectPath,
           this._currentPackageManager
         );
+        requestBadgeRefresh();
         break;
 
       case 'GET_PACKAGE_VERSIONS':
@@ -395,6 +401,7 @@ export class NpmGuiManagerPanel {
         packageName,
         chains: result.chains,
         unsupported: result.unsupported,
+        notInstalled: result.notInstalled,
       });
     } catch (error) {
       console.warn(`[npm-visual-manager] why-installed failed for ${packageName}:`, error);

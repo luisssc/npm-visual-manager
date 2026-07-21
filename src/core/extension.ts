@@ -8,6 +8,7 @@ import { NpmGuiManagerPanel } from './webviewPanel';
 import { setGlobalStorageUri } from '../services/cacheService';
 import { NpmDependenciesProvider } from './sidebarProvider';
 import { computeWorkspaceBadge } from '../services/badgeService';
+import { onBadgeRefreshRequested } from '../services/badgeEvents';
 import { getIgnoreService } from '../services/ignoreService';
 import { getVSCodeLanguage } from '../i18n/getLanguage';
 import { getTranslations } from '../i18n';
@@ -154,6 +155,11 @@ export function activate(context: vscode.ExtensionContext): void {
   // Activity bar badge: background check of updates/vulnerabilities
   const badgeController = new BadgeController(sidebarProvider);
   void badgeController.refresh();
+
+  // Recompute the badge after any package mutation done from the panel.
+  // More reliable than the file watcher alone, which misses some atomic
+  // package.json rewrites (e.g. on Windows).
+  onBadgeRefreshRequested(() => badgeController.requestRefresh());
 
   // Re-check when any project package.json changes (ignoring node_modules)
   const badgeWatcher = vscode.workspace.createFileSystemWatcher('**/package.json');

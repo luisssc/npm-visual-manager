@@ -2,6 +2,17 @@
 
 All notable changes to the "npm-visual-manager" extension will be documented in this file.
 
+## [1.8.1] - 2026-07-21
+
+### Fixed
+- **Activity bar badge stuck after updating a package**: The badge count no longer stays stale until the IDE is restarted.
+  - Previously: The badge only recomputed via the `package.json` file watcher, which does not fire reliably for the atomic rewrites done by npm/yarn/pnpm (notably on Windows), so after updating a package the old count lingered until the extension reactivated.
+  - Now: Package operations (update, update all, install, uninstall, rollback) explicitly request a badge recompute, so the count updates without depending on the file watcher.
+- **"Why is it installed?" empty in workspaces and shared libraries**: The view no longer reports "No dependency chains found" for every package in certain projects.
+  - Workspace subprojects: `npm ls`/`pnpm why` run from a subproject report the tree rooted at the monorepo root. The view now anchors to the current project's node, so its direct dependencies show as "Direct" instead of being prefixed by the project name.
+  - Shared libraries without their own `node_modules` (dependencies installed by the consuming project): instead of a misleading "No dependency chains found", the view now explains that dependencies are not installed here and that installing them enables the analysis.
+- **Stray horizontal scrollbar on the dependency table**: An unwanted horizontal scrollbar appeared at the bottom of the table (surfaced after the new "why is it installed?" button), even though the table fit fully and the bar scrolled nowhere. Since the table uses a fixed layout at 100% width it never needs horizontal scrolling, so the table wrapper now hides overflow on the x axis; the action column was also widened so its buttons fit comfortably.
+
 ## [1.8.0] - Unreleased
 
 ### Added

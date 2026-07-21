@@ -92,7 +92,7 @@ interface DependencyTableProps {
   isLoadingVersions?: (packageName: string) => boolean;
   saveExact?: boolean;
   onWhyInstalled?: (packageName: string) => void;
-  whyResult?: { packageName: string; chains: string[][]; unsupported?: boolean; error?: string } | null;
+  whyResult?: { packageName: string; chains: string[][]; unsupported?: boolean; notInstalled?: boolean; error?: string } | null;
   whyLoadingPackage?: string | null;
   onCloseWhy?: () => void;
 }
@@ -1173,6 +1173,10 @@ export const DependencyTable = ({
               <p className="why-error">{whyResult.error}</p>
             ) : whyResult?.unsupported ? (
               <p className="why-empty">{t.whyInstalled.unsupported}</p>
+            ) : whyResult?.notInstalled ? (
+              <p className="why-empty why-not-installed">
+                <i className="codicon codicon-info" /> {t.whyInstalled.notInstalled}
+              </p>
             ) : whyResult && whyResult.chains.length === 0 ? (
               <p className="why-empty">{t.whyInstalled.noResults}</p>
             ) : whyResult ? (

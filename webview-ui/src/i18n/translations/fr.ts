@@ -165,6 +165,7 @@ export const fr: Translations = {
     direct: 'Déclarée directement dans votre package.json',
     noResults: 'Aucune chaîne de dépendances trouvée pour ce paquet.',
     unsupported: "Cette vue n'est pas encore prise en charge pour les projets bun.",
+    notInstalled: "Les dépendances ne sont pas installées dans ce projet, l'arbre ne peut donc pas être analysé. C'est courant pour les bibliothèques partagées dont les dépendances sont installées par le projet consommateur. Lancez l'installation ici pour activer cette vue.",
     close: 'Fermer',
     alsoRequiredBy: "Également requis par d'autres paquets :",
     onlyDirect: "Aucun autre paquet installé n'en dépend — s'il n'est plus utilisé, il peut être supprimé sans risque.",

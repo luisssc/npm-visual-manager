@@ -10,6 +10,8 @@
 
 import { exec } from 'child_process';
 import { promisify } from 'util';
+import * as fs from 'fs';
+import * as path from 'path';
 import type { PackageManager } from '../../types';
 import { resolveCommandPath } from '../utils/resolveExecutable';
 
@@ -24,6 +26,14 @@ export interface WhyResult {
   chains: string[][];
   /** True when the package manager has no supported "why" command (bun) */
   unsupported?: boolean;
+  /**
+   * True when the dependency tree could not be resolved because the project's
+   * dependencies are not installed here (e.g. a shared library whose deps live
+   * in the consumer, or a subproject before `npm install`). The chains are
+   * empty not because nothing depends on the package, but because there is no
+   * installed tree to analyze.
+   */
+  notInstalled?: boolean;
 }
 
 /** Valid npm package name (also guards against shell injection in exec) */
@@ -47,9 +57,34 @@ export function getWhyCommand(manager: PackageManager, packageName: string): str
 }
 
 interface DependencyTreeNode {
+  name?: string;
   version?: string;
   dependencies?: Record<string, DependencyTreeNode>;
   devDependencies?: Record<string, DependencyTreeNode>;
+}
+
+/**
+ * When `npm ls` / `pnpm why` is run from a workspace subproject, the reported
+ * tree is rooted at the monorepo root, with the current subproject appearing
+ * as a child node. Anchor to that subproject node so its direct dependencies
+ * are reported as direct (chain length 1) instead of prefixed by the
+ * subproject name. Falls back to the root node when there is no match.
+ */
+function resolveProjectNode(root: DependencyTreeNode, projectName?: string): DependencyTreeNode {
+  if (projectName && root.name !== projectName && root.dependencies) {
+    const node = root.dependencies[projectName];
+    if (node) {
+      return node;
+    }
+  }
+  return root;
+}
+
+function nodeHasDependencies(node: DependencyTreeNode): boolean {
+  return (
+    (!!node.dependencies && Object.keys(node.dependencies).length > 0) ||
+    (!!node.devDependencies && Object.keys(node.devDependencies).length > 0)
+  );
 }
 
 function walkTree(
@@ -96,10 +131,16 @@ function dedupeChains(chains: string[][]): string[][] {
  * Shape: { name, version, dependencies: { <name>: { version, dependencies: {...} } } }
  * npm prunes the tree to paths that lead to the requested package.
  */
-export function parseNpmLsOutput(output: string, target: string): string[][] {
+export function parseNpmLsOutput(output: string, target: string, projectName?: string): string[][] {
   const data = JSON.parse(output) as DependencyTreeNode;
+  const start = resolveProjectNode(data, projectName);
   const chains: string[][] = [];
-  walkTree(data.dependencies, [], target, chains);
+  walkTree(start.dependencies, [], target, chains);
+  // If anchoring to the subproject found nothing, the dependency may be hoisted
+  // at the workspace root — retry from the root as a fallback.
+  if (chains.length === 0 && start !== data) {
+    walkTree(data.dependencies, [], target, chains);
+  }
   return dedupeChains(chains);
 }
 
@@ -184,16 +225,67 @@ export function parseYarnWhyOutput(output: string, target: string): string[][] {
   return dedupeChains(chains).slice(0, MAX_CHAINS);
 }
 
-function parseWhyOutput(manager: PackageManager, output: string, target: string): string[][] {
+function parseWhyOutput(
+  manager: PackageManager,
+  output: string,
+  target: string,
+  projectName?: string
+): string[][] {
   switch (manager) {
     case 'npm':
-      return parseNpmLsOutput(output, target);
+      return parseNpmLsOutput(output, target, projectName);
     case 'pnpm':
       return parsePnpmWhyOutput(output, target);
     case 'yarn':
       return parseYarnWhyOutput(output, target);
     case 'bun':
       return [];
+  }
+}
+
+/**
+ * Determine whether the resolved tree actually contains an installed
+ * dependency graph. Used to distinguish "nothing depends on this" from
+ * "there is no installed tree to analyze here".
+ */
+function treeHasInstalledDeps(manager: PackageManager, output: string, projectName?: string): boolean {
+  try {
+    if (manager === 'npm') {
+      const data = JSON.parse(output) as DependencyTreeNode;
+      return nodeHasDependencies(resolveProjectNode(data, projectName));
+    }
+    if (manager === 'pnpm') {
+      const data = JSON.parse(output) as DependencyTreeNode[] | DependencyTreeNode;
+      const projects = Array.isArray(data) ? data : [data];
+      return projects.some(nodeHasDependencies);
+    }
+  } catch {
+    return false;
+  }
+  // yarn: cannot cheaply tell; assume installed so we don't mislabel.
+  return true;
+}
+
+/**
+ * Read the project's own name and whether it declares any dependencies.
+ * Used to anchor workspace trees and to detect the "not installed" case.
+ */
+async function readProjectInfo(projectPath: string): Promise<{ name?: string; hasDeclaredDeps: boolean }> {
+  try {
+    const content = await fs.promises.readFile(path.join(projectPath, 'package.json'), 'utf-8');
+    const pkg = JSON.parse(content) as {
+      name?: string;
+      dependencies?: Record<string, string>;
+      devDependencies?: Record<string, string>;
+      peerDependencies?: Record<string, string>;
+    };
+    const hasDeclaredDeps =
+      Object.keys(pkg.dependencies ?? {}).length > 0 ||
+      Object.keys(pkg.devDependencies ?? {}).length > 0 ||
+      Object.keys(pkg.peerDependencies ?? {}).length > 0;
+    return { name: pkg.name, hasDeclaredDeps };
+  } catch {
+    return { hasDeclaredDeps: false };
   }
 }
 
@@ -214,6 +306,7 @@ export async function getWhyInstalled(
     return { chains: [], unsupported: true };
   }
 
+  const { name: projectName, hasDeclaredDeps } = await readProjectInfo(projectPath);
   const resolvedCommand = await resolveCommandPath(command);
 
   let stdout: string;
@@ -234,5 +327,13 @@ export async function getWhyInstalled(
     }
   }
 
-  return { chains: parseWhyOutput(manager, stdout, packageName) };
+  const chains = parseWhyOutput(manager, stdout, packageName, projectName);
+
+  // No chains + declared deps + an empty installed tree => dependencies are not
+  // installed in this project (shared library, or install not run here).
+  if (chains.length === 0 && hasDeclaredDeps && !treeHasInstalledDeps(manager, stdout, projectName)) {
+    return { chains: [], notInstalled: true };
+  }
+
+  return { chains };
 }

@@ -226,7 +226,12 @@
 /* Table */
 .table-wrapper {
   flex: 1;
-  overflow: auto;
+  /* The table uses `table-layout: fixed; width: 100%`, so its columns always
+     fit the wrapper — it never needs real horizontal scrolling. Hiding overflow-x
+     prevents a spurious horizontal scrollbar caused by the vertical scrollbar
+     width, sub-pixel rounding, or hover-only action buttons briefly overflowing. */
+  overflow-x: hidden;
+  overflow-y: auto;
 }
 
 .dependency-table {
@@ -353,12 +358,12 @@
 }
 
 .action-col {
-  width: 140px;
+  width: 190px;
   text-align: center !important;
 }
 
 .action-cell {
-  width: 140px;
+  width: 190px;
   text-align: center !important;
 }
 
@@ -624,7 +629,7 @@ button.vulnerability-btn {
   gap: 2px;
   min-height: 28px;
   width: 100%;
-  padding: 0 8px;
+  padding: 0 4px;
 }
 
 .ignore-btn {
@@ -1422,4 +1427,11 @@ tr:hover .why-btn,
   align-items: center;
   gap: 6px;
   color: var(--success-fg, #4caf50);
+}
+
+.why-not-installed {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  line-height: 1.5;
 }

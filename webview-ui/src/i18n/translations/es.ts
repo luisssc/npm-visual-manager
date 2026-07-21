@@ -165,6 +165,7 @@ export const es: Translations = {
     direct: 'Declarada directamente en tu package.json',
     noResults: 'No se encontraron cadenas de dependencia para este paquete.',
     unsupported: 'Esta vista aún no está soportada en proyectos con bun.',
+    notInstalled: 'Las dependencias no están instaladas en este proyecto, así que no se puede analizar el árbol. Es habitual en librerías compartidas cuyas dependencias las instala el proyecto que las consume. Ejecuta la instalación aquí para habilitar esta vista.',
     close: 'Cerrar',
     alsoRequiredBy: 'También lo requieren otros paquetes:',
     onlyDirect: 'Ningún otro paquete instalado depende de él — si dejas de usarlo, puedes quitarlo sin romper nada.',

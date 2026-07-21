@@ -162,6 +162,7 @@ export const en = {
     direct: 'Declared directly in your package.json',
     noResults: 'No dependency chains found for this package.',
     unsupported: 'This view is not supported for bun projects yet.',
+    notInstalled: "Dependencies are not installed in this project, so the tree can't be analyzed. This is common for shared libraries whose dependencies are installed by the consuming project. Run install here to enable this view.",
     close: 'Close',
     alsoRequiredBy: 'Also required by other packages:',
     onlyDirect: 'No other installed package depends on it — if you stop using it, it can be removed safely.',

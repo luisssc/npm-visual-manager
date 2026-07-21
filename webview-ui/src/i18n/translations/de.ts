@@ -159,6 +159,7 @@ export const de: Translations = {
     direct: 'Direkt in Ihrer package.json deklariert',
     noResults: 'Keine Abhängigkeitsketten für dieses Paket gefunden.',
     unsupported: 'Diese Ansicht wird für Bun-Projekte noch nicht unterstützt.',
+    notInstalled: 'Die Abhängigkeiten sind in diesem Projekt nicht installiert, daher kann der Baum nicht analysiert werden. Das ist üblich bei geteilten Bibliotheken, deren Abhängigkeiten vom konsumierenden Projekt installiert werden. Führen Sie hier die Installation aus, um diese Ansicht zu aktivieren.',
     close: 'Schließen',
     alsoRequiredBy: 'Wird auch von anderen Paketen benötigt:',
     onlyDirect: 'Kein anderes installiertes Paket hängt davon ab — wenn Sie es nicht mehr verwenden, kann es sicher entfernt werden.',

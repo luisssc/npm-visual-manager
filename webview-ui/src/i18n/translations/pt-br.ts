@@ -158,6 +158,7 @@ export const ptBr: Translations = {
     direct: 'Declarada diretamente no seu package.json',
     noResults: 'Nenhuma cadeia de dependências encontrada para este pacote.',
     unsupported: 'Esta visualização ainda não é suportada em projetos bun.',
+    notInstalled: 'As dependências não estão instaladas neste projeto, então a árvore não pode ser analisada. Isso é comum em bibliotecas compartilhadas cujas dependências são instaladas pelo projeto consumidor. Execute a instalação aqui para habilitar esta visualização.',
     close: 'Fechar',
     alsoRequiredBy: 'Também é exigido por outros pacotes:',
     onlyDirect: 'Nenhum outro pacote instalado depende dele — se não estiver em uso, pode ser removido com segurança.',

@@ -79,6 +79,46 @@ describe('parseNpmLsOutput', () => {
     const keys = chains.map(c => c.join('>'));
     expect(new Set(keys).size).toBe(keys.length);
   });
+
+  // In a workspace, `npm ls` from a subproject reports the tree rooted at the
+  // monorepo root, with the subproject appearing as a child node.
+  const workspaceJson = JSON.stringify({
+    name: 'root',
+    version: '1.0.0',
+    dependencies: {
+      uiconfig: {
+        version: '1.0.0',
+        resolved: 'file:../packages/uiconfig',
+        dependencies: {
+          lodash: { version: '4.17.21' },
+        },
+      },
+    },
+  });
+
+  it('anchors to the subproject node so its direct deps are reported as direct', () => {
+    const chains = parseNpmLsOutput(workspaceJson, 'lodash', 'uiconfig');
+    // lodash is a direct dependency of uiconfig -> chain length 1, no 'uiconfig' prefix
+    expect(chains).toEqual([['lodash@4.17.21']]);
+  });
+
+  it('without the project name, the subproject appears as a prefix (pre-fix behavior)', () => {
+    const chains = parseNpmLsOutput(workspaceJson, 'lodash');
+    expect(chains).toEqual([['uiconfig@1.0.0', 'lodash@4.17.21']]);
+  });
+
+  it('falls back to the root when the target is hoisted beside the subproject', () => {
+    const hoisted = JSON.stringify({
+      name: 'root',
+      dependencies: {
+        uiconfig: { version: '1.0.0', resolved: 'file:../packages/uiconfig' },
+        lodash: { version: '4.17.21' },
+      },
+    });
+    // Anchoring to uiconfig finds nothing (no deps), fallback to root finds lodash
+    const chains = parseNpmLsOutput(hoisted, 'lodash', 'uiconfig');
+    expect(chains).toEqual([['lodash@4.17.21']]);
+  });
 });
 
 describe('parsePnpmWhyOutput', () => {
