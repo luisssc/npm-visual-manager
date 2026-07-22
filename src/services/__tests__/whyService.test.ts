@@ -158,6 +158,57 @@ describe('parsePnpmWhyOutput', () => {
     });
     expect(parsePnpmWhyOutput(single, 'target')).toEqual([['target@1.0.0']]);
   });
+
+  // pnpm 10+ changed `why --json` to a bottom-up format: each entry is the
+  // queried package with a `dependents` array (who depends on it).
+  it('parses the pnpm 10+ bottom-up format for a direct dependency', () => {
+    const pnpm10 = JSON.stringify([
+      {
+        name: 'is-even',
+        version: '1.0.0',
+        path: '/x',
+        dependents: [{ name: 'ui-config', version: '1.0.0', depField: 'dependencies' }],
+      },
+    ]);
+    // Direct dependency of the project -> single-element chain (shown as "Direct")
+    expect(parsePnpmWhyOutput(pnpm10, 'is-even')).toEqual([['is-even@1.0.0']]);
+  });
+
+  it('parses the pnpm 10+ bottom-up format for a transitive dependency', () => {
+    const pnpm10 = JSON.stringify([
+      {
+        name: 'is-odd',
+        version: '0.1.2',
+        path: '/x',
+        dependents: [
+          {
+            name: 'is-even',
+            version: '1.0.0',
+            dependents: [{ name: 'ui-config', version: '1.0.0', depField: 'dependencies' }],
+          },
+        ],
+      },
+    ]);
+    // Chain rendered top-down: direct dependency -> ... -> target
+    expect(parsePnpmWhyOutput(pnpm10, 'is-odd')).toEqual([['is-even@1.0.0', 'is-odd@0.1.2']]);
+  });
+
+  it('parses multiple dependent paths in the pnpm 10+ format', () => {
+    const pnpm10 = JSON.stringify([
+      {
+        name: 'lodash',
+        version: '4.0.0',
+        dependents: [
+          { name: 'a', version: '1.0.0', dependents: [{ name: 'root', version: '1.0.0', depField: 'dependencies' }] },
+          { name: 'b', version: '2.0.0', dependents: [{ name: 'root', version: '1.0.0', depField: 'devDependencies' }] },
+        ],
+      },
+    ]);
+    const chains = parsePnpmWhyOutput(pnpm10, 'lodash');
+    expect(chains).toContainEqual(['a@1.0.0', 'lodash@4.0.0']);
+    expect(chains).toContainEqual(['b@2.0.0', 'lodash@4.0.0']);
+    expect(chains).toHaveLength(2);
+  });
 });
 
 describe('parseYarnWhyOutput', () => {

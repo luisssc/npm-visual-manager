@@ -63,6 +63,18 @@ interface DependencyTreeNode {
   devDependencies?: Record<string, DependencyTreeNode>;
 }
 
+/** pnpm 10+ `why --json` node: bottom-up, each package lists who depends on it. */
+interface PnpmDependent {
+  name?: string;
+  version?: string;
+  depField?: string;
+  dependents?: PnpmDependent[];
+}
+
+function label(name: string | undefined, version: string | undefined): string {
+  return name && version ? `${name}@${version}` : name || '';
+}
+
 /**
  * When `npm ls` / `pnpm why` is run from a workspace subproject, the reported
  * tree is rooted at the monorepo root, with the current subproject appearing
@@ -78,13 +90,6 @@ function resolveProjectNode(root: DependencyTreeNode, projectName?: string): Dep
     }
   }
   return root;
-}
-
-function nodeHasDependencies(node: DependencyTreeNode): boolean {
-  return (
-    (!!node.dependencies && Object.keys(node.dependencies).length > 0) ||
-    (!!node.devDependencies && Object.keys(node.devDependencies).length > 0)
-  );
 }
 
 function walkTree(
@@ -145,17 +150,58 @@ export function parseNpmLsOutput(output: string, target: string, projectName?: s
 }
 
 /**
- * Parse `pnpm why <pkg> --json` output.
- * Shape: an array of projects, each with dependencies/devDependencies trees
- * (same nested node shape as npm ls).
+ * Walk a pnpm 10+ bottom-up `dependents` tree, building top-down chains
+ * (direct dependency -> ... -> target). `acc` accumulates labels from the
+ * target upward; the project root (a dependent with no further dependents)
+ * is not included in the chain.
+ */
+function walkPnpmDependents(node: PnpmDependent, acc: string[], chains: string[][]): void {
+  if (acc.length >= MAX_DEPTH || chains.length >= MAX_CHAINS) {
+    return;
+  }
+  const deps = node.dependents;
+  if (!deps || deps.length === 0) {
+    // Reached the project root; the chain is what we accumulated, reversed.
+    if (acc.length > 0) {
+      chains.push([...acc].reverse());
+    }
+    return;
+  }
+  for (const dep of deps) {
+    if (chains.length >= MAX_CHAINS) {
+      return;
+    }
+    const depIsProjectRoot = !dep.dependents || dep.dependents.length === 0;
+    if (depIsProjectRoot) {
+      // `node` is a direct dependency of the project; close the chain.
+      chains.push([...acc].reverse());
+    } else {
+      walkPnpmDependents(dep, [...acc, label(dep.name, dep.version)], chains);
+    }
+  }
+}
+
+/**
+ * Parse `pnpm why <pkg> --json` output. Supports two formats:
+ *  - pnpm <=9: top-down, an array of projects with nested `dependencies`
+ *    trees (same node shape as npm ls).
+ *  - pnpm >=10: bottom-up, an array where each entry is the queried package
+ *    with a `dependents` array describing who depends on it.
  */
 export function parsePnpmWhyOutput(output: string, target: string): string[][] {
-  const data = JSON.parse(output) as DependencyTreeNode[] | DependencyTreeNode;
-  const projects = Array.isArray(data) ? data : [data];
+  const data = JSON.parse(output) as unknown;
+  const entries = Array.isArray(data) ? data : [data];
   const chains: string[][] = [];
-  for (const project of projects) {
-    walkTree(project.dependencies, [], target, chains);
-    walkTree(project.devDependencies, [], target, chains);
+  for (const entry of entries) {
+    const node = entry as DependencyTreeNode & PnpmDependent;
+    if (Array.isArray(node.dependents)) {
+      // pnpm 10+ bottom-up format
+      walkPnpmDependents(node, [label(node.name, node.version)], chains);
+    } else {
+      // pnpm <=9 top-down format
+      walkTree(node.dependencies, [], target, chains);
+      walkTree(node.devDependencies, [], target, chains);
+    }
   }
   return dedupeChains(chains);
 }
@@ -244,26 +290,20 @@ function parseWhyOutput(
 }
 
 /**
- * Determine whether the resolved tree actually contains an installed
- * dependency graph. Used to distinguish "nothing depends on this" from
- * "there is no installed tree to analyze here".
+ * Whether the project has an installed dependency tree on disk. This is the
+ * source of truth for the "not installed" case: if node_modules exists with
+ * content, dependencies are installed and an empty chain result means "nothing
+ * depends on it" (or a parse gap), never "not installed". Basing this on the
+ * filesystem avoids false positives from package-manager output format changes.
  */
-function treeHasInstalledDeps(manager: PackageManager, output: string, projectName?: string): boolean {
+async function hasInstalledModules(projectPath: string): Promise<boolean> {
   try {
-    if (manager === 'npm') {
-      const data = JSON.parse(output) as DependencyTreeNode;
-      return nodeHasDependencies(resolveProjectNode(data, projectName));
-    }
-    if (manager === 'pnpm') {
-      const data = JSON.parse(output) as DependencyTreeNode[] | DependencyTreeNode;
-      const projects = Array.isArray(data) ? data : [data];
-      return projects.some(nodeHasDependencies);
-    }
+    const entries = await fs.promises.readdir(path.join(projectPath, 'node_modules'));
+    // A lone .package-lock.json or empty dir doesn't count as installed.
+    return entries.some(name => name !== '.package-lock.json');
   } catch {
     return false;
   }
-  // yarn: cannot cheaply tell; assume installed so we don't mislabel.
-  return true;
 }
 
 /**
@@ -329,9 +369,11 @@ export async function getWhyInstalled(
 
   const chains = parseWhyOutput(manager, stdout, packageName, projectName);
 
-  // No chains + declared deps + an empty installed tree => dependencies are not
-  // installed in this project (shared library, or install not run here).
-  if (chains.length === 0 && hasDeclaredDeps && !treeHasInstalledDeps(manager, stdout, projectName)) {
+  // No chains + declared deps + no installed node_modules => dependencies are
+  // not installed in this project (shared library, or install not run here).
+  // Checked against the filesystem so a parser gap for a given package-manager
+  // output format can never masquerade as "not installed".
+  if (chains.length === 0 && hasDeclaredDeps && !(await hasInstalledModules(projectPath))) {
     return { chains: [], notInstalled: true };
   }
 

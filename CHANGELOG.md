@@ -2,6 +2,13 @@
 
 All notable changes to the "npm-visual-manager" extension will be documented in this file.
 
+## [1.8.2] - 2026-07-22
+
+### Fixed
+- **"Why is it installed?" reporting "dependencies are not installed" for every package on pnpm 10**: The view now works on projects using pnpm 10+.
+  - pnpm 10 changed `pnpm why --json` from a top-down `dependencies` tree to a bottom-up `dependents` format. The parser only understood the old shape, so it found no chains and the view mislabeled fully-installed projects as "not installed". The parser now handles both the pnpm 10+ and the legacy formats.
+  - The "not installed" state is now determined from the presence of `node_modules` on disk rather than from an empty parse result, so a future package-manager output change can no longer cause this false positive.
+
 ## [1.8.1] - 2026-07-21
 
 ### Fixed
