@@ -33,6 +33,13 @@ export interface PackageDetails {
 
 export type SemverUpdateType = 'major' | 'minor' | 'patch' | 'none' | 'unknown';
 
+// Shared HTTPS agent with keepAlive enabled for connection reuse
+const httpsAgent = new https.Agent({
+  keepAlive: true,
+  maxSockets: 25,
+  keepAliveMsecs: 30000,
+});
+
 // Global cache instance (set externally)
 let globalCache: VersionCache | null = null;
 
@@ -74,8 +81,9 @@ export async function getPackageInfo(packageName: string, forceRefresh: boolean 
     const req = https.get(
       url,
       {
+        agent: httpsAgent,
         headers: {
-          Accept: 'application/json',
+          Accept: 'application/vnd.npm.install-v1+json; q=1.0, application/json; q=0.8',
           'User-Agent': 'npm-visual-manager-vscode-extension',
         },
         timeout: 10000,

@@ -636,14 +636,18 @@ export class NpmGuiManagerPanel {
    * Check available updates for dependencies
    */
   private async _checkUpdates(dependencies: Dependency[], forceRefresh: boolean = false): Promise<void> {
-    const batchSize = 5; // Process in batches to avoid overloading
+    const concurrency = 12;
     const dependenciesToCheck = Array.from(
       new Map(dependencies.filter(dep => !dep.isIgnored).map(dep => [dep.name, dep] as const)).values()
     );
 
-    for (let i = 0; i < dependenciesToCheck.length; i += batchSize) {
-      const batch = dependenciesToCheck.slice(i, i + batchSize);
-      const promises = batch.map(async dep => {
+    let currentIndex = 0;
+    const workers = Array.from({ length: Math.min(concurrency, dependenciesToCheck.length) }, async () => {
+      while (currentIndex < dependenciesToCheck.length) {
+        const dep = dependenciesToCheck[currentIndex++];
+        if (!dep) {
+          break;
+        }
         try {
           // Skip registry check for local/workspace/git packages
           if (isLocalPackageVersion(dep.declaredVersion)) {
@@ -653,7 +657,7 @@ export class NpmGuiManagerPanel {
               latestVersion: '',
               error: 'Local or workspace package',
             });
-            return;
+            continue;
           }
 
           const details = await getPackageDetails(dep.name, forceRefresh);
@@ -681,10 +685,10 @@ export class NpmGuiManagerPanel {
             error: error instanceof Error ? error.message : String(error),
           });
         }
-      });
+      }
+    });
 
-      await Promise.all(promises);
-    }
+    await Promise.all(workers);
 
     // Save cache after batch processing
     if (this._cache) {

@@ -19,7 +19,7 @@ const sizeCache = new Map<string, SizeCacheEntry>();
  * Calculate the size of a directory recursively (async, non-blocking)
  */
 async function getDirectorySize(dirPath: string): Promise<number> {
-  let size = 0;
+  let totalSize = 0;
   const dirs: string[] = [dirPath];
 
   while (dirs.length > 0) {
@@ -35,28 +35,40 @@ async function getDirectorySize(dirPath: string): Promise<number> {
       continue;
     }
 
+    const fileStatPromises: Promise<number>[] = [];
+
     for (const entry of entries) {
       const filePath = path.join(current, entry.name);
 
       if (entry.isDirectory()) {
         dirs.push(filePath);
-        continue;
+      } else {
+        fileStatPromises.push(
+          fs.promises
+            .stat(filePath)
+            .then(
+              stats => {
+                if (stats.isDirectory()) {
+                  dirs.push(filePath);
+                  return 0;
+                }
+                return stats.size;
+              },
+              () => 0
+            )
+        );
       }
+    }
 
-      try {
-        const stats = await fs.promises.stat(filePath);
-        if (stats.isDirectory()) {
-          dirs.push(filePath);
-        } else {
-          size += stats.size;
-        }
-      } catch {
-        // Skip unreadable files/directories
+    if (fileStatPromises.length > 0) {
+      const sizes = await Promise.all(fileStatPromises);
+      for (const s of sizes) {
+        totalSize += s;
       }
     }
   }
 
-  return size;
+  return totalSize;
 }
 
 /**

@@ -61,6 +61,8 @@ function App() {
   const [lastUpdate, setLastUpdate] = useState<UpdateHistory | null>(null);
   const [rollbackMessage, setRollbackMessage] = useState<string | null>(null);
   const cacheInfoRef = useRef<{ fromCache: boolean; age?: number } | null>(null);
+  const pendingVersionChecksRef = useRef<Extract<HostToWebviewMessage, { type: 'VERSION_CHECK_RESULT' }>[]>([]);
+  const versionCheckTimerRef = useRef<NodeJS.Timeout | number | null>(null);
   const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [saveExact, setSaveExact] = useState<boolean>(false);
@@ -72,6 +74,42 @@ function App() {
     error?: string;
   } | null>(null);
   const [whyLoadingPackage, setWhyLoadingPackage] = useState<string | null>(null);
+
+  const flushVersionChecks = useCallback(() => {
+    versionCheckTimerRef.current = null;
+    const checks = pendingVersionChecksRef.current;
+    if (checks.length === 0) {
+      return;
+    }
+
+    const checkMap = new Map(checks.map(c => [c.dependency.name, c]));
+    pendingVersionChecksRef.current = [];
+
+    setDependencies(prev =>
+      prev.map(dep => {
+        const updateMsg = checkMap.get(dep.name);
+        if (!updateMsg) {
+          return dep;
+        }
+
+        return {
+          ...dep,
+          latestVersion: updateMsg.error ? undefined : updateMsg.latestVersion,
+          updateAvailable: updateMsg.error
+            ? false
+            : !!updateMsg.semverUpdateType &&
+              updateMsg.semverUpdateType !== 'none' &&
+              updateMsg.semverUpdateType !== 'unknown',
+          semverUpdateType: updateMsg.error ? undefined : updateMsg.semverUpdateType,
+          lastPublishDate: updateMsg.error ? undefined : updateMsg.lastPublishDate,
+          isDeprecated: updateMsg.error ? undefined : updateMsg.isDeprecated,
+          deprecationMessage: updateMsg.error ? undefined : updateMsg.deprecationMessage,
+          repositoryUrl: updateMsg.error ? undefined : updateMsg.repositoryUrl,
+          checkError: updateMsg.error,
+        };
+      })
+    );
+  }, []);
 
   // Handle messages from Extension Host
   const handleMessage = useCallback(
@@ -108,30 +146,12 @@ function App() {
           break;
 
         case 'VERSION_CHECK_RESULT':
-          setDependencies(prev =>
-            prev.map(dep =>
-              dep.name === message.dependency.name
-                ? {
-                    ...dep,
-                    latestVersion: message.error ? undefined : message.latestVersion,
-                    updateAvailable: message.error
-                      ? false
-                      : !!message.semverUpdateType &&
-                        message.semverUpdateType !== 'none' &&
-                        message.semverUpdateType !== 'unknown',
-                    semverUpdateType: message.error ? undefined : message.semverUpdateType,
-                    lastPublishDate: message.error ? undefined : message.lastPublishDate,
-                    isDeprecated: message.error ? undefined : message.isDeprecated,
-                    deprecationMessage: message.error ? undefined : message.deprecationMessage,
-                    repositoryUrl: message.error ? undefined : message.repositoryUrl,
-                    checkError: message.error,
-                  }
-                : dep
-            )
-          );
-          // Track cache status from first package
+          pendingVersionChecksRef.current.push(message);
           if (message.fromCache !== undefined && !cacheInfoRef.current) {
             cacheInfoRef.current = { fromCache: message.fromCache, age: message.cacheAge };
+          }
+          if (!versionCheckTimerRef.current) {
+            versionCheckTimerRef.current = setTimeout(flushVersionChecks, 30);
           }
           break;
 
@@ -204,7 +224,7 @@ function App() {
           break;
       }
     },
-    [requestDependencies, handleVersionsResult]
+    [requestDependencies, handleVersionsResult, flushVersionChecks]
   );
 
   useVsCodeMessages(handleMessage);

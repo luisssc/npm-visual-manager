@@ -48,13 +48,9 @@ async function searchDirectories(
   try {
     const entries = await fs.promises.readdir(currentDir, { withFileTypes: true });
 
-    for (const entry of entries) {
-      if (entry.isDirectory()) {
-        // Skip node_modules and hidden directories
-        if (entry.name === 'node_modules' || entry.name.startsWith('.')) {
-          continue;
-        }
-
+    const dirTasks = entries
+      .filter(entry => entry.isDirectory() && entry.name !== 'node_modules' && !entry.name.startsWith('.'))
+      .map(async entry => {
         const fullPath = path.join(currentDir, entry.name);
         const packageJsonPath = path.join(fullPath, 'package.json');
 
@@ -66,14 +62,12 @@ async function searchDirectories(
             path: fullPath,
             relativePath,
           });
-          // Continue recursing into this directory to find nested packages (e.g. monorepo workspaces)
-          await searchDirectories(fullPath, workspaceRoot, currentDepth + 1, maxDepth, projects);
-        } else {
-          // Recurse into subdirectory
-          await searchDirectories(fullPath, workspaceRoot, currentDepth + 1, maxDepth, projects);
         }
-      }
-    }
+        // Recurse into subdirectory
+        await searchDirectories(fullPath, workspaceRoot, currentDepth + 1, maxDepth, projects);
+      });
+
+    await Promise.all(dirTasks);
   } catch {
     // Permission denied or other error, skip this directory
   }
