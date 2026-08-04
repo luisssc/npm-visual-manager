@@ -4,7 +4,7 @@
 
 import { exec } from 'child_process';
 import { promisify } from 'util';
-import { detectPackageManager, getAuditCommand, parseAuditOutput } from './packageManagerService';
+import { detectPackageManager, getAuditCommandForProject, parseAuditOutput } from './packageManagerService';
 import { resolveCommandPath } from '../utils/resolveExecutable';
 
 const execAsync = promisify(exec);
@@ -67,7 +67,7 @@ export async function runAudit(projectPath: string, options: RunAuditOptions = {
   }
 
   const packageManager = await detectPackageManager(projectPath);
-  const auditCommand = await resolveCommandPath(getAuditCommand(packageManager));
+  const auditCommand = await resolveCommandPath(await getAuditCommandForProject(packageManager, projectPath));
 
   try {
     const { stdout } = await execAsync(auditCommand, {

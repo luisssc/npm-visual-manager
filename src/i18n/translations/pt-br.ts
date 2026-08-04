@@ -17,6 +17,7 @@ export const ptBr: Translations = {
     tip1: 'Clique direito no package.json para abrir',
     tip2: 'Clique no ícone de olho para ignorar atualizações',
     madeBy: 'Feito por Luis Clement Cremades',
+    updatesTitle: 'Atualizações',
     badgeTooltip: '{updates} atualizações disponíveis · {vulnerable} pacotes vulneráveis',
   },
 };

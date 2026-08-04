@@ -21,36 +21,23 @@ function getExtensionVersion(): string {
   }
 }
 
+/**
+ * Welcome view shown in the activity bar container.
+ *
+ * Note: the activity bar badge is NOT set here. A `WebviewView` only exists
+ * once `resolveWebviewView` runs, which VS Code defers until the view first
+ * becomes visible, so a badge set from here stays invisible until the user
+ * opens the sidebar. The badge lives on the sibling tree view instead
+ * (see `updatesViewProvider.ts`), which can be created eagerly at activation.
+ */
 export class NpmDependenciesProvider implements vscode.WebviewViewProvider {
   public static readonly viewType = 'npm-visual-manager.sidebar';
-
-  private _view: vscode.WebviewView | undefined;
-  private _badge: vscode.ViewBadge | undefined;
-
-  /**
-   * Set (or clear with undefined) the badge shown on the activity bar icon.
-   * If the view has not been resolved yet, the badge is applied on resolve.
-   */
-  public setBadge(badge: vscode.ViewBadge | undefined): void {
-    this._badge = badge;
-    if (this._view) {
-      this._view.badge = badge;
-    }
-  }
 
   public resolveWebviewView(
     webviewView: vscode.WebviewView,
     _context: vscode.WebviewViewResolveContext,
     _token: vscode.CancellationToken
   ): void {
-    this._view = webviewView;
-    webviewView.badge = this._badge;
-    webviewView.onDidDispose(() => {
-      if (this._view === webviewView) {
-        this._view = undefined;
-      }
-    });
-
     webviewView.webview.options = {
       enableScripts: true,
     };

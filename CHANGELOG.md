@@ -2,6 +2,26 @@
 
 All notable changes to the "npm-visual-manager" extension will be documented in this file.
 
+## [1.8.3] - 2026-08-04
+
+### Fixed
+- **The security audit never reported anything for yarn projects**: The Security column stayed empty for every yarn project, with no error shown.
+  - Yarn classic: `yarn audit --json` prints newline-delimited JSON, one object per line. The parser ran a single `JSON.parse` over the whole output, which always threw, and the failure was swallowed into an empty result that was then cached.
+  - Yarn 2+ ("berry"): `yarn audit` does not exist there at all (it is `yarn npm audit`), so the command failed outright and produced the same empty result. Berry projects are now detected from the `__metadata` block in `yarn.lock`, falling back to the presence of `.yarnrc.yml`, and get `yarn npm audit --json`.
+  - Yarn reports one advisory per dependency path, so a package reachable three ways used to yield three identical entries. Advisories are now deduplicated, which keeps the per-package vulnerability count in the table honest.
+  - The parser now detects the payload shape instead of trusting which package manager produced it, so all four known formats (npm 7+, npm 6/pnpm/berry, the legacy wrapper, and yarn's JSON lines) go through one path, and a future format change degrades to "no data" for that shape alone rather than for everything. Malformed entries no longer surface as `undefined` in the table: a missing severity reads as `info` and missing version ranges fall back instead of being dropped.
+- **The security audit never reported anything for bun projects either**: The audit ran `bun audit` without `--json`, so bun printed a human-readable summary that no parser could read, and the failure was swallowed into an empty result. The command now asks for JSON, and the parser recognises the bulk advisory map (package name to advisories) that bun reports.
+- **Bun projects created with Bun 1.2 or newer were treated as npm projects**: Bun replaced its binary `bun.lockb` lock file with the text `bun.lock`, and only the old name was recognised. A modern bun project therefore matched no lock file and fell through to the npm default, so the toolbar reported `npm`, the audit ran `npm audit`, and installing or updating a package ran `npm install` inside a bun project. Both lock file names are now recognised, and `PackageManagerInfo.lockFiles` accepts several names per manager so the next format change is a one-line addition.
+- **Activity bar badge never appeared until the sidebar was opened at least once**: The pending-updates count now shows on the extension icon as soon as a workspace with a `package.json` is loaded.
+  - Previously: two separate things blocked it. The extension only activated via `onCommand`/`onView`, so the background check did not run at startup; and the badge was applied to a `WebviewView`, an object that only exists once `resolveWebviewView` runs — which VS Code defers until the view first becomes visible. The net effect was that the count stayed invisible until the user clicked the activity bar icon, and invisible again after every restart in which they did not.
+  - Now: the new `workspaceContains:**/package.json` activation event starts the background check in any Node project, and the badge moved to a sibling `TreeView` ("Updates"), created eagerly during activation, so it can be set without any view being opened.
+
+### Added
+- **"Updates" view** in the activity bar container, collapsed by default. It carries the badge and, when expanded, shows a single row with the workspace summary (available updates · vulnerable packages) that opens the manager when clicked. Its title is localized at runtime through the existing translations, so no `package.nls.*.json` files are needed.
+
+### Changed
+- The welcome view now shows a section header ("NPM VISUAL MANAGER"), which VS Code adds automatically once a container holds more than one view. Its contents and styling are unchanged.
+
 ## [1.8.2] - 2026-07-22
 
 ### Fixed

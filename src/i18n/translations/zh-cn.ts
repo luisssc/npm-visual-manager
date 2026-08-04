@@ -16,6 +16,7 @@ export const zhCn: Translations = {
     tip1: '右键点击 package.json 打开',
     tip2: '点击眼睛图标忽略更新',
     madeBy: 'Luis Clement Cremades 制作',
+    updatesTitle: '更新',
     badgeTooltip: '{updates} 个可用更新 · {vulnerable} 个存在漏洞的包',
   },
 };

@@ -2,7 +2,7 @@
   "name": "npm-visual-manager",
   "displayName": "NPM Visual Manager",
   "description": "Visual package manager for NPM dependencies with update checking, security audit, and bulk operations",
-  "version": "1.8.2",
+  "version": "1.8.3",
   "publisher": "LuisClementDev",
   "author": {
     "name": "Luis Clement Cremades"
@@ -34,7 +34,8 @@
   ],
   "activationEvents": [
     "onCommand:npm-visual-manager.openManager",
-    "onView:npm-visual-manager.sidebar"
+    "onView:npm-visual-manager.sidebar",
+    "workspaceContains:**/package.json"
   ],
   "main": "./out/core/extension.js",
   "icon": "resources/icon-marketplace.png",
@@ -83,6 +84,11 @@
           "id": "npm-visual-manager.sidebar",
           "name": "NPM Visual Manager",
           "contextualTitle": "NPM Visual Manager"
+        },
+        {
+          "id": "npm-visual-manager.updates",
+          "name": "Updates",
+          "visibility": "collapsed"
         }
       ]
     },

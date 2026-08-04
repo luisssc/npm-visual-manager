@@ -17,6 +17,7 @@ export const de: Translations = {
     tip1: 'Rechtsklick auf package.json zum Öffnen',
     tip2: 'Klicken Sie auf das Augen-Symbol, um Updates zu ignorieren',
     madeBy: 'Gemacht von Luis Clement Cremades',
+    updatesTitle: 'Aktualisierungen',
     badgeTooltip: '{updates} Updates verfügbar · {vulnerable} anfällige Pakete',
   },
 };

@@ -7,11 +7,10 @@ import * as path from 'path';
 import { NpmGuiManagerPanel } from './webviewPanel';
 import { setGlobalStorageUri } from '../services/cacheService';
 import { NpmDependenciesProvider } from './sidebarProvider';
+import { UpdatesViewProvider } from './updatesViewProvider';
 import { computeWorkspaceBadge } from '../services/badgeService';
 import { onBadgeRefreshRequested } from '../services/badgeEvents';
 import { getIgnoreService } from '../services/ignoreService';
-import { getVSCodeLanguage } from '../i18n/getLanguage';
-import { getTranslations } from '../i18n';
 
 const BADGE_REFRESH_DEBOUNCE_MS = 3000;
 
@@ -29,7 +28,7 @@ class BadgeController {
   private _pending = false;
   private _debounceTimer: NodeJS.Timeout | undefined;
 
-  constructor(private readonly _provider: NpmDependenciesProvider) {}
+  constructor(private readonly _provider: UpdatesViewProvider) {}
 
   requestRefresh(): void {
     if (this._debounceTimer) {
@@ -47,13 +46,13 @@ class BadgeController {
 
     try {
       if (!isBadgeEnabled()) {
-        this._provider.setBadge(undefined);
+        this._provider.setSummary(undefined);
         return;
       }
 
       const workspaceFolders = vscode.workspace.workspaceFolders;
       if (!workspaceFolders || workspaceFolders.length === 0) {
-        this._provider.setBadge(undefined);
+        this._provider.setSummary(undefined);
         return;
       }
 
@@ -63,19 +62,9 @@ class BadgeController {
         isIgnored: name => ignoreService.isIgnored(name),
       });
 
-      // Badge number counts available updates only; vulnerabilities are
+      // The badge number counts available updates only; vulnerabilities are
       // detailed in the tooltip so the count matches what the table shows.
-      if (summary.updates === 0) {
-        this._provider.setBadge(undefined);
-        return;
-      }
-
-      const t = getTranslations(getVSCodeLanguage());
-      const tooltip = t.sidebar.badgeTooltip
-        .replace('{updates}', String(summary.updates))
-        .replace('{vulnerable}', String(summary.vulnerablePackages));
-
-      this._provider.setBadge({ value: summary.updates, tooltip });
+      this._provider.setSummary(summary);
     } catch (error) {
       console.warn('[npm-visual-manager] Badge refresh failed:', error);
     } finally {
@@ -144,7 +133,7 @@ export function activate(context: vscode.ExtensionContext): void {
     vscode.commands.executeCommand('npm-visual-manager.openManager');
   });
 
-  // Register sidebar webview provider
+  // Register sidebar webview provider (welcome view)
   const sidebarProvider = new NpmDependenciesProvider();
   const sidebarDisposable = vscode.window.registerWebviewViewProvider('npm-visual-manager.sidebar', sidebarProvider, {
     webviewOptions: {
@@ -152,8 +141,12 @@ export function activate(context: vscode.ExtensionContext): void {
     },
   });
 
+  // Sibling tree view that carries the activity bar badge. Created eagerly on
+  // purpose: this is what lets the badge show before the user opens anything.
+  const updatesProvider = new UpdatesViewProvider();
+
   // Activity bar badge: background check of updates/vulnerabilities
-  const badgeController = new BadgeController(sidebarProvider);
+  const badgeController = new BadgeController(updatesProvider);
   void badgeController.refresh();
 
   // Recompute the badge after any package mutation done from the panel.
@@ -186,6 +179,7 @@ export function activate(context: vscode.ExtensionContext): void {
   context.subscriptions.push(openManagerCommand);
   context.subscriptions.push(refreshCommand);
   context.subscriptions.push(sidebarDisposable);
+  context.subscriptions.push(updatesProvider);
   context.subscriptions.push(badgeWatcher);
   context.subscriptions.push(configListener);
   context.subscriptions.push({ dispose: () => badgeController.dispose() });

@@ -15,6 +15,12 @@ export const en = {
     tip1: 'Right-click package.json to open',
     tip2: 'Click the eye icon to ignore package updates',
     madeBy: 'Made by Luis Clement Cremades',
+    /**
+     * Title of the tree view that carries the activity bar badge. Applied at
+     * runtime via `TreeView.title`, since the name in package.json can only be
+     * localized through `package.nls.*.json` files in the extension root.
+     */
+    updatesTitle: 'Updates',
     badgeTooltip: '{updates} updates available · {vulnerable} vulnerable packages',
   },
 };
