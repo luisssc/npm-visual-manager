@@ -5,6 +5,7 @@ All notable changes to the "npm-visual-manager" extension will be documented in 
 ## [1.8.3] - 2026-08-04
 
 ### Fixed
+- **The manager's editor tab had no icon in installed builds**: `.vscodeignore` excluded `resources/*.svg`, but the panel loads its theme-aware tab icon from `resources/icon-light.svg` and `icon-dark.svg`. The icon therefore appeared when running from source and was missing from every published build. Both files are now packaged; `icon-theme-aware.svg` stays excluded, as nothing references it. A test asserts that every `resources/` file the source loads survives `.vscodeignore`, since only installing the packaged extension would otherwise reveal this.
 - **The security audit never reported anything for yarn projects**: The Security column stayed empty for every yarn project, with no error shown.
   - Yarn classic: `yarn audit --json` prints newline-delimited JSON, one object per line. The parser ran a single `JSON.parse` over the whole output, which always threw, and the failure was swallowed into an empty result that was then cached.
   - Yarn 2+ ("berry"): `yarn audit` does not exist there at all (it is `yarn npm audit`), so the command failed outright and produced the same empty result. Berry projects are now detected from the `__metadata` block in `yarn.lock`, falling back to the presence of `.yarnrc.yml`, and get `yarn npm audit --json`.

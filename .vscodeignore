@@ -13,5 +13,7 @@ webview-ui/node_modules/**
 !out/**/*.js
 !out/webview/**
 resources/*.svg
+!resources/icon-light.svg
+!resources/icon-dark.svg
 AGENTS.md
 DEV.md
