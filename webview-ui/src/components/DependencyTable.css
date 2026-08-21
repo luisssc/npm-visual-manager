@@ -900,6 +900,27 @@ tr:hover .uninstall-btn,
 }
 
 /* Ignore modal hint */
+/* Names the package.json a confirmation is about (multi-package.json repos) */
+.modal-target-file {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin: -8px 0 16px;
+  font-size: 12px;
+  color: var(--vscode-descriptionForeground);
+}
+
+.modal-target-file code {
+  font-family: var(--vscode-editor-font-family);
+  font-size: 11px;
+  padding: 2px 6px;
+  border-radius: 3px;
+  background: var(--vscode-textCodeBlock-background);
+  color: var(--vscode-foreground);
+  word-break: break-all;
+}
+
 .modal-hint {
   font-size: 12px;
   color: var(--vscode-descriptionForeground);

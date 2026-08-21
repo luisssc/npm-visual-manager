@@ -95,6 +95,8 @@ interface DependencyTableProps {
   whyResult?: { packageName: string; chains: string[][]; unsupported?: boolean; notInstalled?: boolean; error?: string } | null;
   whyLoadingPackage?: string | null;
   onCloseWhy?: () => void;
+  /** Workspace-relative package.json every action writes to (e.g. "apps/web/package.json") */
+  targetFile?: string;
 }
 
 type SortColumn = 'name' | 'installedVersion' | 'latestVersion' | 'type' | 'size' | 'lastPublishDate';
@@ -196,6 +198,7 @@ export const DependencyTable = ({
   whyResult,
   whyLoadingPackage,
   onCloseWhy,
+  targetFile,
 }: DependencyTableProps) => {
   const t = useTranslation();
   const [sortColumn, setSortColumn] = useState<SortColumn>('name');
@@ -214,6 +217,16 @@ export const DependencyTable = ({
   const [useExactVersion, setUseExactVersion] = useState<boolean>(false);
   const [vulnerabilityModalPackage, setVulnerabilityModalPackage] = useState<string | null>(null);
   // Note: confirmUpdate was replaced by versionPickerOpen for exact version selection
+
+  // Every confirmation names the package.json it writes to: in a repo with
+  // several of them the package list alone does not identify the target.
+  const targetFileNote = targetFile ? (
+    <p className="modal-target-file">
+      <i className="codicon codicon-json" />
+      <span className="modal-target-label">{t.modalMessages.targetFileLabel}</span>
+      <code>{targetFile}</code>
+    </p>
+  ) : null;
 
   // Clear selection for packages that are no longer in the dependencies list (e.g. after uninstall)
   useEffect(() => {
@@ -833,6 +846,7 @@ export const DependencyTable = ({
                 __html: interpolate(t.modalMessages.confirmUninstall, { name: confirmUninstall }),
               }}
             />
+            {targetFileNote}
             <div className="modal-actions">
               <button className="modal-btn cancel" onClick={() => setConfirmUninstall(null)}>
                 {t.buttons.cancel}
@@ -869,6 +883,7 @@ export const DependencyTable = ({
               <i className="codicon codicon-arrow-right" />
               <span className="version-to">{selectedVersion}</span>
             </p>
+            {targetFileNote}
             <div className="exact-version-checkbox">
               <label className="checkbox-label">
                 <input
@@ -1006,6 +1021,7 @@ export const DependencyTable = ({
                     : interpolate(t.modalMessages.confirmUpdateAll_plural, { count: confirmUpdateAll.length }),
               }}
             />
+            {targetFileNote}
             <div className="modal-package-list">
               {confirmUpdateAll.slice(0, 10).map(dep => (
                 <div key={dep.name} className="modal-package-item">
@@ -1049,6 +1065,7 @@ export const DependencyTable = ({
                       }),
               }}
             />
+            {targetFileNote}
             <div className="modal-package-list">
               {confirmUpdateSelected.slice(0, 10).map(dep => (
                 <div key={dep.name} className="modal-package-item">
@@ -1120,6 +1137,7 @@ export const DependencyTable = ({
                     : interpolate(t.modalMessages.confirmRollback_plural, { count: lastUpdate.packages.length }),
               }}
             />
+            {targetFileNote}
             <p className="modal-hint">{t.modalMessages.rollbackDetails}</p>
             <div className="modal-package-list">
               {lastUpdate.packages.slice(0, 10).map(pkg => (

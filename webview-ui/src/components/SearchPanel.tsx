@@ -10,10 +10,12 @@ interface SearchPanelProps {
   onUninstall?: (packageName: string) => void;
   isLoading?: boolean;
   installedPackages?: Dependency[];
+  /** Workspace-relative package.json an install or uninstall writes to */
+  targetFile?: string;
 }
 
 export const SearchPanel = memo(
-  ({ results, onSearch, onInstall, onUninstall, isLoading, installedPackages }: SearchPanelProps) => {
+  ({ results, onSearch, onInstall, onUninstall, isLoading, installedPackages, targetFile }: SearchPanelProps) => {
     const t = useTranslation();
     const [query, setQuery] = useState('');
     const [isCollapsed, setIsCollapsed] = useState(true);
@@ -21,6 +23,16 @@ export const SearchPanel = memo(
     const [isDev, setIsDev] = useState(false);
     const [showUninstallConfirm, setShowUninstallConfirm] = useState(false);
     const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+    // Installing from here writes to the project the panel is on, which is not
+    // obvious when the repo holds several package.json files.
+    const targetFileNote = targetFile ? (
+      <p className="install-target-file">
+        <i className="codicon codicon-json" />
+        <span>{t.modalMessages.targetFileLabel}</span>
+        <code>{targetFile}</code>
+      </p>
+    ) : null;
 
     const handleSearchChange = (value: string) => {
       setQuery(value);
@@ -115,6 +127,7 @@ export const SearchPanel = memo(
                             }}
                           />
                         </p>
+                        {targetFileNote}
                         <div className="install-actions">
                           <button
                             className="search-uninstall-btn"
@@ -152,6 +165,7 @@ export const SearchPanel = memo(
                       })}
                     </h4>
                     <p className="install-description">{selectedPackage.description}</p>
+                    {targetFileNote}
                     <div className="install-options">
                       <label className="dev-checkbox">
                         <input type="checkbox" checked={isDev} onChange={e => setIsDev(e.target.checked)} />

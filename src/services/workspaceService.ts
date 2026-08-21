@@ -11,10 +11,43 @@ export interface Project {
   relativePath: string;
 }
 
+export interface ScanOptions {
+  /** How many directory levels below the workspace root are searched */
+  maxDepth?: number;
+  /** Directory names never descended into (case-insensitive) */
+  exclude?: string[];
+}
+
+/**
+ * Default depth. Four levels was not enough for common layouts: a Bedrock-style
+ * WordPress repo keeps its theme at `web/app/themes/<theme>` (4 levels), so with
+ * the previous limit of 3 those package.json files were never discovered and the
+ * project could not even be selected.
+ */
+export const DEFAULT_MAX_DEPTH = 5;
+
+/**
+ * Directories that hold dependencies or build output rather than source
+ * projects. Descending into them is both slow (a WordPress `vendor/` or
+ * `uploads/` tree is huge) and wrong, since any package.json inside is not a
+ * project the user maintains.
+ */
+export const DEFAULT_EXCLUDED_DIRECTORIES = [
+  'node_modules',
+  'bower_components',
+  'vendor',
+  'uploads',
+  'dist',
+  'out',
+  'coverage',
+  'tmp',
+  'temp',
+];
+
 /**
  * Find all package.json files in workspace
  */
-export async function findAllProjects(workspaceRoot: string): Promise<Project[]> {
+export async function findAllProjects(workspaceRoot: string, options: ScanOptions = {}): Promise<Project[]> {
   const projects: Project[] = [];
 
   // Always check root first
@@ -28,8 +61,10 @@ export async function findAllProjects(workspaceRoot: string): Promise<Project[]>
     });
   }
 
-  // Search in subdirectories (max depth 3 for performance)
-  await searchDirectories(workspaceRoot, workspaceRoot, 0, 3, projects);
+  const maxDepth = options.maxDepth && options.maxDepth > 0 ? options.maxDepth : DEFAULT_MAX_DEPTH;
+  const exclude = new Set((options.exclude ?? DEFAULT_EXCLUDED_DIRECTORIES).map(name => name.toLowerCase()));
+
+  await searchDirectories(workspaceRoot, workspaceRoot, 0, maxDepth, projects, exclude);
 
   return projects;
 }
@@ -39,7 +74,8 @@ async function searchDirectories(
   workspaceRoot: string,
   currentDepth: number,
   maxDepth: number,
-  projects: Project[]
+  projects: Project[],
+  exclude: Set<string>
 ): Promise<void> {
   if (currentDepth >= maxDepth) {
     return;
@@ -50,8 +86,8 @@ async function searchDirectories(
 
     for (const entry of entries) {
       if (entry.isDirectory()) {
-        // Skip node_modules and hidden directories
-        if (entry.name === 'node_modules' || entry.name.startsWith('.')) {
+        // Skip dependency/output directories and hidden directories
+        if (exclude.has(entry.name.toLowerCase()) || entry.name.startsWith('.')) {
           continue;
         }
 
@@ -67,10 +103,10 @@ async function searchDirectories(
             relativePath,
           });
           // Continue recursing into this directory to find nested packages (e.g. monorepo workspaces)
-          await searchDirectories(fullPath, workspaceRoot, currentDepth + 1, maxDepth, projects);
+          await searchDirectories(fullPath, workspaceRoot, currentDepth + 1, maxDepth, projects, exclude);
         } else {
           // Recurse into subdirectory
-          await searchDirectories(fullPath, workspaceRoot, currentDepth + 1, maxDepth, projects);
+          await searchDirectories(fullPath, workspaceRoot, currentDepth + 1, maxDepth, projects, exclude);
         }
       }
     }
@@ -91,12 +127,15 @@ async function fileExists(filePath: string): Promise<boolean> {
 /**
  * Find all projects across multiple workspace roots (multi-root workspace support)
  */
-export async function findAllProjectsMultiRoot(workspaceRoots: string[]): Promise<Project[]> {
+export async function findAllProjectsMultiRoot(
+  workspaceRoots: string[],
+  options: ScanOptions = {}
+): Promise<Project[]> {
   const allProjects: Project[] = [];
   const seen = new Set<string>();
 
   for (const root of workspaceRoots) {
-    const projects = await findAllProjects(root);
+    const projects = await findAllProjects(root, options);
     for (const project of projects) {
       const normalized = path.normalize(project.path).toLowerCase();
       if (!seen.has(normalized)) {

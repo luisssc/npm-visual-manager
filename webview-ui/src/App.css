@@ -62,6 +62,41 @@
   border-color: var(--vscode-focusBorder);
 }
 
+/* Target package.json indicator: makes explicit which file gets written */
+.target-file-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  max-width: 320px;
+  background: var(--vscode-badge-background);
+  color: var(--vscode-badge-foreground);
+  border: 1px solid transparent;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-family: var(--vscode-editor-font-family);
+  font-size: 11px;
+  cursor: pointer;
+  transition: border-color 0.2s;
+}
+
+.target-file-btn:hover {
+  border-color: var(--vscode-focusBorder);
+}
+
+.target-file-btn .codicon {
+  font-size: 13px;
+  flex-shrink: 0;
+}
+
+/* Long paths keep the tail visible: the folder near package.json identifies it */
+.target-file-path {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  direction: rtl;
+  text-align: left;
+}
+
 .toggle-packages-btn {
   background: var(--vscode-button-secondaryBackground);
   color: var(--vscode-button-secondaryForeground);

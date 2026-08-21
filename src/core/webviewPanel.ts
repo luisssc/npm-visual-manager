@@ -11,6 +11,7 @@ import { getPackageDetails, getPackageVersions, getSemverUpdateType, setGlobalCa
 import { getCache, VersionCache } from '../services/cacheService';
 import { getIgnoreService } from '../services/ignoreService';
 import { findAllProjectsMultiRoot, Project } from '../services/workspaceService';
+import { getScanOptions } from '../services/scanConfigService';
 import {
   runAudit,
   hasVulnerabilities,
@@ -29,6 +30,11 @@ import { getWhyInstalled } from '../services/whyService';
 import { requestBadgeRefresh } from '../services/badgeEvents';
 import { getVSCodeLanguage } from '../i18n/getLanguage';
 import { PackageOperationsService } from '../services/packageOperationsService';
+
+/** Windows paths are shown with forward slashes, like the rest of the UI. */
+function toPosixPath(value: string): string {
+  return value.replace(/\\/g, '/');
+}
 
 export class NpmGuiManagerPanel {
   public static currentPanel: NpmGuiManagerPanel | undefined;
@@ -58,7 +64,7 @@ export class NpmGuiManagerPanel {
     const workspaceRoot = roots[0]!;
 
     // Find all projects across all workspace roots (multi-root workspace support)
-    const discoveredProjects = await findAllProjectsMultiRoot(roots);
+    const discoveredProjects = await findAllProjectsMultiRoot(roots, getScanOptions());
     const projects = await NpmGuiManagerPanel._withPreferredProject(
       discoveredProjects,
       workspaceRoot,
@@ -319,7 +325,8 @@ export class NpmGuiManagerPanel {
           message.currentVersion,
           this._currentProjectPath,
           this._currentPackageManager,
-          saveExact
+          saveExact,
+          this._targetFileLabel()
         );
         requestBadgeRefresh();
         break;
@@ -334,7 +341,8 @@ export class NpmGuiManagerPanel {
           message.packages,
           this._currentProjectPath,
           this._currentPackageManager,
-          saveExact
+          saveExact,
+          this._targetFileLabel()
         );
         requestBadgeRefresh();
         break;
@@ -344,7 +352,8 @@ export class NpmGuiManagerPanel {
         await this._packageOperationsService.rollbackLastUpdate(
           this._updateHistory,
           this._currentProjectPath,
-          this._currentPackageManager
+          this._currentPackageManager,
+          this._targetFileLabel()
         );
         requestBadgeRefresh();
         break;
@@ -360,10 +369,26 @@ export class NpmGuiManagerPanel {
           message.isDev,
           this._currentProjectPath,
           this._currentPackageManager,
-          this._saveExact
+          this._saveExact,
+          this._targetFileLabel()
         );
         requestBadgeRefresh();
         break;
+
+      case 'OPEN_PACKAGE_JSON': {
+        // Opens the package.json the panel is currently acting on, so the user
+        // can verify the target file in a repo with several of them.
+        const target = vscode.Uri.file(path.join(message.path, 'package.json'));
+        try {
+          const document = await vscode.workspace.openTextDocument(target);
+          await vscode.window.showTextDocument(document, { preview: true });
+        } catch (error) {
+          vscode.window.showErrorMessage(
+            `npm-visual-manager: Could not open ${target.fsPath} - ${error instanceof Error ? error.message : String(error)}`
+          );
+        }
+        break;
+      }
 
       case 'OPEN_EXTERNAL':
         // Always open in the system's default browser for maximum compatibility
@@ -375,7 +400,8 @@ export class NpmGuiManagerPanel {
         await this._packageOperationsService.uninstallPackage(
           message.packageName,
           this._currentProjectPath,
-          this._currentPackageManager
+          this._currentPackageManager,
+          this._targetFileLabel()
         );
         requestBadgeRefresh();
         break;
@@ -421,6 +447,19 @@ export class NpmGuiManagerPanel {
     this._cache = getCache(this._currentProjectPath);
     await this._cache.load();
     setGlobalCache(this._cache);
+  }
+
+  /**
+   * Workspace-relative package.json that the current operations write to, e.g.
+   * "wp-content/themes/mytheme/package.json". Shown in the progress
+   * notifications so a repo with several package.json files stays unambiguous.
+   */
+  private _targetFileLabel(): string {
+    const currentProject = this._projects.find(p => p.path === this._currentProjectPath);
+    if (!currentProject || currentProject.relativePath === '.') {
+      return 'package.json';
+    }
+    return `${toPosixPath(currentProject.relativePath)}/package.json`;
   }
 
   private async _selectProject(projectPath: string): Promise<void> {
@@ -561,9 +600,13 @@ export class NpmGuiManagerPanel {
         saveExact: this._saveExact,
       });
 
-      // Update panel title with project name
+      // Update panel title with project name. The relative path is appended for
+      // non-root projects: package.json names repeat (or are missing) across a
+      // repo, so the name alone does not say which file the panel writes to.
       const projectName = currentProject?.name || packageJson.name || 'NPM Package Manager';
-      this._panel.title = `NPM: ${projectName}`;
+      const projectSuffix =
+        currentProject && currentProject.relativePath !== '.' ? ` (${toPosixPath(currentProject.relativePath)})` : '';
+      this._panel.title = `NPM: ${projectName}${projectSuffix}`;
 
       // Start checking updates in parallel
       await this._checkUpdates(dependencies);

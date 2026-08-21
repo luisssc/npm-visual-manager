@@ -57,6 +57,7 @@ export const ptBr: Translations = {
     showAllPackages: 'Mostrar todos os pacotes',
     rollbackUpdate: 'Reverter última atualização ({{count}} pacote)',
     rollbackUpdate_plural: 'Reverter última atualização ({{count}} pacotes)',
+    openPackageJson: 'Abrir este package.json',
   },
 
   // Placeholders
@@ -123,6 +124,7 @@ export const ptBr: Translations = {
     confirmRollback: 'Reverter <strong>{{count}} pacote</strong> para versões anteriores?',
     confirmRollback_plural: 'Reverter <strong>{{count}} pacotes</strong> para versões anteriores?',
     rollbackDetails: 'Os seguintes pacotes serão restaurados para suas versões anteriores:',
+    targetFileLabel: 'Aplica-se a',
     ignoreHint: 'Pacotes ignorados são excluídos das verificações de atualização e dos contadores.',
     andMore: '...e mais {{count}}',
     selectVersionHint: 'Escolha a versão que deseja instalar:',

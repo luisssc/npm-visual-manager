@@ -55,6 +55,7 @@ export const en = {
     showAllPackages: 'Show all packages',
     rollbackUpdate: 'Rollback last update ({{count}} package)',
     rollbackUpdate_plural: 'Rollback last update ({{count}} packages)',
+    openPackageJson: 'Open this package.json',
   },
 
   // Placeholders
@@ -120,6 +121,7 @@ export const en = {
     confirmRollback: 'Rollback <strong>{{count}} package</strong> to previous versions?',
     confirmRollback_plural: 'Rollback <strong>{{count}} packages</strong> to previous versions?',
     rollbackDetails: 'The following packages will be restored to their previous versions:',
+    targetFileLabel: 'Applies to',
     ignoreHint: 'Ignored packages are excluded from update checks and counters.',
     andMore: '...and {{count}} more',
     selectVersionHint: 'Choose the version you want to install:',

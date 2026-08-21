@@ -15,9 +15,24 @@ import * as vscode from 'vscode';
 import { getVSCodeLanguage } from '../i18n/getLanguage';
 import { getTranslations } from '../i18n';
 
+export interface UpdatesProjectSummary {
+  name: string;
+  path: string;
+  relativePath: string;
+  updates: number;
+  vulnerablePackages: number;
+}
+
 export interface UpdatesSummary {
   updates: number;
   vulnerablePackages: number;
+  /** Per package.json breakdown of the totals, when available */
+  projects?: UpdatesProjectSummary[];
+}
+
+/** Windows paths are shown with forward slashes, like the rest of the UI. */
+function toPosixPath(value: string): string {
+  return value.replace(/\\/g, '/');
 }
 
 export class UpdatesViewProvider implements vscode.TreeDataProvider<vscode.TreeItem>, vscode.Disposable {
@@ -72,7 +87,40 @@ export class UpdatesViewProvider implements vscode.TreeDataProvider<vscode.TreeI
       title: t.sidebar.openButton,
     };
 
-    return [item];
+    return [item, ...this._projectRows()];
+  }
+
+  /**
+   * One row per package.json that needs attention. Without this the totals say
+   * "40 updates" while the panel only ever shows one project's worth of them,
+   * and nothing tells the user which file the rest belong to.
+   * Rows are only added when more than one project was discovered.
+   */
+  private _projectRows(): vscode.TreeItem[] {
+    const projects = this._summary?.projects;
+    if (!projects || projects.length < 2) {
+      return [];
+    }
+
+    return projects
+      .filter(project => project.updates > 0 || project.vulnerablePackages > 0)
+      .sort((a, b) => b.updates - a.updates || b.vulnerablePackages - a.vulnerablePackages)
+      .map(project => {
+        const label =
+          project.relativePath === '.' ? 'package.json' : `${toPosixPath(project.relativePath)}/package.json`;
+        const row = new vscode.TreeItem(label);
+        row.description = this._summaryLabel(project);
+        row.tooltip = `${project.name}\n${project.path}`;
+        row.iconPath = new vscode.ThemeIcon(project.updates > 0 ? 'arrow-circle-up' : 'shield');
+        // Opening with the project folder as the resource makes the panel focus
+        // that package.json instead of the first one discovered.
+        row.command = {
+          command: 'npm-visual-manager.openManager',
+          title: label,
+          arguments: [vscode.Uri.file(project.path)],
+        };
+        return row;
+      });
   }
 
   private _summaryLabel(summary: UpdatesSummary): string {

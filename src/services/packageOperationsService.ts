@@ -7,6 +7,15 @@ import { clearAuditCache } from './auditService';
 import { getInstallCommand, getPackageManagerInfo, getUninstallCommand } from './packageManagerService';
 import { getInstalledVersion, getInstalledVersions } from './installedVersionService';
 
+/**
+ * Suffix appended to progress notifications and errors so every operation says
+ * which package.json it touches. Repos can hold many (themes, plugins,
+ * monorepo packages) and the notification alone was ambiguous.
+ */
+function inFile(targetFile?: string): string {
+  return targetFile ? ` in ${targetFile}` : '';
+}
+
 export class PackageOperationsService {
   constructor(
     private readonly sendMessage: (message: HostToWebviewMessage) => void,
@@ -23,7 +32,8 @@ export class PackageOperationsService {
     currentVersion: string | undefined,
     currentProjectPath: string,
     currentPackageManager: PackageManager,
-    saveExact: boolean = false
+    saveExact: boolean = false,
+    targetFile?: string
   ): Promise<UpdateHistory | null> {
     let newHistory: UpdateHistory | null = null;
 
@@ -52,7 +62,7 @@ export class PackageOperationsService {
       const result = await vscode.window.withProgress(
         {
           location: vscode.ProgressLocation.Notification,
-          title: `Updating ${packageName}...`,
+          title: `Updating ${packageName}${inFile(targetFile)}...`,
           cancellable: false,
         },
         async () => {
@@ -74,7 +84,7 @@ export class PackageOperationsService {
 
       if (result.exitCode !== 0) {
         vscode.window.showErrorMessage(
-          `Update failed for ${packageName} with exit code ${result.exitCode}. Check the Output channel for details.`
+          `Update failed for ${packageName}${inFile(targetFile)} with exit code ${result.exitCode}. Check the Output channel for details.`
         );
       }
 
@@ -107,7 +117,8 @@ export class PackageOperationsService {
     packages: { name: string; version: string; currentVersion?: string }[],
     currentProjectPath: string,
     currentPackageManager: PackageManager,
-    saveExact: boolean = false
+    saveExact: boolean = false,
+    targetFile?: string
   ): Promise<UpdateHistory | null> {
     if (packages.length === 0) {
       vscode.window.showInformationMessage('No packages to update');
@@ -142,7 +153,7 @@ export class PackageOperationsService {
       const result = await vscode.window.withProgress(
         {
           location: vscode.ProgressLocation.Notification,
-          title: `Updating ${packages.length} package(s)...`,
+          title: `Updating ${packages.length} package(s)${inFile(targetFile)}...`,
           cancellable: false,
         },
         async () => {
@@ -164,7 +175,7 @@ export class PackageOperationsService {
 
       if (result.exitCode !== 0) {
         vscode.window.showErrorMessage(
-          `Update failed for ${packages.length} package(s) with exit code ${result.exitCode}. Check the Output channel for details.`
+          `Update failed for ${packages.length} package(s)${inFile(targetFile)} with exit code ${result.exitCode}. Check the Output channel for details.`
         );
       }
 
@@ -199,7 +210,8 @@ export class PackageOperationsService {
   public async uninstallPackage(
     packageName: string,
     currentProjectPath: string,
-    currentPackageManager: PackageManager
+    currentPackageManager: PackageManager,
+    targetFile?: string
   ): Promise<void> {
     try {
       // Get exact installed version before uninstalling so we can rollback
@@ -225,7 +237,7 @@ export class PackageOperationsService {
       const result = await vscode.window.withProgress(
         {
           location: vscode.ProgressLocation.Notification,
-          title: `Uninstalling ${packageName}...`,
+          title: `Uninstalling ${packageName}${inFile(targetFile)}...`,
           cancellable: false,
         },
         async () => {
@@ -246,7 +258,7 @@ export class PackageOperationsService {
 
       if (result.exitCode !== 0) {
         vscode.window.showErrorMessage(
-          `Uninstall failed for ${packageName} with exit code ${result.exitCode}. Check the Output channel for details.`
+          `Uninstall failed for ${packageName}${inFile(targetFile)} with exit code ${result.exitCode}. Check the Output channel for details.`
         );
       }
 
@@ -281,7 +293,8 @@ export class PackageOperationsService {
     isDev: boolean,
     currentProjectPath: string,
     currentPackageManager: PackageManager,
-    saveExact: boolean = false
+    saveExact: boolean = false,
+    targetFile?: string
   ): Promise<void> {
     try {
       const info = getPackageManagerInfo(currentPackageManager);
@@ -294,7 +307,7 @@ export class PackageOperationsService {
       const result = await vscode.window.withProgress(
         {
           location: vscode.ProgressLocation.Notification,
-          title: `Installing ${packageName}...`,
+          title: `Installing ${packageName}${inFile(targetFile)}...`,
           cancellable: false,
         },
         async () => {
@@ -311,7 +324,7 @@ export class PackageOperationsService {
 
       if (result.exitCode !== 0) {
         vscode.window.showErrorMessage(
-          `Install failed for ${packageName} with exit code ${result.exitCode}. Check the Output channel for details.`
+          `Install failed for ${packageName}${inFile(targetFile)} with exit code ${result.exitCode}. Check the Output channel for details.`
         );
       }
 
@@ -343,7 +356,8 @@ export class PackageOperationsService {
   public async rollbackLastUpdate(
     updateHistory: UpdateHistory | null,
     currentProjectPath: string,
-    currentPackageManager: PackageManager
+    currentPackageManager: PackageManager,
+    targetFile?: string
   ): Promise<void> {
     if (!updateHistory || updateHistory.packages.length === 0) {
       this.sendMessage({
@@ -368,7 +382,7 @@ export class PackageOperationsService {
       const result = await vscode.window.withProgress(
         {
           location: vscode.ProgressLocation.Notification,
-          title: `Rolling back ${packagesToRollback.length} package(s)...`,
+          title: `Rolling back ${packagesToRollback.length} package(s)${inFile(targetFile)}...`,
           cancellable: false,
         },
         async () => {

@@ -11,12 +11,30 @@ import { findPackageJson, readPackageJson } from './packageService';
 import { getPackageDetails, getSemverUpdateType, setGlobalCache } from './npmService';
 import { getCache } from './cacheService';
 import { runAudit } from './auditService';
-import { findAllProjectsMultiRoot } from './workspaceService';
+import { findAllProjectsMultiRoot, ScanOptions } from './workspaceService';
 import { isLocalPackageVersion } from '../utils/localPackage';
+
+/** Per-project counts, so the workspace total can be attributed to a file. */
+export interface BadgeProjectSummary {
+  /** package.json "name", or the folder name when absent */
+  name: string;
+  /** Absolute path of the project folder */
+  path: string;
+  /** Path relative to the workspace root ('.' for the root project) */
+  relativePath: string;
+  updates: number;
+  vulnerablePackages: number;
+}
 
 export interface BadgeSummary {
   updates: number;
   vulnerablePackages: number;
+  /**
+   * Breakdown of the totals above, one entry per discovered package.json.
+   * The workspace total says nothing about *which* project needs work, which
+   * is confusing in repos holding many package.json files.
+   */
+  projects?: BadgeProjectSummary[];
 }
 
 export interface BadgeCheckOptions {
@@ -24,6 +42,8 @@ export interface BadgeCheckOptions {
   isIgnored?: (packageName: string) => boolean;
   /** Max parallel registry requests per batch */
   batchSize?: number;
+  /** Depth/exclusions used to discover package.json files */
+  scan?: ScanOptions;
 }
 
 const DEFAULT_BATCH_SIZE = 5;
@@ -123,15 +143,17 @@ export async function computeWorkspaceBadge(
   await cache.load();
   setGlobalCache(cache);
 
-  const projects = await findAllProjectsMultiRoot(workspaceRoots);
+  const projects = await findAllProjectsMultiRoot(workspaceRoots, options.scan);
 
   let updates = 0;
   let vulnerablePackages = 0;
+  const perProject: BadgeProjectSummary[] = [];
 
   for (const project of projects) {
     const result = await countProjectUpdates(project.path, options);
     updates += result.updates;
 
+    let vulnerableInThisProject = 0;
     try {
       const audit = await runAudit(project.path);
       const vulnerableInProject = new Set<string>();
@@ -140,13 +162,22 @@ export async function computeWorkspaceBadge(
           vulnerableInProject.add(vulnerability.packageName);
         }
       }
-      vulnerablePackages += vulnerableInProject.size;
+      vulnerableInThisProject = vulnerableInProject.size;
+      vulnerablePackages += vulnerableInThisProject;
     } catch {
       // Audit failure must never break the badge
     }
+
+    perProject.push({
+      name: project.name,
+      path: project.path,
+      relativePath: project.relativePath,
+      updates: result.updates,
+      vulnerablePackages: vulnerableInThisProject,
+    });
   }
 
   await cache.save();
 
-  return { updates, vulnerablePackages };
+  return { updates, vulnerablePackages, projects: perProject };
 }

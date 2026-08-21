@@ -2,7 +2,7 @@
   "name": "npm-visual-manager",
   "displayName": "NPM Visual Manager",
   "description": "Visual package manager for NPM dependencies with update checking, security audit, and bulk operations",
-  "version": "1.8.3",
+  "version": "1.9.0",
   "publisher": "LuisClementDev",
   "author": {
     "name": "Luis Clement Cremades"
@@ -160,6 +160,31 @@
           "type": "boolean",
           "default": false,
           "description": "Use --save-exact flag when installing/updating packages (pins exact version without ^ or ~ prefix)"
+        },
+        "npm-visual-manager.scan.maxDepth": {
+          "type": "number",
+          "default": 5,
+          "minimum": 1,
+          "maximum": 10,
+          "description": "How many folder levels below the workspace root are searched for package.json files. Raise it if a project of yours is not listed (e.g. web/app/themes/my-theme); lower it if the initial scan is slow."
+        },
+        "npm-visual-manager.scan.excludeFolders": {
+          "type": "array",
+          "default": [
+            "node_modules",
+            "bower_components",
+            "vendor",
+            "uploads",
+            "dist",
+            "out",
+            "coverage",
+            "tmp",
+            "temp"
+          ],
+          "description": "Folder names never searched for package.json files. Folders starting with a dot are always skipped.",
+          "items": {
+            "type": "string"
+          }
         },
         "npm-visual-manager.badge.enabled": {
           "type": "boolean",

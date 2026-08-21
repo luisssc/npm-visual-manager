@@ -2,6 +2,17 @@
 
 All notable changes to the "npm-visual-manager" extension will be documented in this file.
 
+## [1.9.0] - 2026-08-21
+
+### Added
+- **Every view now names the `package.json` it is acting on** ([#8](https://github.com/luisssc/npm-visual-manager/issues/8)): repos holding several `package.json` files (a WordPress theme plus its plugins, a monorepo, a site with a build folder) gave no way to tell which file the panel had picked, so it was not clear what an update would rewrite.
+  - The project selector now labels each entry `name — relative/path`, since `package.json` names repeat across a repo, or are missing entirely, and the name alone did not identify the file. Hovering an entry shows its absolute path.
+  - A new chip next to the selector shows the target file (e.g. `wp-content/themes/mytheme/package.json`) and opens it in the editor when clicked. It is shown for single-project workspaces too.
+  - The editor tab title carries the relative path for non-root projects (`NPM: mytheme (wp-content/themes/mytheme)`).
+  - Update, update all, update selected, install, uninstall and rollback confirmations state the file they apply to, and the progress notifications name it as well (`Updating react in wp-content/themes/mytheme/package.json...`).
+  - **Projects nested more than three levels deep were never discovered at all**, so in those repos there was nothing to label: a Bedrock-style WordPress repo keeps its theme at `web/app/themes/<theme>` (four levels) and only the root `package.json` showed up. The scan now goes five levels deep by default and skips dependency/output folders (`vendor`, `uploads`, `dist`, `out`, `coverage`, `tmp`, `temp`, `bower_components`, plus `node_modules` and dotted folders as before), which more than pays for the extra depth: on a 2,300-folder WordPress-like tree the full scan takes ~90 ms, against ~300 ms without the exclusions. Both are configurable via `npm-visual-manager.scan.maxDepth` and `npm-visual-manager.scan.excludeFolders`.
+  - The "Updates" view now lists one row per `package.json` that has updates or vulnerabilities, sorted by update count, each opening the manager on that project. Previously only the workspace total was shown, which could not be reconciled with the single project the panel displays.
+
 ## [1.8.3] - 2026-08-04
 
 ### Fixed

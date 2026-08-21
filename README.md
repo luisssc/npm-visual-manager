@@ -19,7 +19,7 @@ A Visual Studio Code extension that provides a visual interface for managing NPM
 | **Search & Install** | NPM registry search with debouncing, install as regular or dev dependency |
 | **Updates** | One-click individual or bulk updates, version rollbacks, ignore packages from checks |
 | **Security & Info** | Security audit integration, deprecation warnings, package sizes, direct links to changelogs, "why is it installed?" reverse dependency view |
-| **Multi-Project** | Auto-detection in monorepos, supports npm, yarn, pnpm, and bun |
+| **Multi-Project** | Auto-detection in monorepos, project selector showing each `package.json` path, supports npm, yarn, pnpm, and bun |
 | **Localization** | 8 languages: Spanish, German, French, Chinese (Simplified), Japanese, Portuguese, Russian, Korean |
 | **UI** | Native VS Code theme integration, customizable columns, activity bar badge with pending updates/vulnerabilities |
 
@@ -50,6 +50,10 @@ Also available on [Open VSX Registry](https://open-vsx.org/extension/LuisClement
    - Click "Update" on individual packages
    - Use "Update All" button to update all outdated packages at once
 
+### Which package.json is being managed
+
+Repos often hold more than one `package.json` (a monorepo, a WordPress theme plus its plugins, a site with its own build folder). The header always shows the target file as a path chip next to the project selector; click it to open that file. The editor tab title, every confirmation dialog and every progress notification name the same path, so an update can never land on a file you did not expect. When several projects are detected, the selector switches between them and the "Updates" view lists the pending updates per `package.json`. Projects are discovered up to five folder levels deep; if one of yours is missing, raise `npm-visual-manager.scan.maxDepth`.
+
 ### Filtering
 
 - **Search**: Type in the filter box to search by package name
@@ -79,6 +83,8 @@ This extension contributes the following settings:
 - `npm-visual-manager.columns.security`: Show Security column
 - `npm-visual-manager.columns.semverUpdate`: Show Update Type column
 - `npm-visual-manager.badge.enabled`: Show a badge on the activity bar icon with the number of available updates and vulnerable packages
+- `npm-visual-manager.scan.maxDepth`: How many folder levels below the workspace root are searched for `package.json` files (default `5`)
+- `npm-visual-manager.scan.excludeFolders`: Folder names never searched (defaults to `node_modules`, `bower_components`, `vendor`, `uploads`, `dist`, `out`, `coverage`, `tmp`, `temp`; dotted folders are always skipped)
 
 ## Contributing
 

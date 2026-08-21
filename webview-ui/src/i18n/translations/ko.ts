@@ -57,6 +57,7 @@ export const ko: Translations = {
     showAllPackages: '모든 패키지 표시',
     rollbackUpdate: '마지막 업데이트 롤백 ({{count}}개 패키지)',
     rollbackUpdate_plural: '마지막 업데이트 롤백 ({{count}}개 패키지)',
+    openPackageJson: '이 package.json 열기',
   },
 
   // Placeholders
@@ -122,6 +123,7 @@ export const ko: Translations = {
     confirmRollback: '<strong>{{count}}개 패키지</strong>를 이전 버전으로 롤백하시겠습니까?',
     confirmRollback_plural: '<strong>{{count}}개 패키지</strong>를 이전 버전으로 롤백하시겠습니까?',
     rollbackDetails: '다음 패키지가 이전 버전으로 복원됩니다:',
+    targetFileLabel: '적용 대상:',
     ignoreHint: '무시된 패키지는 업데이트 확인 및 카운터에서 제외됩니다.',
     andMore: '...그리고 {{count}}개 더',
     selectVersionHint: '설치할 버전을 선택하세요:',

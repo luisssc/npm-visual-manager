@@ -206,6 +206,43 @@ describe('computeWorkspaceBadge', () => {
     expect(summary.vulnerablePackages).toBe(0);
   });
 
+  it('attributes updates and vulnerabilities to the project they belong to', async () => {
+    mockFindAllProjectsMultiRoot.mockResolvedValue([
+      { name: 'theme', path: '/root/wp-content/themes/theme', relativePath: 'wp-content/themes/theme' },
+      { name: 'plugin', path: '/root/wp-content/plugins/plugin', relativePath: 'wp-content/plugins/plugin' },
+    ]);
+    mockFindPackageJson.mockImplementation(async projectPath => `${projectPath}/package.json`);
+    mockReadPackageJson.mockImplementation(async packageJsonPath =>
+      packageJsonPath.includes('themes')
+        ? { dependencies: { 'pkg-outdated': '^1.0.0' } }
+        : { dependencies: { 'pkg-current': '^2.0.0' } }
+    );
+    // pkg-outdated is declared ^1.0.0 (update), pkg-current is declared ^2.0.0 (satisfied)
+    mockGetPackageDetails.mockResolvedValue({ latestVersion: '2.0.0' });
+    mockRunAudit.mockImplementation(async projectPath =>
+      projectPath.includes('plugins') ? auditWith('pkg-current') : EMPTY_AUDIT
+    );
+
+    const summary = await computeWorkspaceBadge(['/root']);
+
+    expect(summary.projects).toEqual([
+      {
+        name: 'theme',
+        path: '/root/wp-content/themes/theme',
+        relativePath: 'wp-content/themes/theme',
+        updates: 1,
+        vulnerablePackages: 0,
+      },
+      {
+        name: 'plugin',
+        path: '/root/wp-content/plugins/plugin',
+        relativePath: 'wp-content/plugins/plugin',
+        updates: 0,
+        vulnerablePackages: 1,
+      },
+    ]);
+  });
+
   it('counts vulnerable packages only when they are direct dependencies', async () => {
     mockFindAllProjectsMultiRoot.mockResolvedValue([{ name: 'app', path: '/root', relativePath: '.' }]);
     mockFindPackageJson.mockResolvedValue('/root/package.json');

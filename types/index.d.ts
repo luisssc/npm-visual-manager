@@ -106,6 +106,7 @@ export type WebviewToHostMessage =
   | { type: 'INSTALL_NEW_PACKAGE'; packageName: string; version: string; isDev: boolean }
   | { type: 'GET_AUDIT' }
   | { type: 'OPEN_EXTERNAL'; url: string }
+  | { type: 'OPEN_PACKAGE_JSON'; path: string }
   | { type: 'UNINSTALL_PACKAGE'; packageName: string }
   | { type: 'GET_PACKAGE_VERSIONS'; packageName: string; limit?: number }
   | { type: 'GET_WHY_INSTALLED'; packageName: string };

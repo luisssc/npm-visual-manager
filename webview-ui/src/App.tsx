@@ -28,6 +28,7 @@ function App() {
     searchPackages,
     installNewPackage,
     openExternal,
+    openPackageJson,
     uninstallPackage,
     getPackageVersions,
     getWhyInstalled,
@@ -297,6 +298,26 @@ function App() {
     setWhyLoadingPackage(null);
   }, []);
 
+  const handleOpenPackageJson = useCallback(() => {
+    if (currentProjectPath) {
+      openPackageJson(currentProjectPath);
+    }
+  }, [openPackageJson, currentProjectPath]);
+
+  // The project whose package.json every action in this panel writes to.
+  // Matching is case-insensitive because Windows paths can differ in casing
+  // between what the host discovered and what it echoes back.
+  const currentProject = projects.find(
+    project => project.path.toLowerCase() === currentProjectPath.toLowerCase()
+  );
+  // Relative path of the target package.json, always shown so a repo with
+  // several package.json files is never ambiguous (see issue #8).
+  const targetFile = currentProject
+    ? currentProject.relativePath === '.'
+      ? 'package.json'
+      : `${currentProject.relativePath.replace(/\\/g, '/')}/package.json`
+    : 'package.json';
+
   if (isLoading) {
     return (
       <div className="loading-container">
@@ -339,16 +360,27 @@ function App() {
               className="project-selector"
               value={currentProjectPath}
               onChange={e => handleSelectProject(e.target.value)}
+              title={currentProjectPath}
             >
               {projects.map(project => (
-                <option key={project.path} value={project.path}>
-                  {project.name}
+                <option key={project.path} value={project.path} title={project.path}>
+                  {project.relativePath === '.'
+                    ? project.name
+                    : `${project.name} — ${project.relativePath.replace(/\\/g, '/')}`}
                 </option>
               ))}
             </select>
           ) : (
             <span className="package-name">{packageName}</span>
           )}
+          <button
+            className="target-file-btn"
+            onClick={handleOpenPackageJson}
+            title={`${t.tooltips.openPackageJson}\n${currentProjectPath}`}
+          >
+            <i className="codicon codicon-json" />
+            <span className="target-file-path">{targetFile}</span>
+          </button>
           <button
             className="toggle-packages-btn"
             onClick={() => setShowAllPackages(!showAllPackages)}
@@ -400,6 +432,7 @@ function App() {
           whyResult={whyResult}
           whyLoadingPackage={whyLoadingPackage}
           onCloseWhy={handleCloseWhy}
+          targetFile={targetFile}
         />
         <SearchPanel
           results={searchResults}
@@ -408,6 +441,7 @@ function App() {
           onUninstall={handleUninstall}
           isLoading={isSearching}
           installedPackages={dependencies}
+          targetFile={targetFile}
         />
       </main>
     </div>

@@ -57,6 +57,7 @@ export const zhCn: Translations = {
     showAllPackages: '显示所有包',
     rollbackUpdate: '回滚上次更新 ({{count}} 个包)',
     rollbackUpdate_plural: '回滚上次更新 ({{count}} 个包)',
+    openPackageJson: '打开此 package.json',
   },
 
   // Placeholders
@@ -122,6 +123,7 @@ export const zhCn: Translations = {
     confirmRollback: '确定要将 <strong>{{count}}</strong> 个包回滚到之前的版本吗？',
     confirmRollback_plural: '确定要将 <strong>{{count}}</strong> 个包回滚到之前的版本吗？',
     rollbackDetails: '以下包将恢复到其先前版本：',
+    targetFileLabel: '应用于:',
     ignoreHint: '已忽略的包将被排除在更新检查和计数器之外。',
     andMore: '...还有 {{count}} 个',
     selectVersionHint: '选择您要安装的版本：',

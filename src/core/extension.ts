@@ -11,6 +11,7 @@ import { UpdatesViewProvider } from './updatesViewProvider';
 import { computeWorkspaceBadge } from '../services/badgeService';
 import { onBadgeRefreshRequested } from '../services/badgeEvents';
 import { getIgnoreService } from '../services/ignoreService';
+import { getScanOptions } from '../services/scanConfigService';
 
 const BADGE_REFRESH_DEBOUNCE_MS = 3000;
 
@@ -60,6 +61,7 @@ class BadgeController {
       const ignoreService = getIgnoreService();
       const summary = await computeWorkspaceBadge(roots, {
         isIgnored: name => ignoreService.isIgnored(name),
+        scan: getScanOptions(),
       });
 
       // The badge number counts available updates only; vulnerabilities are
@@ -170,7 +172,9 @@ export function activate(context: vscode.ExtensionContext): void {
   const configListener = vscode.workspace.onDidChangeConfiguration(event => {
     if (
       event.affectsConfiguration('npm-visual-manager.badge.enabled') ||
-      event.affectsConfiguration('npm-visual-manager.ignoredPackages')
+      event.affectsConfiguration('npm-visual-manager.ignoredPackages') ||
+      event.affectsConfiguration('npm-visual-manager.scan.maxDepth') ||
+      event.affectsConfiguration('npm-visual-manager.scan.excludeFolders')
     ) {
       void badgeController.refresh();
     }

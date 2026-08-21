@@ -57,6 +57,7 @@ export const ja: Translations = {
     showAllPackages: 'すべてのパッケージを表示',
     rollbackUpdate: '最後の更新をロールバック ({{count}} 件)',
     rollbackUpdate_plural: '最後の更新をロールバック ({{count}} 件)',
+    openPackageJson: 'この package.json を開く',
   },
 
   // Placeholders
@@ -122,6 +123,7 @@ export const ja: Translations = {
     confirmRollback: '<strong>{{count}}</strong> 件のパッケージを以前のバージョンにロールバックしますか？',
     confirmRollback_plural: '<strong>{{count}}</strong> 件のパッケージを以前のバージョンにロールバックしますか？',
     rollbackDetails: '以下のパッケージは以前のバージョンに復元されます：',
+    targetFileLabel: '対象:',
     ignoreHint: '無視されたパッケージは更新チェックとカウンターから除外されます。',
     andMore: '...他 {{count}} 件',
     selectVersionHint: 'インストールするバージョンを選択してください：',

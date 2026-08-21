@@ -57,6 +57,7 @@ export const fr: Translations = {
     showAllPackages: 'Afficher tous les paquets',
     rollbackUpdate: 'Annuler la dernière mise à jour ({{count}} paquet)',
     rollbackUpdate_plural: 'Annuler la dernière mise à jour ({{count}} paquets)',
+    openPackageJson: 'Ouvrir ce package.json',
   },
 
   // Placeholders
@@ -123,6 +124,7 @@ export const fr: Translations = {
     confirmRollback: 'Annuler la mise à jour de <strong>{{count}} paquet</strong> ?',
     confirmRollback_plural: 'Annuler la mise à jour de <strong>{{count}} paquets</strong> ?',
     rollbackDetails: 'Les paquets suivants seront restaurés à leurs versions précédentes :',
+    targetFileLabel: "S'applique à",
     ignoreHint: 'Les paquets ignorés sont exclus des vérifications de mise à jour et des compteurs.',
     andMore: '...et {{count}} de plus',
     selectVersionHint: 'Choisissez la version que vous souhaitez installer:',

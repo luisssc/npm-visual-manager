@@ -105,6 +105,13 @@ export function useVsCodeApi() {
     [postMessage]
   );
 
+  const openPackageJson = useCallback(
+    (projectPath: string) => {
+      postMessage({ type: 'OPEN_PACKAGE_JSON', path: projectPath });
+    },
+    [postMessage]
+  );
+
   const uninstallPackage = useCallback(
     (packageName: string) => {
       postMessage({ type: 'UNINSTALL_PACKAGE', packageName });
@@ -144,6 +151,7 @@ export function useVsCodeApi() {
     installNewPackage,
     runAudit,
     openExternal,
+    openPackageJson,
     uninstallPackage,
     getPackageVersions,
     getWhyInstalled,

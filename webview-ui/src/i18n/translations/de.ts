@@ -57,6 +57,7 @@ export const de: Translations = {
     showAllPackages: 'Alle Pakete anzeigen',
     rollbackUpdate: 'Letzte Aktualisierung zurücksetzen ({{count}} Paket)',
     rollbackUpdate_plural: 'Letzte Aktualisierung zurücksetzen ({{count}} Pakete)',
+    openPackageJson: 'Diese package.json öffnen',
   },
 
   // Placeholders
@@ -124,6 +125,7 @@ export const de: Translations = {
     confirmRollback: '<strong>{{count}} Paket</strong> auf vorherige Version zurücksetzen?',
     confirmRollback_plural: '<strong>{{count}} Pakete</strong> auf vorherige Versionen zurücksetzen?',
     rollbackDetails: 'Die folgenden Pakete werden auf ihre vorherigen Versionen zurückgesetzt:',
+    targetFileLabel: 'Betrifft',
     ignoreHint: 'Ignorierte Pakete werden von Aktualisierungsprüfungen und Zählern ausgeschlossen.',
     andMore: '...und {{count}} weitere',
     selectVersionHint: 'Wählen Sie die Version, die Sie installieren möchten:',

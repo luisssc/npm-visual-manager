@@ -57,6 +57,7 @@ export const ru: Translations = {
     showAllPackages: 'Показать все пакеты',
     rollbackUpdate: 'Откатить последнее обновление ({{count}} пакет)',
     rollbackUpdate_plural: 'Откатить последнее обновление ({{count}} пакетов)',
+    openPackageJson: 'Открыть этот package.json',
   },
 
   // Placeholders
@@ -122,6 +123,7 @@ export const ru: Translations = {
     confirmRollback: 'Откатить <strong>{{count}} пакет</strong> к предыдущим версиям?',
     confirmRollback_plural: 'Откатить <strong>{{count}} пакетов</strong> к предыдущим версиям?',
     rollbackDetails: 'Следующие пакеты будут восстановлены до предыдущих версий:',
+    targetFileLabel: 'Применяется к',
     ignoreHint: 'Игнорируемые пакеты исключаются из проверок обновлений и счетчиков.',
     andMore: '...и ещё {{count}}',
     selectVersionHint: 'Выберите версию, которую хотите установить:',
