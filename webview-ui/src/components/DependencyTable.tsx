@@ -323,11 +323,16 @@ export const DependencyTable = ({
     if (!confirmUpdateSelected) {
       return;
     }
-    const packages = confirmUpdateSelected.map(d => ({
-      name: d.name,
-      version: 'latest',
-      currentVersion: d.declaredVersion,
-    }));
+    // Send the resolved version, never the literal "latest": package managers
+    // leave package.json untouched when the installed version already satisfies
+    // the declared range, so the row would keep showing an update forever.
+    const packages = confirmUpdateSelected
+      .filter(d => d.latestVersion)
+      .map(d => ({
+        name: d.name,
+        version: d.latestVersion!,
+        currentVersion: d.declaredVersion,
+      }));
     onUpdateAll(packages);
     setSelectedPackages(new Set()); // Clear selection after update
     setConfirmUpdateSelected(null);
@@ -345,11 +350,13 @@ export const DependencyTable = ({
     if (!confirmUpdateAll) {
       return;
     }
-    const packages = confirmUpdateAll.map(d => ({
-      name: d.name,
-      version: 'latest',
-      currentVersion: d.declaredVersion,
-    }));
+    const packages = confirmUpdateAll
+      .filter(d => d.latestVersion)
+      .map(d => ({
+        name: d.name,
+        version: d.latestVersion!,
+        currentVersion: d.declaredVersion,
+      }));
     onUpdateAll(packages);
     setConfirmUpdateAll(null);
   };

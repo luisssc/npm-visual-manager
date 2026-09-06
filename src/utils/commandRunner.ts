@@ -55,6 +55,9 @@ export async function runCommand(command: string, options: RunCommandOptions): P
     channel.appendLine('');
     channel.appendLine(`▶ ${label}`);
     channel.appendLine(`  cwd: ${options.cwd}`);
+    // Echo the real command: bugs like "update all did nothing" are impossible
+    // to diagnose from the package manager output alone.
+    channel.appendLine(`  $ ${resolvedCommand}`);
     channel.appendLine('─'.repeat(60));
 
     // Use shell: true so we can pass the full command string

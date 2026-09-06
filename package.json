@@ -2,7 +2,7 @@
   "name": "npm-visual-manager",
   "displayName": "NPM Visual Manager",
   "description": "Visual package manager for NPM dependencies with update checking, security audit, and bulk operations",
-  "version": "1.9.0",
+  "version": "1.9.2",
   "publisher": "LuisClementDev",
   "author": {
     "name": "Luis Clement Cremades"

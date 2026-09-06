@@ -2,6 +2,14 @@
 
 All notable changes to the "npm-visual-manager" extension will be documented in this file.
 
+## [1.9.2] - 2026-09-06
+
+### Fixed
+- **"Update all" and "Update selected" reported success without updating anything**: Both bulk actions ran, printed `Already up to date`, finished with exit code 0 and offered a Rollback, yet every package stayed on its old version. Updating the same package from its own row button worked.
+  - The bulk actions sent the literal string `latest` as the target version, so the command was `pnpm add pkg@latest` (or the npm/yarn/bun equivalent) instead of `pnpm add pkg@1.2.3`. Because a package is flagged as updatable by comparing the **declared range** in `package.json` with the latest published version, a dependency declared `^5.0.0` with 5.9.3 already installed is listed as updatable — but `pkg@latest` resolves to that same 5.9.3, which the existing range already covers, so the package manager rewrote nothing and exited cleanly. The row button escaped this because it always sends a concrete version, which forces the range to be rewritten.
+  - Both actions now send the resolved `latestVersion` for each package. This also fixes the rollback history, which was recording `latest` as the new version instead of the real one.
+- The output channel now echoes the exact command being run (`$ pnpm add ...`) under the working directory, so a bulk operation that does nothing can be diagnosed from its log alone.
+
 ## [1.9.0] - 2026-08-21
 
 ### Added
