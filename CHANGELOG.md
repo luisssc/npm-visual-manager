@@ -2,6 +2,14 @@
 
 All notable changes to the "npm-visual-manager" extension will be documented in this file.
 
+## [1.9.3] - 2026-09-18
+
+### Fixed
+- **Commands failed on Windows when the package manager resolved to an MSYS path**: On Windows, executable discovery ran `which` through the user's login shell or Git Bash on PATH, which can return an MSYS path such as `/f/laragon/bin/nodejs/node-v24.18.0/npm` that the native CMD runner cannot execute. The same shared resolver is used by install/update/remove operations, the security audit and the dependency explanations, so any of them could fail depending on the shell setup. ([#10](https://github.com/luisssc/npm-visual-manager/pull/10))
+  - npm, pnpm and yarn now resolve to their native `.cmd` names through the process PATH on Windows (`.exe` for node and bun), and Unix discovery is skipped entirely on Windows.
+  - Commands are invoked through CMD with `/d /s /c`, correct outer quoting and verbatim Windows arguments, in a hidden console. This also supports explicitly quoted absolute executable paths and directories containing spaces, independently of the VS Code terminal profile.
+  - Unix resolution (login shell, version managers) is unchanged, as are the command-string builders and the output/error/exit-code contract.
+
 ## [1.9.2] - 2026-09-06
 
 ### Fixed
