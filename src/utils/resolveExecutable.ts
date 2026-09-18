@@ -1,5 +1,6 @@
 /**
- * Resolves the absolute path of an executable binary.
+ * Resolves an executable to a native PATH command on Windows or an absolute
+ * path on Unix.
  * Handles cases where the executable is not in the current process PATH
  * (e.g. when installed via nvm, fnm, or volta and VS Code was not launched
  * from an interactive shell).
@@ -13,7 +14,7 @@ import { executeShellCommand } from './shellUtils';
 const CACHE = new Map<string, string | null>();
 
 /**
- * Resolve the absolute path of an executable.
+ * Resolve an executable for the native platform's shell.
  * Results are cached in memory for the duration of the session.
  */
 export async function resolveExecutable(name: string): Promise<string | null> {
@@ -27,6 +28,19 @@ export async function resolveExecutable(name: string): Promise<string | null> {
 }
 
 async function tryResolve(name: string): Promise<string | null> {
+  // Windows must use native PATH lookup, not `which` from Git Bash/MSYS.
+  // Keep the command bare so PATH entries containing spaces need no quoting.
+  // The callers execute through cmd.exe, which is required for .cmd wrappers.
+  if (process.platform === 'win32') {
+    if (['npm', 'pnpm', 'yarn'].includes(name)) {
+      return `${name}.cmd`;
+    }
+    if (['node', 'bun'].includes(name)) {
+      return `${name}.exe`;
+    }
+    return name;
+  }
+
   // 1. Try using the user's login shell to find the executable.
   //    This loads .bashrc/.zshrc where nvm/fnm are typically initialised.
   const userShell = process.env.SHELL;
@@ -74,7 +88,8 @@ async function tryResolve(name: string): Promise<string | null> {
 
     const versionsDir = path.join(nvmDir, 'versions', 'node');
     if (fs.existsSync(versionsDir)) {
-      const versions = fs.readdirSync(versionsDir)
+      const versions = fs
+        .readdirSync(versionsDir)
         .filter(v => fs.existsSync(path.join(versionsDir, v, 'bin', name)))
         .sort((a, b) => compareSemverDesc(a, b));
       for (const v of versions) {
@@ -93,7 +108,8 @@ async function tryResolve(name: string): Promise<string | null> {
     ];
     for (const fnmDir of fnmDirs) {
       if (fs.existsSync(fnmDir)) {
-        const versions = fs.readdirSync(fnmDir)
+        const versions = fs
+          .readdirSync(fnmDir)
           .filter(v => fs.existsSync(path.join(fnmDir, v, 'installation', 'bin', name)))
           .sort((a, b) => compareSemverDesc(a, b));
         for (const v of versions) {
@@ -116,7 +132,7 @@ async function tryResolve(name: string): Promise<string | null> {
     path.join('/usr', 'local', 'bin', name),
     path.join('/usr', 'bin', name),
     path.join('/opt', 'local', 'bin', name),
-    path.join(home, '.local', 'bin', name),
+    path.join(home, '.local', 'bin', name)
   );
 
   for (const candidate of candidates) {
@@ -142,7 +158,7 @@ function compareSemverDesc(a: string, b: string): number {
 }
 
 /**
- * Replace the first token of a command with its resolved absolute path.
+ * Replace the first token of a command with its resolved executable.
  * Only replaces common package-manager / node binaries.
  */
 export async function resolveCommandPath(command: string): Promise<string> {

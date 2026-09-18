@@ -60,12 +60,18 @@ export async function runCommand(command: string, options: RunCommandOptions): P
     channel.appendLine(`  $ ${resolvedCommand}`);
     channel.appendLine('─'.repeat(60));
 
-    // Use shell: true so we can pass the full command string
+    // Command builders currently return shell strings. Windows .cmd wrappers
+    // cannot be spawned directly with shell:false; invoke CMD explicitly,
+    // independently of VS Code's terminal profile (including Git Bash).
+    // /d disables AutoRun and /s /c handles a quoted executable consistently.
     const isWindows = process.platform === 'win32';
     const shell = isWindows ? 'cmd.exe' : '/bin/sh';
-    const shellFlag = isWindows ? '/c' : '-c';
+    const shellArgs = isWindows ? ['/d', '/s', '/c', `"${resolvedCommand}"`] : ['-c', resolvedCommand];
 
-    const child = spawn(shell, [shellFlag, resolvedCommand], {
+    const child = spawn(shell, shellArgs, {
+      shell: false,
+      windowsHide: true,
+      windowsVerbatimArguments: isWindows,
       cwd: options.cwd,
       env: { ...process.env },
       stdio: ['ignore', 'pipe', 'pipe'],

@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import * as path from 'path';
 
 const mockState = {
@@ -34,6 +34,11 @@ import { resolveExecutable, resolveCommandPath, clearExecutableCache } from '../
 import { executeShellCommand } from '../shellUtils';
 import * as fs from 'fs';
 
+afterEach(() => {
+  vi.restoreAllMocks();
+  vi.unstubAllEnvs();
+});
+
 function setShellResult(cmd: string, result: { stdout?: string; stderr?: string; error?: Error }): void {
   mockState.results.set(cmd, result);
 }
@@ -48,6 +53,7 @@ function n(name: string): string {
 
 describe('resolveExecutable', () => {
   beforeEach(() => {
+    vi.spyOn(process, 'platform', 'get').mockReturnValue('linux');
     clearExecutableCache();
     clearShellResults();
     vi.clearAllMocks();
@@ -78,7 +84,8 @@ describe('resolveExecutable', () => {
 
     vi.mocked(fs.readdirSync).mockImplementation((p: unknown) => {
       const pathStr = n(String(p));
-      if (pathStr === n(path.join('/home/testuser', '.nvm', 'versions', 'node'))) return ['v20.0.0', 'v22.0.0'] as unknown[] as string[];
+      if (pathStr === n(path.join('/home/testuser', '.nvm', 'versions', 'node')))
+        return ['v20.0.0', 'v22.0.0'] as unknown[] as string[];
       return [] as unknown[] as string[];
     });
 
@@ -155,13 +162,15 @@ describe('resolveExecutable', () => {
     vi.mocked(fs.existsSync).mockImplementation((p: unknown) => {
       const pathStr = n(String(p));
       if (pathStr === n(path.join('/home/testuser', '.fnm', 'node-versions'))) return true;
-      if (pathStr === n(path.join('/home/testuser', '.fnm', 'node-versions', 'v20.0.0', 'installation', 'bin', 'pnpm'))) return true;
+      if (pathStr === n(path.join('/home/testuser', '.fnm', 'node-versions', 'v20.0.0', 'installation', 'bin', 'pnpm')))
+        return true;
       return false;
     });
 
     vi.mocked(fs.readdirSync).mockImplementation((p: unknown) => {
       const pathStr = n(String(p));
-      if (pathStr === n(path.join('/home/testuser', '.fnm', 'node-versions'))) return ['v20.0.0'] as unknown[] as string[];
+      if (pathStr === n(path.join('/home/testuser', '.fnm', 'node-versions')))
+        return ['v20.0.0'] as unknown[] as string[];
       return [] as unknown[] as string[];
     });
 
@@ -197,6 +206,7 @@ describe('resolveExecutable', () => {
 
 describe('resolveCommandPath', () => {
   beforeEach(() => {
+    vi.spyOn(process, 'platform', 'get').mockReturnValue('linux');
     clearExecutableCache();
     clearShellResults();
     vi.clearAllMocks();
@@ -237,5 +247,39 @@ describe('resolveCommandPath', () => {
     const result = await resolveCommandPath('  npm install foo');
     // regex in resolveCommandPath expects command at start
     expect(result).toBe('  npm install foo');
+  });
+});
+
+describe('Windows executable resolution', () => {
+  beforeEach(() => {
+    clearExecutableCache();
+    vi.clearAllMocks();
+    vi.spyOn(process, 'platform', 'get').mockReturnValue('win32');
+    vi.stubEnv('SHELL', 'C:/Program Files/Git/bin/bash.exe');
+  });
+
+  it.each(['npm', 'pnpm', 'yarn'])('uses the native %s wrapper without consulting Git Bash', async name => {
+    expect(await resolveExecutable(name)).toBe(`${name}.cmd`);
+    expect(await resolveCommandPath(`${name} install @types/react@19.0.0 react@19.0.0`)).toBe(
+      `${name}.cmd install @types/react@19.0.0 react@19.0.0`
+    );
+    expect(executeShellCommand).not.toHaveBeenCalled();
+  });
+
+  it.each(['node', 'bun'])('uses %s.exe instead of adding .cmd', async name => {
+    expect(await resolveExecutable(name)).toBe(`${name}.exe`);
+  });
+
+  it('preserves an explicitly quoted native executable path', async () => {
+    const command = '"C:\\Program Files\\nodejs\\npm.cmd" install react@19.0.0';
+    expect(await resolveCommandPath(command)).toBe(command);
+    expect(executeShellCommand).not.toHaveBeenCalled();
+  });
+
+  it.each(['linux', 'darwin'] as const)('preserves Unix resolution on %s', async platform => {
+    vi.spyOn(process, 'platform', 'get').mockReturnValue(platform);
+    vi.stubEnv('SHELL', '/bin/bash');
+    setShellResult('/bin/bash -lc "which npm"', { stdout: '/usr/bin/npm\n' });
+    expect(await resolveCommandPath('npm install foo')).toBe('/usr/bin/npm install foo');
   });
 });
