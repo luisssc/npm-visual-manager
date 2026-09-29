@@ -144,6 +144,7 @@ export const ru: Translations = {
 
   // Time ago
   timeAgo: {
+    today: 'Сегодня',
     days: '{{count}} дней назад',
     days_singular: '{{count}} день назад',
     months: '{{count}} месяцев назад',

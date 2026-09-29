@@ -142,6 +142,7 @@ const parseSize = (sizeStr: string | undefined): number => {
 const formatDate = (
   t: {
     timeAgo: {
+      today: string;
       days: string;
       days_singular: string;
       months: string;
@@ -153,12 +154,15 @@ const formatDate = (
   dateString: string | undefined
 ): string => {
   if (!dateString) {
-    return '-';
+    return '—';
   }
   const date = new Date(dateString);
   const now = new Date();
-  const diffTime = Math.abs(now.getTime() - date.getTime());
-  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+  const diffTime = now.getTime() - date.getTime();
+  if (!Number.isFinite(diffTime) || diffTime < 0) return '—';
+  const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+
+  if (diffDays === 0) return t.timeAgo.today;
 
   if (diffDays < 30) {
     const key = diffDays === 1 ? 'days_singular' : 'days';
@@ -661,6 +665,8 @@ export const DependencyTable = ({
                           <Tooltip text={dep.checkError}>
                             <span className="not-available">-</span>
                           </Tooltip>
+                        ) : dep.latestVersion ? (
+                          <span className="not-available">—</span>
                         ) : (
                           <span className="checking">{t.states.checkingShort}</span>
                         )}
@@ -790,6 +796,8 @@ export const DependencyTable = ({
                                 <Tooltip text={dep.checkError}>
                                   <span className="not-available">-</span>
                                 </Tooltip>
+                              ) : dep.latestVersion ? (
+                                <span className="not-available">—</span>
                               ) : (
                                 <span className="checking">{t.states.checkingShort}</span>
                               )}

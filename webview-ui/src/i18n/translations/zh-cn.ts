@@ -144,6 +144,7 @@ export const zhCn: Translations = {
 
   // Time ago
   timeAgo: {
+    today: '今天',
     days: '{{count}} 天前',
     days_singular: '{{count}} 天前',
     months: '{{count}} 个月前',

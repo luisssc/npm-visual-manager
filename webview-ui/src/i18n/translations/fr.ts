@@ -152,6 +152,7 @@ export const fr: Translations = {
 
   // Time ago
   timeAgo: {
+    today: 'Aujourd’hui',
     days: 'il y a {{count}} jours',
     days_singular: 'il y a {{count}} jour',
     months: 'il y a {{count}} mois',

@@ -144,6 +144,7 @@ export const ko: Translations = {
 
   // Time ago
   timeAgo: {
+    today: '오늘',
     days: '{{count}}일 전',
     days_singular: '{{count}}일 전',
     months: '{{count}}개월 전',

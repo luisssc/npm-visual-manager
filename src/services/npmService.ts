@@ -63,11 +63,17 @@ function detailsFromInfo(info: NpmPackageInfo): PackageDetails {
     | undefined;
   return {
     latestVersion,
-    lastPublishDate: info.time?.[latestVersion] || info.time?.modified,
+    lastPublishDate: getVersionPublishDate(info, latestVersion),
     isDeprecated: !!version?.deprecated,
     deprecationMessage: version?.deprecated,
     repositoryUrl: extractRepositoryUrl(version?.repository),
   };
+}
+
+/** Package modification time is not the publication time of an individual version. */
+export function getVersionPublishDate(info: NpmPackageInfo, version: string): string | undefined {
+  const date = info.time?.[version];
+  return typeof date === 'string' && Number.isFinite(Date.parse(date)) ? date : undefined;
 }
 
 /** Get package metadata using the selected project's npm configuration. */
@@ -156,7 +162,7 @@ export async function getPackageVersions(
   for (const [version, versionData] of versionEntries) {
     // Skip deprecated versions unless it's the only one
     const data = versionData as { deprecated?: string };
-    const date = info.time?.[version] || info.time?.modified || new Date().toISOString();
+    const date = getVersionPublishDate(info, version) ?? '';
 
     // Detect if it's a pre-release version (contains -alpha, -beta, -rc, -dev, etc.)
     const isPrerelease = /-\w/.test(version);

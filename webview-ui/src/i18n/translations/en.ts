@@ -149,6 +149,7 @@ export const en = {
 
   // Time ago
   timeAgo: {
+    today: 'Today',
     days: '{{count}} days ago',
     days_singular: '{{count}} day ago',
     months: '{{count}} months ago',

@@ -146,6 +146,7 @@ export const de: Translations = {
 
   // Time ago
   timeAgo: {
+    today: 'Heute',
     days: 'vor {{count}} Tagen',
     days_singular: 'vor {{count}} Tag',
     months: 'vor {{count}} Monaten',

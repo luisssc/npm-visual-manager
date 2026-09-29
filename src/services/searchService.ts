@@ -3,7 +3,7 @@
  */
 
 import { getRegistryClient, RegistryError, RegistryTarget } from './registryService';
-import type { NpmPackageInfo } from './npmService';
+import { getVersionPublishDate, type NpmPackageInfo } from './npmService';
 
 export interface SearchResult {
   packageUrl?: string;
@@ -115,7 +115,7 @@ async function exactMatch(target: RegistryTarget, name: string, signal?: AbortSi
         version,
         description: metadata.description || '',
         keywords: metadata.keywords,
-        date: info.time?.[version] || info.time?.modified || '',
+        date: getVersionPublishDate(info, version) ?? '',
         packageUrl: target.packageUrl(name),
       },
     ];

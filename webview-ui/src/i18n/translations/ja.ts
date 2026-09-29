@@ -144,6 +144,7 @@ export const ja: Translations = {
 
   // Time ago
   timeAgo: {
+    today: '今日',
     days: '{{count}} 日前',
     days_singular: '{{count}} 日前',
     months: '{{count}} ヶ月前',

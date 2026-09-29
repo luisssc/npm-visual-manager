@@ -22,7 +22,7 @@ interface CacheData {
   entries: Record<string, CacheEntry>;
 }
 
-const CACHE_VERSION = '1.2'; // Bumped for repositoryUrl support
+const CACHE_VERSION = '1.3'; // Discard dates previously inferred from package modification time.
 const DEFAULT_TTL_HOURS = 24; // Cache valid for 24 hours
 const CACHE_FILENAME = '.npm-visual-manager-cache.json';
 const MAX_ENTRIES = 500; // Maximum cache entries to prevent unlimited growth

@@ -12,7 +12,7 @@ vi.mock('../registryService', async importOriginal => ({
 
 import { getRegistryClient, loadRegistryClient, RegistryClient } from '../registryService';
 import { getPackageDetails, getPackageVersions } from '../npmService';
-import { getCache } from '../cacheService';
+import { getCache, VersionCache } from '../cacheService';
 import { searchPackages } from '../searchService';
 
 let root: string;
@@ -93,6 +93,41 @@ async function privateClient(id = 42) {
 }
 
 describe('configured private registries', () => {
+  it('discards persisted metadata whose publication date may have been inferred', async () => {
+    await fs.mkdir(path.join(project, '.vscode'));
+    await fs.writeFile(path.join(project, '.vscode', '.npm-visual-manager-cache.json'), JSON.stringify({
+      version: '1.2',
+      entries: { demo: { latestVersion: '1.0.0', lastPublishDate: '2026-09-28T00:00:00Z', timestamp: Date.now() } },
+    }));
+    const cache = new VersionCache(project, null);
+    await cache.load();
+    expect(cache.get('demo')).toBeNull();
+    expect(cache.getStale('demo')).toBeNull();
+  });
+
+  it.each([undefined, { modified: '2026-09-28T00:00:00Z' }])(
+    'does not invent version dates when metadata has no per-version timestamps: %j', async time => {
+      await privateClient();
+      metadataOverrides = { versions: { '1.0.0': {}, '0.9.0': {} }, time };
+      const versions = await getPackageVersions('@company/demo', 20, project);
+      expect(versions.map(version => version.date)).toEqual(['', '']);
+      expect((await getPackageDetails('@company/demo', false, project)).lastPublishDate).toBeUndefined();
+      expect((await searchPackages('@company/demo', 20, undefined, project))[0]?.date).toBe('');
+    }
+  );
+
+  it('preserves individual publication dates while leaving missing and malformed dates unknown', async () => {
+    await privateClient();
+    metadataOverrides = {
+      versions: { '1.0.0': {}, '0.9.0': {}, '0.8.0': {}, '0.7.0-beta.1': {} },
+      time: { '1.0.0': '2026-07-01T00:00:00Z', '0.9.0': '2025-01-01T00:00:00Z', '0.8.0': 'invalid', modified: '2026-09-28T00:00:00Z' },
+    };
+    const versions = await getPackageVersions('@company/demo', 20, project);
+    expect(versions.map(version => version.date)).toEqual(['2026-07-01T00:00:00Z', '2025-01-01T00:00:00Z', '', '']);
+    expect((await getPackageDetails('@company/demo', false, project)).lastPublishDate).toBe('2026-07-01T00:00:00Z');
+    expect((await searchPackages('@company/demo', 20, undefined, project))[0]?.date).toBe('2026-07-01T00:00:00Z');
+  });
+
   it('recognises a GitLab project scope and expands its token without sending it to the default registry', async () => {
     const client = await privateClient();
     expect(client.forPackage('@company/demo').url).toBe(`${base}/api/v4/projects/42/packages/npm/`);

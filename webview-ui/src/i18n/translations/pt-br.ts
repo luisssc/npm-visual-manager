@@ -145,6 +145,7 @@ export const ptBr: Translations = {
 
   // Time ago
   timeAgo: {
+    today: 'Hoje',
     days: 'há {{count}} dias',
     days_singular: 'há {{count}} dia',
     months: 'há {{count}} meses',

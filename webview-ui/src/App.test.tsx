@@ -64,6 +64,32 @@ beforeEach(() => {
 
 afterEach(() => vi.useRealTimers());
 
+describe('publication dates', () => {
+  it('shows unknown dates as a dash and preserves real dates for stable and prerelease versions', () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-09-29T12:00:00Z'));
+    const { container } = render(<App />, { wrapper: Wrapper });
+    loadProjects([THEME], THEME.path, {
+      dependencies: [{ name: 'demo', type: 'dependencies', declaredVersion: '^1.0.0', installedVersion: '1.0.0', latestVersion: '2.0.0', updateAvailable: true }],
+    });
+    expect(container.querySelector('.date-cell')).toHaveTextContent('—');
+    expect(container.querySelector('.date-cell .checking')).toBeNull();
+    fireEvent.click(container.querySelector('.update-btn')!);
+    sendFromHost({ type: 'PACKAGE_VERSIONS_RESULT', packageName: 'demo', versions: [
+      { version: '2.0.0', date: '', releaseType: 'stable' },
+      { version: '1.9.0', date: '2026-09-29T10:00:00Z', releaseType: 'stable' },
+      { version: '1.8.0', date: '2026-09-28T11:00:00Z', releaseType: 'stable' },
+      { version: '1.7.0', date: '2026-09-26T12:00:00Z', releaseType: 'stable' },
+      { version: '1.6.0-beta.1', date: '', releaseType: 'prerelease' },
+      { version: '1.5.0-beta.1', date: 'invalid', releaseType: 'prerelease' },
+      { version: '1.4.0-beta.1', date: '2026-10-01T12:00:00Z', releaseType: 'prerelease' },
+    ] });
+    expect(Array.from(container.querySelectorAll('.version-date'), element => element.textContent)).toEqual([
+      'Resolves to 2.0.0', '—', 'Today', '1 day ago', '3 days ago', '—', '—', '—',
+    ]);
+  });
+});
+
 describe('package operation locking', () => {
   const dependencies = [{
     name: 'react', declaredVersion: '^18.0.0', installedVersion: '18.0.0',
