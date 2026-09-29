@@ -2,6 +2,46 @@
 
 All notable changes to the "npm-visual-manager" extension will be documented in this file.
 
+## [2.0.0] - Unreleased
+
+### Added
+
+- **Private npm registries**: Package metadata, version selection, update checks, the activity bar badge and package search use the selected project's npm configuration.
+- Default registries and `@scope:registry` mappings are read from project/workspace, user and global npm configuration, including `NPM_CONFIG_*` overrides. Existing npm authentication, environment variable substitution, proxy and certificate settings are reused. Credentials are not exposed in the interface or stored in the package metadata cache.
+- **GitLab npm feeds**: Project, group and instance endpoints support lookups by full package name, such as `@company/package-name`. Registries that provide the npm search endpoint also support text search.
+- Package links point to the configured registry, and the package-name tooltip identifies that registry. The extension does not retry private lookups against the public npm registry; registry-server forwarding settings still apply.
+- Localized private-search guidance, an audit-unavailable warning with a retry action, and a "Today" date label in all nine supported interface languages.
+- README instructions for private registry configuration, authentication through environment variables, refresh behavior and GitLab lookup limitations, using fictional examples.
+
+### Fixed
+
+- **Monorepo subprojects were detected as npm**: Package manager detection now resolves the nearest project/workspace configuration through ancestor directories. It honors supported `packageManager` declarations, recognizes pnpm workspaces before the first install, and finds root lockfiles for npm, pnpm, Yarn and Bun, including `npm-shrinkwrap.json`. A project's own configuration takes precedence, repository boundaries prevent inheriting an unrelated parent's manager, and directories named like lockfiles are ignored. Commands continue to run in the selected subproject.
+- **Hoisted dependencies appeared uninstalled**: Installed-version lookup checks the nearest `node_modules` first and then ancestor directories, including scoped packages, pnpm links and linked workspace packages. Reading manifests directly supports packages that hide `package.json` through exports or have no runtime entry point. Invalid local manifests are not replaced with a different ancestor version.
+- Yarn Berry detection uses the resolved root configuration and the declared Yarn version, so audits launched from a subproject select the correct Yarn audit command.
+- **Rollback could modify the wrong project**: Update history belongs to its originating project, including when an operation finishes after switching projects. Rollback rejects another project's history, clears only its own history on success, and reads the latest history when a queued rollback starts.
+- **Failed security audits appeared clean**: Command failures, interrupted runs and unrecognized report formats now produce an unavailable state rather than zero vulnerabilities. Failed refreshes invalidate earlier cached results. The dependency table and activity bar distinguish unknown security status from a successful clean audit; valid reports containing vulnerabilities remain supported even when the command exits with a nonzero code.
+- **Package operations could overlap**: Install, individual and bulk update, uninstall and rollback run in order per project. Projects sharing a lockfile or workspace root share a queue, including the first install before a workspace lockfile exists. Independent projects can still run concurrently.
+- The queue covers history capture, command execution, rollback restoration of `package.json` and dependency reloads. Failed commands release the queue so subsequent operations can proceed.
+- **Write controls unlocked after three seconds**: Table actions, confirmation buttons and search install/uninstall actions now lock immediately and stay locked until the host finishes all pending operations. Pending state survives dependency reloads and reopening the panel, and a result from another project cannot unlock the selected project.
+- **Project switches mixed registry data**: Metadata caches are isolated by project and registry. Switching projects resets version selections, search results and open confirmations; stale dependency loads, searches and version-check responses are discarded.
+- Authentication and package-not-found errors are surfaced instead of being masked by stale cached metadata. Registry configuration is loaded without mutating the extension host's environment or sharing credentials between feeds.
+- **Private package versions all showed "1 day ago"**: Version lists, latest-version details and exact-name search use only the individual version's publication date. Missing or malformed dates no longer fall back to the package modification time or the current time.
+- Unknown publication dates display a dash instead of a fabricated age or an endless "checking" indicator. Valid relative dates use completed days; releases less than 24 hours old display "Today", and future dates are not rendered as past releases.
+
+### Changed
+
+- Minimum supported VS Code version is now **1.86.0** to support the npm registry client dependencies.
+- Registry access uses `@npmcli/config` and `npm-registry-fetch`. Install/update commands continue to use the selected package manager's own configuration; metadata queries read npm-compatible `.npmrc` settings, not native Yarn `.yarnrc.yml` registry settings.
+- **Refresh** reloads registry configuration immediately; otherwise it is cached for up to 30 seconds. Changes to the environment used to launch VS Code require restarting VS Code.
+- Metadata cache format is now **1.3**, invalidating previously inferred publication dates.
+- Extension and webview manifests and both lockfiles are synchronized at **2.0.0**.
+
+### Tests
+
+- Added regression coverage for monorepo manager detection and installed-version resolution, private registry routing and authentication, per-project cache isolation, rollback ownership, audit failures, operation queues and UI locking, and missing or incorrect publication dates.
+- Private registry integration tests use a local HTTP server and fictional credentials, without contacting a corporate feed.
+- Validation: **265 passing tests** (241 extension/service tests and 24 webview tests), successful TypeScript compilation and webview production build, and no lint errors.
+
 ## [1.9.3] - 2026-09-18
 
 ### Fixed
