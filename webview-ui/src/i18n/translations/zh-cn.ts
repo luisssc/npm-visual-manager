@@ -89,6 +89,7 @@ export const zhCn: Translations = {
 
   // Search panel
   search: {
+    privateRegistryHint: '私有注册表：请输入完整包名，例如 @scope/package。',
     title: '安装包',
     noResults: '未找到 "{{query}}" 的相关包',
     weeklyDownloads: '{{downloads}}/周',

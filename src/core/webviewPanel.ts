@@ -7,7 +7,8 @@ import * as path from 'path';
 import * as fs from 'fs';
 import type { Dependency, WebviewToHostMessage, HostToWebviewMessage, ColumnConfig, UpdateHistory } from '../../types';
 import { findPackageJson, readPackageJson, extractDependencies } from '../services/packageService';
-import { getPackageDetails, getPackageVersions, getSemverUpdateType, setGlobalCache } from '../services/npmService';
+import { getPackageDetails, getPackageVersions, getSemverUpdateType } from '../services/npmService';
+import { clearRegistryConfig } from '../services/registryService';
 import { getCache, VersionCache } from '../services/cacheService';
 import { getIgnoreService } from '../services/ignoreService';
 import { findAllProjectsMultiRoot, Project } from '../services/workspaceService';
@@ -458,7 +459,6 @@ export class NpmGuiManagerPanel {
   private async _initializeCache(): Promise<void> {
     this._cache = getCache(this._currentProjectPath);
     await this._cache.load();
-    setGlobalCache(this._cache);
   }
 
   /**
@@ -483,6 +483,7 @@ export class NpmGuiManagerPanel {
   }
 
   private async _refreshCache(): Promise<void> {
+    clearRegistryConfig();
     if (this._cache) {
       this._cache.clear();
       await this._cache.save();
@@ -688,7 +689,7 @@ export class NpmGuiManagerPanel {
     const projectPath = this._currentProjectPath;
     console.log(`[npm-visual-manager] Fetching versions for ${packageName}...`);
     try {
-      const versions = await getPackageVersions(packageName, limit || 20);
+      const versions = await getPackageVersions(packageName, limit || 20, projectPath);
       if (projectPath !== this._currentProjectPath) {
         return;
       }
@@ -741,7 +742,7 @@ export class NpmGuiManagerPanel {
             return;
           }
 
-          const details = await getPackageDetails(dep.name, forceRefresh);
+          const details = await getPackageDetails(dep.name, forceRefresh, projectPath);
           if (projectPath !== this._currentProjectPath || generation !== this._loadGeneration) {
             return;
           }
@@ -759,6 +760,8 @@ export class NpmGuiManagerPanel {
             isDeprecated: details.isDeprecated,
             deprecationMessage: details.deprecationMessage,
             repositoryUrl: details.repositoryUrl,
+            registryUrl: details.registryUrl,
+            packageUrl: details.packageUrl,
           });
         } catch (error) {
           if (projectPath !== this._currentProjectPath || generation !== this._loadGeneration) {
@@ -805,7 +808,7 @@ export class NpmGuiManagerPanel {
     const signal = this._searchAbortController.signal;
 
     try {
-      const results = await searchPackages(query, 20, signal);
+      const results = await searchPackages(query, 20, signal, this._currentProjectPath);
 
       // If signal was aborted, results will be empty or searchPackages handled it.
       // But we double check here to avoid updating UI with stale data if necessary.

@@ -89,6 +89,7 @@ export const de: Translations = {
 
   // Search panel
   search: {
+    privateRegistryHint: 'Private Registry: vollständigen Paketnamen eingeben, z. B. @scope/package.',
     title: 'Pakete installieren',
     noResults: 'Keine Pakete für "{{query}}" gefunden',
     weeklyDownloads: '{{downloads}}/Wo',

@@ -89,6 +89,7 @@ export const ru: Translations = {
 
   // Search panel
   search: {
+    privateRegistryHint: 'Частный реестр: введите полное имя пакета, например @scope/package.',
     title: 'Установить пакеты',
     noResults: 'Пакеты для "{{query}}" не найдены',
     weeklyDownloads: '{{downloads}}/нед',

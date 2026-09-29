@@ -153,7 +153,7 @@ describe('countProjectUpdates', () => {
     const result = await countProjectUpdates('/project');
 
     expect(mockGetPackageDetails).toHaveBeenCalledTimes(1);
-    expect(mockGetPackageDetails).toHaveBeenCalledWith('pkg-normal');
+    expect(mockGetPackageDetails).toHaveBeenCalledWith('pkg-normal', false, '/project');
     expect(result.directDependencies.size).toBe(4);
   });
 

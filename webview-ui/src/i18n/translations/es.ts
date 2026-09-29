@@ -89,6 +89,7 @@ export const es: Translations = {
 
   // Search panel
   search: {
+    privateRegistryHint: 'Registro privado: escribe el nombre completo, por ejemplo @scope/paquete.',
     title: 'Instalar Paquetes',
     noResults: 'No se encontraron paquetes para "{{query}}"',
     weeklyDownloads: '{{downloads}}/sem',

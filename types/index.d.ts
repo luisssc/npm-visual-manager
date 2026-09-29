@@ -14,6 +14,7 @@ export interface VulnerabilityInfo {
 }
 
 export interface SearchResult {
+  packageUrl?: string;
   name: string;
   version: string;
   description: string;
@@ -34,6 +35,8 @@ export interface PackageVersion {
 }
 
 export interface Dependency {
+  registryUrl?: string;
+  packageUrl?: string;
   name: string;
   installedVersion: string;
   declaredVersion: string;
@@ -142,6 +145,8 @@ export type HostToWebviewMessage =
       isDeprecated?: boolean;
       deprecationMessage?: string;
       repositoryUrl?: string;
+      registryUrl?: string;
+      packageUrl?: string;
       error?: string;
     }
   | { type: 'CACHE_CLEARED'; message: string }

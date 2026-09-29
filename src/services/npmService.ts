@@ -3,9 +3,9 @@
  * With offline cache support
  */
 
-import * as https from 'https';
+import { getRegistryClient, RegistryError, RegistryTarget } from './registryService';
 import type { PackageVersion } from '../../types';
-import { VersionCache } from './cacheService';
+import { getCache, VersionCache } from './cacheService';
 
 export interface NpmPackageInfo {
   name: string;
@@ -29,192 +29,95 @@ export interface PackageDetails {
   isDeprecated?: boolean;
   deprecationMessage?: string;
   repositoryUrl?: string;
+  registryUrl?: string;
+  packageUrl?: string;
 }
 
 export type SemverUpdateType = 'major' | 'minor' | 'patch' | 'none' | 'unknown';
 
-// Global cache instance (set externally)
-let globalCache: VersionCache | null = null;
-
-export function setGlobalCache(cache: VersionCache): void {
-  globalCache = cache;
+interface PackageContext {
+  target: RegistryTarget;
+  cache: VersionCache;
+  key: string;
 }
 
-/**
- * Get package information from the NPM registry
- * With cache support
- */
-export async function getPackageInfo(packageName: string, forceRefresh: boolean = false): Promise<NpmPackageInfo> {
-  // Check cache first if not forcing refresh
-  if (!forceRefresh && globalCache) {
-    const cached = globalCache.get(packageName);
-    if (cached) {
-      // Return cached data as mock NpmPackageInfo
-      return {
-        name: packageName,
-        'dist-tags': { latest: cached.latestVersion },
-        versions: {},
-        time: cached.lastPublishDate
-          ? {
-              created: cached.lastPublishDate,
-              modified: cached.lastPublishDate,
-              [cached.latestVersion]: cached.lastPublishDate,
-            }
-          : undefined,
-      };
-    }
-  }
-
-  return new Promise((resolve, reject) => {
-    // For scoped packages (@scope/name), encodeURIComponent gives %40scope%2Fname
-    // We need to keep it encoded as %40scope%2Fname for the npm registry
-    const encodedName = encodeURIComponent(packageName);
-    const url = `https://registry.npmjs.org/${encodedName}`;
-
-    const req = https.get(
-      url,
-      {
-        headers: {
-          Accept: 'application/json',
-          'User-Agent': 'npm-visual-manager-vscode-extension',
-        },
-        timeout: 10000,
-      },
-      res => {
-        let data = '';
-
-        res.on('data', chunk => {
-          data += chunk;
-        });
-
-        res.on('end', () => {
-          try {
-            if (res.statusCode === 200) {
-              const packageInfo: NpmPackageInfo = JSON.parse(data);
-
-              // Save to cache
-              if (globalCache) {
-                const latestVersion = packageInfo['dist-tags'].latest;
-                const lastPublishDate = packageInfo.time?.[latestVersion] || packageInfo.time?.modified;
-
-                // Check deprecation and repository for caching
-                let isDeprecated = false;
-                let deprecationMessage: string | undefined;
-                const latestVersionInfo = packageInfo.versions[latestVersion] as
-                  | { deprecated?: string; repository?: { url?: string } | string }
-                  | undefined;
-                if (latestVersionInfo?.deprecated) {
-                  isDeprecated = true;
-                  deprecationMessage = latestVersionInfo.deprecated;
-                }
-                const repositoryUrl = extractRepositoryUrl(latestVersionInfo?.repository);
-
-                globalCache.set(packageName, {
-                  latestVersion,
-                  lastPublishDate,
-                  isDeprecated,
-                  deprecationMessage,
-                  repositoryUrl,
-                });
-              }
-
-              resolve(packageInfo);
-            } else if (res.statusCode === 404) {
-              reject(new Error(`Package "${packageName}" not found in npm registry`));
-            } else {
-              reject(new Error(`HTTP ${res.statusCode}: ${data}`));
-            }
-          } catch (error) {
-            reject(new Error(`Failed to parse npm response: ${error}`));
-          }
-        });
-      }
-    );
-
-    req.on('error', error => {
-      reject(new Error(`Request failed: ${error.message}`));
-    });
-
-    req.on('timeout', () => {
-      req.destroy();
-      reject(new Error(`Request timeout for package "${packageName}"`));
-    });
-  });
+async function packageContext(packageName: string, projectPath: string): Promise<PackageContext> {
+  const target = (await getRegistryClient(projectPath)).forPackage(packageName);
+  return { target, cache: getCache(projectPath), key: target.url + '|' + packageName };
 }
 
-/**
- * Get package details (version and date)
- * With cache support
- */
-export async function getPackageDetails(packageName: string, forceRefresh: boolean = false): Promise<PackageDetails> {
-  // Check cache first
-  if (!forceRefresh && globalCache) {
-    const cached = globalCache.get(packageName);
-    if (cached) {
-      return {
-        latestVersion: cached.latestVersion,
-        lastPublishDate: cached.lastPublishDate,
-        fromCache: true,
-        cacheAge: globalCache.getAgeHours(packageName) || 0,
-        isDeprecated: cached.isDeprecated,
-        deprecationMessage: cached.deprecationMessage,
-        repositoryUrl: cached.repositoryUrl,
-      };
-    }
+async function fetchPackageInfo(packageName: string, context: PackageContext): Promise<NpmPackageInfo> {
+  const info = await context.target.json<NpmPackageInfo>(encodeURIComponent(packageName));
+  if (!info || typeof info['dist-tags']?.latest !== 'string' || !info.versions || Array.isArray(info.versions)) {
+    throw new RegistryError('The configured registry returned invalid package metadata.');
   }
+  const details = detailsFromInfo(info);
+  context.cache.set(context.key, details);
+  return info;
+}
 
-  try {
-    const info = await getPackageInfo(packageName, forceRefresh);
-    const latestVersion = info['dist-tags'].latest;
+function detailsFromInfo(info: NpmPackageInfo): PackageDetails {
+  const latestVersion = info['dist-tags'].latest;
+  const version = info.versions[latestVersion] as
+    | { deprecated?: string; repository?: { url?: string } | string }
+    | undefined;
+  return {
+    latestVersion,
+    lastPublishDate: info.time?.[latestVersion] || info.time?.modified,
+    isDeprecated: !!version?.deprecated,
+    deprecationMessage: version?.deprecated,
+    repositoryUrl: extractRepositoryUrl(version?.repository),
+  };
+}
 
-    // Get the publish date for the latest version
-    let lastPublishDate: string | undefined;
-    if (info.time && info.time[latestVersion]) {
-      lastPublishDate = info.time[latestVersion];
-    } else if (info.time?.modified) {
-      lastPublishDate = info.time.modified;
-    }
-
-    // Check if package is deprecated
-    // Note: In NPM, deprecation is per-version
-    let isDeprecated = false;
-    let deprecationMessage: string | undefined;
-
-    // Check if latest version is deprecated
-    const latestVersionInfo = info.versions[latestVersion] as
-      | { deprecated?: string; repository?: { url?: string } | string }
-      | undefined;
-    if (latestVersionInfo?.deprecated) {
-      isDeprecated = true;
-      deprecationMessage = latestVersionInfo.deprecated;
-    }
-
-    // Extract repository URL for changelog
-    const repositoryUrl = extractRepositoryUrl(latestVersionInfo?.repository);
-
+/** Get package metadata using the selected project's npm configuration. */
+export async function getPackageInfo(
+  packageName: string,
+  forceRefresh: boolean = false,
+  projectPath: string = process.cwd()
+): Promise<NpmPackageInfo> {
+  const context = await packageContext(packageName, projectPath);
+  const cached = !forceRefresh && context.cache.get(context.key);
+  if (cached) {
     return {
-      latestVersion,
-      lastPublishDate,
-      fromCache: false,
-      isDeprecated,
-      deprecationMessage,
-      repositoryUrl,
+      name: packageName,
+      'dist-tags': { latest: cached.latestVersion },
+      versions: {},
+      time: cached.lastPublishDate
+        ? {
+            created: cached.lastPublishDate,
+            modified: cached.lastPublishDate,
+            [cached.latestVersion]: cached.lastPublishDate,
+          }
+        : undefined,
     };
+  }
+  return fetchPackageInfo(packageName, context);
+}
+
+export async function getPackageDetails(
+  packageName: string,
+  forceRefresh: boolean = false,
+  projectPath: string = process.cwd()
+): Promise<PackageDetails> {
+  // Capture both the registry and cache before starting any asynchronous fetch.
+  const context = await packageContext(packageName, projectPath);
+  const source = { registryUrl: context.target.url, packageUrl: context.target.packageUrl(packageName) };
+  const cached = !forceRefresh && context.cache.get(context.key);
+  if (cached) {
+    return { ...cached, ...source, fromCache: true, cacheAge: context.cache.getAgeHours(context.key) ?? 0 };
+  }
+  try {
+    const info = await fetchPackageInfo(packageName, context);
+    return { ...detailsFromInfo(info), ...source, fromCache: false };
   } catch (error) {
-    // If network fails, return stale cache as fallback for this package
-    if (globalCache) {
-      const staleEntry = globalCache.getStale(packageName);
-      if (staleEntry) {
-        return {
-          latestVersion: staleEntry.latestVersion,
-          lastPublishDate: staleEntry.lastPublishDate,
-          fromCache: true,
-          cacheAge: globalCache.getAgeHours(packageName) || 999,
-          isDeprecated: staleEntry.isDeprecated,
-          deprecationMessage: staleEntry.deprecationMessage,
-          repositoryUrl: staleEntry.repositoryUrl,
-        };
-      }
+    // Authentication and missing packages need attention, not stale success.
+    if (error instanceof RegistryError && [401, 403, 404].includes(error.statusCode ?? 0)) {
+      throw error;
+    }
+    const stale = context.cache.getStale(context.key);
+    if (stale) {
+      return { ...stale, ...source, fromCache: true, cacheAge: context.cache.getAgeHours(context.key) ?? 999 };
     }
     throw error;
   }
@@ -223,8 +126,12 @@ export async function getPackageDetails(packageName: string, forceRefresh: boole
 /**
  * Get the latest version of a package
  */
-export async function getLatestVersion(packageName: string, forceRefresh: boolean = false): Promise<string> {
-  const details = await getPackageDetails(packageName, forceRefresh);
+export async function getLatestVersion(
+  packageName: string,
+  forceRefresh: boolean = false,
+  projectPath: string = process.cwd()
+): Promise<string> {
+  const details = await getPackageDetails(packageName, forceRefresh, projectPath);
   return details.latestVersion;
 }
 
@@ -234,32 +141,23 @@ export async function getLatestVersion(packageName: string, forceRefresh: boolea
  */
 export async function getPackageVersions(
   packageName: string,
-  limit: number = 20
+  limit: number = 20,
+  projectPath: string = process.cwd()
 ): Promise<PackageVersion[]> {
   // Always fetch fresh data for version list (cache may not have full version list)
-  const info = await getPackageInfo(packageName, true);
+  const info = await getPackageInfo(packageName, true, projectPath);
 
   const versions: PackageVersion[] = [];
 
-  // Get all version keys and sort by date (newest first)
+  // Get all versions; semantic version ordering does not require publication dates.
   const versionEntries = Object.entries(info.versions);
-
-  // Create a map of version to publish date
-  const versionDates = new Map<string, string>();
-  if (info.time) {
-    for (const [version, date] of Object.entries(info.time)) {
-      if (version !== 'created' && version !== 'modified') {
-        versionDates.set(version, date);
-      }
-    }
-  }
 
   // Build version info array
   for (const [version, versionData] of versionEntries) {
     // Skip deprecated versions unless it's the only one
     const data = versionData as { deprecated?: string };
-    const date = versionDates.get(version) || info.time?.modified || new Date().toISOString();
-    
+    const date = info.time?.[version] || info.time?.modified || new Date().toISOString();
+
     // Detect if it's a pre-release version (contains -alpha, -beta, -rc, -dev, etc.)
     const isPrerelease = /-\w/.test(version);
 

@@ -25,7 +25,7 @@ A Visual Studio Code extension that provides a visual interface for managing NPM
 
 ## Requirements
 
-- VS Code 1.85.0 or higher
+- VS Code 1.86.0 or higher
 - Node.js project with a `package.json` file
 - Package manager installed (npm, yarn, pnpm, or bun)
 
@@ -72,6 +72,30 @@ Click the eye icon 👁️ next to any package to ignore it from update checks. 
 ### Changelog Viewer
 
 Hover over any package row and click the book icon 📖 to open the package's GitHub releases page. This helps you review what changed before updating.
+
+## Private registries (including GitLab)
+
+Version checks, version selection and package search read the selected project's npm configuration: project/workspace `.npmrc`, user `.npmrc`, global npm configuration and `NPM_CONFIG_*` environment overrides. Scoped packages use their `@scope:registry` mapping; other packages use the default `registry`.
+
+For example, a GitLab project feed can be configured in the project's `.npmrc`:
+
+```ini
+@company:registry=https://gitlab.example.com/api/v4/projects/42/packages/npm/
+```
+
+Keep authentication in your user `.npmrc` or use an environment variable available to the VS Code extension host:
+
+```ini
+//gitlab.example.com/api/v4/projects/42/packages/npm/:_authToken=${NPM_TOKEN}
+```
+
+GitLab group and instance npm endpoints are supported too. The extension reuses npm authentication and its proxy/CA configuration (`https-proxy`, `cafile`, etc.); it does not ask for or store tokens in extension settings. Install and update commands continue to use the selected package manager's own configuration. Native Yarn `.yarnrc.yml` registry settings are not imported by these metadata queries; use npm-compatible `.npmrc` settings for them.
+
+GitLab lookup uses the **full package name**, such as `@company/ui-kit`, because its npm API does not provide the public npm text-search endpoint. General text searches use the configured default registry. A private lookup never falls back to npmjs.org on authentication or lookup errors. A GitLab server may independently forward requests according to its own configuration.
+
+The package-name tooltip shows the resolved registry, and its link points to that registry. Metadata caches are isolated by project and registry. Click **Refresh** after editing `.npmrc` or changing tokens to reload configuration immediately (configuration is otherwise cached for up to 30 seconds). If credentials use environment variables, restart VS Code after changing its launch environment. See [GitLab's npm registry documentation](https://docs.gitlab.com/user/packages/npm_registry/) for token permissions and endpoint formats.
+
+The registry libraries require the Node.js runtime bundled with VS Code 1.86 or newer.
 
 ## Extension Settings
 

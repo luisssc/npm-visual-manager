@@ -112,6 +112,8 @@ export const SearchPanel = memo(
               {isLoading && <span className="search-loading">{t.states.searching}</span>}
             </div>
 
+            <p className="private-registry-hint">{t.search.privateRegistryHint}</p>
+
             {selectedPackage ? (
               <div className="install-confirmation">
                 {isPackageInstalled(selectedPackage.name) ? (

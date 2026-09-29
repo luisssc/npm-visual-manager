@@ -89,6 +89,7 @@ export const ko: Translations = {
 
   // Search panel
   search: {
+    privateRegistryHint: '비공개 레지스트리: 전체 패키지 이름을 입력하세요. 예: @scope/package.',
     title: '패키지 설치',
     noResults: '"{{query}}"에 대한 패키지를 찾을 수 없음',
     weeklyDownloads: '{{downloads}}/주',

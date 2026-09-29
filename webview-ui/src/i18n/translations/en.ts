@@ -87,6 +87,7 @@ export const en = {
 
   // Search panel
   search: {
+    privateRegistryHint: 'Private registry: enter the full package name, e.g. @scope/package.',
     title: 'Install Packages',
     noResults: 'No packages found for "{{query}}"',
     weeklyDownloads: '{{downloads}}/wk',

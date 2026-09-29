@@ -89,6 +89,7 @@ export const ja: Translations = {
 
   // Search panel
   search: {
+    privateRegistryHint: 'プライベートレジストリ：完全なパッケージ名を入力してください（例：@scope/package）。',
     title: 'パッケージをインストール',
     noResults: '"{{query}}" のパッケージが見つかりません',
     weeklyDownloads: '{{downloads}}/週',

@@ -155,6 +155,8 @@ function App() {
                     isDeprecated: message.error ? undefined : message.isDeprecated,
                     deprecationMessage: message.error ? undefined : message.deprecationMessage,
                     repositoryUrl: message.error ? undefined : message.repositoryUrl,
+                    registryUrl: message.error ? undefined : message.registryUrl,
+                    packageUrl: message.error ? undefined : message.packageUrl,
                     checkError: message.error,
                   }
                 : dep

@@ -561,9 +561,9 @@ export const DependencyTable = ({
                     </td>
                     <td className="package-name">
                       <div className="package-info">
-                        <Tooltip text={t.tooltips.viewOnNpm}>
+                        <Tooltip text={dep.registryUrl || t.tooltips.viewOnNpm}>
                           <a
-                            href={`https://www.npmjs.com/package/${dep.name}`}
+                            href={dep.packageUrl}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="package-link"

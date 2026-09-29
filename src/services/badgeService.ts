@@ -8,7 +8,7 @@
 
 import type { PackageJson } from '../../types';
 import { findPackageJson, readPackageJson } from './packageService';
-import { getPackageDetails, getSemverUpdateType, setGlobalCache } from './npmService';
+import { getPackageDetails, getSemverUpdateType } from './npmService';
 import { getCache } from './cacheService';
 import { runAudit } from './auditService';
 import { findAllProjectsMultiRoot, ScanOptions } from './workspaceService';
@@ -98,6 +98,8 @@ export async function countProjectUpdates(
   }
 
   const directDeps = collectDirectDependencies(packageJson);
+  const cache = getCache(projectPath);
+  await cache.load();
   const candidates = Array.from(directDeps.entries()).filter(
     ([name, version]) => !isIgnored(name) && !isLocalPackageVersion(version)
   );
@@ -108,7 +110,7 @@ export async function countProjectUpdates(
     await Promise.all(
       batch.map(async ([name, declaredVersion]) => {
         try {
-          const details = await getPackageDetails(name);
+          const details = await getPackageDetails(name, false, projectPath);
           const updateType = getSemverUpdateType(declaredVersion, details.latestVersion);
           if (updateType === 'major' || updateType === 'minor' || updateType === 'patch') {
             updates++;
@@ -120,6 +122,7 @@ export async function countProjectUpdates(
     );
   }
 
+  await cache.save();
   return { updates, directDependencies: new Set(directDeps.keys()) };
 }
 
@@ -137,10 +140,6 @@ export async function computeWorkspaceBadge(
   if (workspaceRoots.length === 0) {
     return { updates: 0, vulnerablePackages: 0 };
   }
-
-  const cache = getCache(workspaceRoots[0]!);
-  await cache.load();
-  setGlobalCache(cache);
 
   const projects = await findAllProjectsMultiRoot(workspaceRoots, options.scan);
 
@@ -180,6 +179,5 @@ export async function computeWorkspaceBadge(
     });
   }
 
-  await cache.save();
   return { updates, vulnerablePackages, projects: perProject, ...(auditFailed ? { auditFailed: true } : {}) };
 }

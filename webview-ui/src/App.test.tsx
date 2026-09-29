@@ -206,6 +206,19 @@ describe('rollback results across projects', () => {
 });
 
 describe('App header target file', () => {
+  it('links a private dependency to its configured registry', () => {
+    render(<App />, { wrapper: Wrapper });
+    loadProjects([THEME], THEME.path, {
+      dependencies: [{
+        name: '@company/demo', declaredVersion: '^1.0.0', installedVersion: '1.0.0',
+        type: 'dependencies', updateAvailable: true, latestVersion: '2.0.0',
+        registryUrl: 'https://gitlab.example.test/api/v4/projects/42/packages/npm/',
+        packageUrl: 'https://gitlab.example.test/api/v4/projects/42/packages/npm/%40company%2Fdemo',
+      }],
+    });
+    expect(screen.getByRole('link', { name: '@company/demo' })).toHaveAttribute('href', 'https://gitlab.example.test/api/v4/projects/42/packages/npm/%40company%2Fdemo');
+  });
+
   it('names the package.json being managed, with forward slashes', () => {
     render(<App />, { wrapper: Wrapper });
     loadProjects([THEME, PLUGIN], THEME.path);

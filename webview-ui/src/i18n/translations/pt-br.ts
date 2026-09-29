@@ -89,6 +89,7 @@ export const ptBr: Translations = {
 
   // Search panel
   search: {
+    privateRegistryHint: 'Registro privado: digite o nome completo, por exemplo @scope/pacote.',
     title: 'Instalar Pacotes',
     noResults: 'Nenhum pacote encontrado para "{{query}}"',
     weeklyDownloads: '{{downloads}}/sem',
