@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { collectDirectDependencies, countProjectUpdates, computeWorkspaceBadge } from '../badgeService';
 import { findPackageJson, readPackageJson } from '../packageService';
 import { getPackageDetails } from '../npmService';
@@ -67,6 +67,7 @@ function auditWith(...packageNames: string[]): AuditResult {
 beforeEach(() => {
   vi.clearAllMocks();
 });
+afterEach(() => vi.useRealTimers());
 
 describe('collectDirectDependencies', () => {
   it('collects prod, dev and peer dependencies', () => {
@@ -98,6 +99,23 @@ describe('collectDirectDependencies', () => {
 });
 
 describe('countProjectUpdates', () => {
+  it('refills free lookup slots while a slow request remains pending', async () => {
+    vi.useFakeTimers();
+    mockFindPackageJson.mockResolvedValue('/project/package.json');
+    mockReadPackageJson.mockResolvedValue({ dependencies: { slow: '^1.0.0', fast: '^1.0.0', next: '^1.0.0' } });
+    mockGetPackageDetails.mockImplementation(async name => {
+      await new Promise(resolve => setTimeout(resolve, name === 'slow' ? 1000 : 50));
+      return { latestVersion: '2.0.0' };
+    });
+    const check = countProjectUpdates('/project', { batchSize: 2 });
+    await vi.advanceTimersByTimeAsync(0);
+    expect(mockGetPackageDetails).toHaveBeenCalledTimes(2);
+    await vi.advanceTimersByTimeAsync(50);
+    expect(mockGetPackageDetails).toHaveBeenCalledTimes(3);
+    await vi.runAllTimersAsync();
+    expect((await check).updates).toBe(3);
+  });
+
   it('counts prerelease advances and stable promotions but ignores build metadata', async () => {
     mockFindPackageJson.mockResolvedValue('/project/package.json');
     mockReadPackageJson.mockResolvedValue({

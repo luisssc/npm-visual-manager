@@ -27,6 +27,7 @@ import { clearPackageSizeCache } from '../services/sizeService';
 import type { PackageManager } from '../../types';
 import { getHtmlForWebview } from './htmlProvider';
 import { isLocalPackageVersion } from '../utils/localPackage';
+import { mapWithConcurrency } from '../utils/mapWithConcurrency';
 import { getWhyInstalled } from '../services/whyService';
 import { requestBadgeRefresh } from '../services/badgeEvents';
 import { getVSCodeLanguage } from '../i18n/getLanguage';
@@ -719,71 +720,65 @@ export class NpmGuiManagerPanel {
   private async _checkUpdates(dependencies: Dependency[], forceRefresh: boolean = false): Promise<void> {
     const projectPath = this._currentProjectPath;
     const generation = this._loadGeneration;
-    const batchSize = 5; // Process in batches to avoid overloading
+    const cache = this._cache;
+    const concurrency = 5;
     const dependenciesToCheck = Array.from(
       new Map(dependencies.filter(dep => !dep.isIgnored).map(dep => [dep.name, dep] as const)).values()
     );
 
-    for (let i = 0; i < dependenciesToCheck.length; i += batchSize) {
+    await mapWithConcurrency(dependenciesToCheck, concurrency, async dep => {
       if (projectPath !== this._currentProjectPath || generation !== this._loadGeneration) {
         return;
       }
-      const batch = dependenciesToCheck.slice(i, i + batchSize);
-      const promises = batch.map(async dep => {
-        try {
-          // Skip registry check for local/workspace/git packages
-          if (isLocalPackageVersion(dep.declaredVersion)) {
-            this._sendMessage({
-              type: 'VERSION_CHECK_RESULT',
-              dependency: dep,
-              latestVersion: '',
-              error: 'Local or workspace package',
-            });
-            return;
-          }
-
-          const details = await getPackageDetails(dep.name, forceRefresh, projectPath);
-          if (projectPath !== this._currentProjectPath || generation !== this._loadGeneration) {
-            return;
-          }
-          // Compare declared version (from package.json) with latest, not installed version
-          const semverUpdateType = getSemverUpdateType(dep.declaredVersion, details.latestVersion);
-
-          this._sendMessage({
-            type: 'VERSION_CHECK_RESULT',
-            dependency: dep,
-            latestVersion: details.latestVersion,
-            semverUpdateType,
-            lastPublishDate: details.lastPublishDate,
-            fromCache: details.fromCache,
-            cacheAge: details.cacheAge,
-            isDeprecated: details.isDeprecated,
-            deprecationMessage: details.deprecationMessage,
-            repositoryUrl: details.repositoryUrl,
-            registryUrl: details.registryUrl,
-            packageUrl: details.packageUrl,
-          });
-        } catch (error) {
-          if (projectPath !== this._currentProjectPath || generation !== this._loadGeneration) {
-            return;
-          }
-          console.warn(`Failed to check version for ${dep.name}:`, error);
+      try {
+        // Skip registry check for local/workspace/git packages
+        if (isLocalPackageVersion(dep.declaredVersion)) {
           this._sendMessage({
             type: 'VERSION_CHECK_RESULT',
             dependency: dep,
             latestVersion: '',
-            error: error instanceof Error ? error.message : String(error),
+            error: 'Local or workspace package',
           });
+          return;
         }
-      });
 
-      await Promise.all(promises);
-    }
+        const details = await getPackageDetails(dep.name, forceRefresh, projectPath);
+        if (projectPath !== this._currentProjectPath || generation !== this._loadGeneration) {
+          return;
+        }
+        // Compare declared version (from package.json) with latest, not installed version
+        const semverUpdateType = getSemverUpdateType(dep.declaredVersion, details.latestVersion);
 
-    // Save cache after batch processing
-    if (this._cache) {
-      await this._cache.save();
-    }
+        this._sendMessage({
+          type: 'VERSION_CHECK_RESULT',
+          dependency: dep,
+          latestVersion: details.latestVersion,
+          semverUpdateType,
+          lastPublishDate: details.lastPublishDate,
+          fromCache: details.fromCache,
+          cacheAge: details.cacheAge,
+          isDeprecated: details.isDeprecated,
+          deprecationMessage: details.deprecationMessage,
+          repositoryUrl: details.repositoryUrl,
+          registryUrl: details.registryUrl,
+          packageUrl: details.packageUrl,
+        });
+      } catch (error) {
+        if (projectPath !== this._currentProjectPath || generation !== this._loadGeneration) {
+          return;
+        }
+        console.warn(`Failed to check version for ${dep.name}:`, error);
+        this._sendMessage({
+          type: 'VERSION_CHECK_RESULT',
+          dependency: dep,
+          latestVersion: '',
+          error: error instanceof Error ? error.message : String(error),
+        });
+      }
+    });
+
+    // Save only the cache belonging to this check, even after a project switch.
+    await cache?.save();
   }
 
   /**

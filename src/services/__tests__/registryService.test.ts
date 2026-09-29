@@ -196,6 +196,47 @@ describe('configured private registries', () => {
 });
 
 describe('private metadata and search', () => {
+  it('shares concurrent metadata requests from the panel, badge and version selector', async () => {
+    await privateClient();
+    const [panel, badge, versions] = await Promise.all([
+      getPackageDetails('@company/demo', false, project),
+      getPackageDetails('@company/demo', false, project),
+      getPackageVersions('@company/demo', 20, project),
+    ]);
+    expect(panel.latestVersion).toBe('1.0.0');
+    expect(badge.latestVersion).toBe('1.0.0');
+    expect(versions[0]?.version).toBe('1.0.0');
+    expect(requests).toHaveLength(1);
+    await getPackageDetails('@company/demo', true, project);
+    expect(requests).toHaveLength(2);
+  });
+
+  it('releases a shared failed request so retry can succeed', async () => {
+    await privateClient();
+    status = 401;
+    const results = await Promise.allSettled([
+      getPackageDetails('@company/demo', false, project),
+      getPackageDetails('@company/demo', false, project),
+    ]);
+    expect(results.every(result => result.status === 'rejected')).toBe(true);
+    expect(requests).toHaveLength(1);
+    status = 200;
+    expect((await getPackageDetails('@company/demo', false, project)).latestVersion).toBe('1.0.0');
+    expect(requests).toHaveLength(2);
+  });
+
+  it('does not share in-flight metadata across projects or refreshed registry configurations', async () => {
+    const client = await privateClient();
+    const reloaded = await loadRegistryClient(project, env);
+    vi.mocked(getRegistryClient).mockResolvedValueOnce(client).mockResolvedValueOnce(client).mockResolvedValueOnce(reloaded);
+    await Promise.all([
+      getPackageDetails('@company/demo', false, project),
+      getPackageDetails('@company/demo', false, path.join(root, 'other-project')),
+      getPackageDetails('@company/demo', true, project),
+    ]);
+    expect(requests).toHaveLength(3);
+  });
+
   it('orders valid versions by SemVer and does not mistake build metadata for a prerelease', async () => {
     await privateClient();
     metadataOverrides = {

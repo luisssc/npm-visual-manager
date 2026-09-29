@@ -7,6 +7,7 @@ import * as path from 'path';
 import type { PackageJson, Dependency } from '../../types';
 import { getPackageSize } from './sizeService';
 import { getInstalledVersion } from './installedVersionService';
+import { mapWithConcurrency } from '../utils/mapWithConcurrency';
 
 interface ExtractDependenciesOptions {
   includeSize?: boolean;
@@ -92,24 +93,4 @@ export async function extractDependencies(
   });
 
   return dependencies.sort((a, b) => a.name.localeCompare(b.name));
-}
-
-async function mapWithConcurrency<T, R>(items: T[], limit: number, mapper: (item: T) => Promise<R>): Promise<R[]> {
-  const results = new Array<R>(items.length);
-  let currentIndex = 0;
-
-  const workers = Array.from({ length: Math.min(limit, items.length) }, async () => {
-    // eslint-disable-next-line no-constant-condition
-    while (true) {
-      const index = currentIndex++;
-      if (index >= items.length) {
-        return;
-      }
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      results[index] = await mapper(items[index]!);
-    }
-  });
-
-  await Promise.all(workers);
-  return results;
 }

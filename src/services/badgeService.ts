@@ -13,6 +13,7 @@ import { getCache } from './cacheService';
 import { runAudit } from './auditService';
 import { findAllProjectsMultiRoot, ScanOptions } from './workspaceService';
 import { isLocalPackageVersion } from '../utils/localPackage';
+import { mapWithConcurrency } from '../utils/mapWithConcurrency';
 
 /** Per-project counts, so the workspace total can be attributed to a file. */
 export interface BadgeProjectSummary {
@@ -42,7 +43,7 @@ export interface BadgeSummary {
 export interface BadgeCheckOptions {
   /** Predicate for packages excluded from update checks (ignore list) */
   isIgnored?: (packageName: string) => boolean;
-  /** Max parallel registry requests per batch */
+  /** Max concurrent registry lookups (slots are refilled as each finishes). */
   batchSize?: number;
   /** Depth/exclusions used to discover package.json files */
   scan?: ScanOptions;
@@ -105,21 +106,16 @@ export async function countProjectUpdates(
   );
 
   let updates = 0;
-  for (let i = 0; i < candidates.length; i += batchSize) {
-    const batch = candidates.slice(i, i + batchSize);
-    await Promise.all(
-      batch.map(async ([name, declaredVersion]) => {
-        try {
-          const details = await getPackageDetails(name, false, projectPath);
-          if (isUpdateAvailable(declaredVersion, details.latestVersion)) {
-            updates++;
-          }
-        } catch {
-          // Unresolvable package (private registry, network error): not counted
-        }
-      })
-    );
-  }
+  await mapWithConcurrency(candidates, batchSize, async ([name, declaredVersion]) => {
+    try {
+      const details = await getPackageDetails(name, false, projectPath);
+      if (isUpdateAvailable(declaredVersion, details.latestVersion)) {
+        updates++;
+      }
+    } catch {
+      // Unresolvable package (private registry, network error): not counted
+    }
+  });
 
   await cache.save();
   return { updates, directDependencies: new Set(directDeps.keys()) };

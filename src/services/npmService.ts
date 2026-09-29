@@ -3,7 +3,7 @@
  * With offline cache support
  */
 
-import { getRegistryClient, RegistryError, RegistryTarget } from './registryService';
+import { getRegistryClient, RegistryClient, RegistryError, RegistryTarget } from './registryService';
 import { compare, minVersion, parse, validRange } from 'semver';
 import type { PackageVersion, SemverUpdateType } from '../../types';
 import { getCache, VersionCache } from './cacheService';
@@ -37,17 +37,47 @@ export interface PackageDetails {
 export type { SemverUpdateType } from '../../types';
 
 interface PackageContext {
+  client: RegistryClient;
   target: RegistryTarget;
   cache: VersionCache;
   key: string;
 }
 
 async function packageContext(packageName: string, projectPath: string): Promise<PackageContext> {
-  const target = (await getRegistryClient(projectPath)).forPackage(packageName);
-  return { target, cache: getCache(projectPath), key: target.url + '|' + packageName };
+  const client = await getRegistryClient(projectPath);
+  const target = client.forPackage(packageName);
+  return { client, target, cache: getCache(projectPath), key: target.url + '|' + packageName };
 }
 
+// Share only in-flight reads with the same project cache and configuration
+// instance. Reloading npmrc creates a new client, so credentials never cross.
+const pendingMetadata = new WeakMap<RegistryClient, WeakMap<VersionCache, Map<string, Promise<NpmPackageInfo>>>>();
+
 async function fetchPackageInfo(packageName: string, context: PackageContext): Promise<NpmPackageInfo> {
+  let projects = pendingMetadata.get(context.client);
+  if (!projects) {
+    projects = new WeakMap();
+    pendingMetadata.set(context.client, projects);
+  }
+  let requests = projects.get(context.cache);
+  if (!requests) {
+    requests = new Map();
+    projects.set(context.cache, requests);
+  }
+  const existing = requests.get(context.key);
+  if (existing) {
+    return existing;
+  }
+  const request = requestPackageInfo(packageName, context);
+  requests.set(context.key, request);
+  try {
+    return await request;
+  } finally {
+    requests.delete(context.key);
+  }
+}
+
+async function requestPackageInfo(packageName: string, context: PackageContext): Promise<NpmPackageInfo> {
   const info = await context.target.json<NpmPackageInfo>(encodeURIComponent(packageName));
   if (!info || typeof info['dist-tags']?.latest !== 'string' || !info.versions || Array.isArray(info.versions)) {
     throw new RegistryError('The configured registry returned invalid package metadata.');

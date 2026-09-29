@@ -39,6 +39,7 @@ import { getInstalledVersion } from '../../services/installedVersionService';
 import { runCommand } from '../../utils/commandRunner';
 import { PackageOperationsService } from '../../services/packageOperationsService';
 import { runAudit } from '../../services/auditService';
+import * as npmService from '../../services/npmService';
 
 const projectA = path.resolve('project-a');
 const projectB = path.resolve('project-b');
@@ -74,6 +75,79 @@ function makePanel() {
     { name: 'B', path: projectB, relativePath: 'b' },
   ]);
 }
+
+describe('update check scheduling', () => {
+  function dependencies(count: number) {
+    return Array.from({ length: count }, (_, i) => ({
+      name: `demo-${i}`, declaredVersion: '^1.0.0', installedVersion: '1.0.0', type: 'dependencies',
+    }));
+  }
+
+  it('keeps five slots busy without waiting for slow peers in a batch', async () => {
+    const panel = makePanel();
+    panel._checkUpdates.mockRestore();
+    let active = 0;
+    let peak = 0;
+    const startedAt = Date.now();
+    let completedAt = startedAt;
+    const details = vi.spyOn(npmService, 'getPackageDetails').mockImplementation(async name => {
+      active++;
+      peak = Math.max(peak, active);
+      await new Promise(resolve => setTimeout(resolve, Number(name.split('-')[1]) % 5 === 0 ? 1000 : 50));
+      active--;
+      completedAt = Date.now();
+      return { latestVersion: '2.0.0' };
+    });
+    const check = panel._checkUpdates(dependencies(50));
+    await vi.advanceTimersByTimeAsync(50);
+    expect(details.mock.calls.length).toBeGreaterThan(5);
+    expect(peak).toBe(5);
+    await vi.advanceTimersByTimeAsync(2950);
+    expect(details).toHaveBeenCalledTimes(50);
+    expect(panel._panel.webview.postMessage).toHaveBeenCalledTimes(50);
+    expect(active).toBe(0);
+    // The former ten sequential batches each waited 1 s: 10 s total.
+    expect(completedAt - startedAt).toBe(2700);
+    await check;
+  });
+
+  it('continues after failed lookups and saves the originating project cache', async () => {
+    const panel = makePanel();
+    panel._checkUpdates.mockRestore();
+    const save = vi.fn().mockResolvedValue(undefined);
+    panel._cache = { save };
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const details = vi.spyOn(npmService, 'getPackageDetails')
+      .mockRejectedValueOnce(new Error('offline'))
+      .mockResolvedValue({ latestVersion: '2.0.0' });
+    await panel._checkUpdates(dependencies(12));
+    expect(details).toHaveBeenCalledTimes(12);
+    const messages = panel._panel.webview.postMessage.mock.calls.map((call: any[]) => call[0]);
+    expect(messages.filter((message: any) => message.error)).toHaveLength(1);
+    expect(messages.filter((message: any) => message.latestVersion === '2.0.0')).toHaveLength(11);
+    expect(save).toHaveBeenCalledOnce();
+  });
+
+  it.each(['project', 'generation'])('stops scheduling and discards results after a %s change', async change => {
+    const panel = makePanel();
+    panel._checkUpdates.mockRestore();
+    const details = vi.spyOn(npmService, 'getPackageDetails').mockImplementation(async () => {
+      await new Promise(resolve => setTimeout(resolve, 100));
+      return { latestVersion: '2.0.0' };
+    });
+    const check = panel._checkUpdates(dependencies(20));
+    expect(details).toHaveBeenCalledTimes(5);
+    if (change === 'project') {
+      panel._currentProjectPath = projectB;
+    } else {
+      panel._loadGeneration++;
+    }
+    await vi.runAllTimersAsync();
+    await check;
+    expect(details).toHaveBeenCalledTimes(5);
+    expect(panel._panel.webview.postMessage).not.toHaveBeenCalled();
+  });
+});
 
 describe('project-bound rollback', () => {
   it('refuses a history from a different project before running any command', async () => {

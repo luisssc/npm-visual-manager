@@ -32,6 +32,8 @@ All notable changes to the "npm-visual-manager" extension will be documented in 
 
 ### Changed
 
+- Update checks in the panel and activity badge continuously refill up to five concurrent lookup slots, so a slow dependency no longer blocks the next batch. A deterministic 50-dependency regression scenario (50 ms/1 s responses) completes in 2.7 s instead of 10 s with the former batches; actual gains depend on registry latency.
+- Simultaneous metadata reads for the same package, project and registry configuration share one in-flight request. Completed and failed requests are released, explicit refresh still fetches fresh data, and projects or reloaded credentials remain isolated.
 - Minimum supported VS Code version is now **1.86.0** to support the npm registry client dependencies.
 - Registry access uses `@npmcli/config` and `npm-registry-fetch`. Install/update commands continue to use the selected package manager's own configuration; metadata queries read npm-compatible `.npmrc` settings, not native Yarn `.yarnrc.yml` registry settings.
 - **Refresh** reloads registry configuration immediately; otherwise it is cached for up to 30 seconds. Changes to the environment used to launch VS Code require restarting VS Code.
@@ -40,9 +42,9 @@ All notable changes to the "npm-visual-manager" extension will be documented in 
 
 ### Tests
 
-- Added regression coverage for SemVer precedence, range parsing, prerelease update actions and counts, monorepo manager detection and installed-version resolution, private registry routing and authentication, per-project cache isolation, rollback ownership, audit failures, operation queues and UI locking, and missing or incorrect publication dates.
+- Added regression coverage for continuous update-check scheduling, concurrency limits, stale-result rejection and shared metadata requests, SemVer precedence, range parsing, prerelease update actions and counts, monorepo manager detection and installed-version resolution, private registry routing and authentication, per-project cache isolation, rollback ownership, audit failures, operation queues and UI locking, and missing or incorrect publication dates.
 - Private registry integration tests use a local HTTP server and fictional credentials, without contacting a corporate feed.
-- Validation: **300 passing tests** (273 extension/service tests and 27 webview tests), successful TypeScript compilation and webview production build, and no lint errors.
+- Validation: **308 passing tests** (281 extension/service tests and 27 webview tests), successful TypeScript compilation and webview production build, and no lint errors.
 
 ## [1.9.3] - 2026-09-18
 
