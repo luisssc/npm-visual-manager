@@ -63,9 +63,7 @@ describe('detectPackageManager', () => {
 
   it('ignores a directory named like a lock file', async () => {
     fs.mkdirSync(path.join(projectPath, 'pnpm-lock.yaml'));
-    // fs.access only proves the path exists, so this documents current
-    // behaviour rather than asserting it is ideal.
-    await expect(detectPackageManager(projectPath)).resolves.toBe('pnpm');
+    await expect(detectPackageManager(projectPath)).resolves.toBe('npm');
   });
 });
 

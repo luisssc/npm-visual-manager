@@ -29,7 +29,7 @@ const PACKAGE_MANAGERS: Record<PackageManager, PackageManagerInfo> = {
     installCommand: 'npm install',
     addCommand: 'npm install',
     auditCommand: 'npm audit --json',
-    lockFiles: ['package-lock.json'],
+    lockFiles: ['npm-shrinkwrap.json', 'package-lock.json'],
     runCommand: 'npm run',
     devFlag: '--save-dev',
     exactFlag: '--save-exact',
@@ -73,25 +73,74 @@ const PACKAGE_MANAGERS: Record<PackageManager, PackageManagerInfo> = {
   },
 };
 
-/**
- * Detect which package manager is used in a project
- */
-export async function detectPackageManager(projectPath: string): Promise<PackageManager> {
-  // Check for lock files
-  for (const [name, info] of Object.entries(PACKAGE_MANAGERS)) {
-    for (const lockFile of info.lockFiles) {
-      const lockFilePath = path.join(projectPath, lockFile);
-      try {
-        await fs.promises.access(lockFilePath, fs.constants.F_OK);
-        return name as PackageManager;
-      } catch {
-        // Lock file doesn't exist, continue
+export interface PackageManagerContext {
+  manager: PackageManager;
+  /** Directory owning the configuration; commands still target the selected project. */
+  rootPath: string;
+  declaredVersion?: string;
+}
+
+async function isFile(filePath: string): Promise<boolean> {
+  try {
+    return (await fs.promises.stat(filePath)).isFile();
+  } catch {
+    return false;
+  }
+}
+
+/** Find the nearest project/workspace configuration without crossing a repository boundary. */
+export async function resolvePackageManagerContext(projectPath: string): Promise<PackageManagerContext> {
+  let directory = path.resolve(projectPath);
+  try { directory = await fs.promises.realpath(directory); } catch { /* New project. */ }
+  const original = directory;
+  for (;;) {
+    let manifest: { packageManager?: unknown; workspaces?: unknown } | null = null;
+    try {
+      manifest = JSON.parse(await fs.promises.readFile(path.join(directory, 'package.json'), 'utf8'));
+    } catch { /* No readable manifest here; workspace configuration may be higher up. */ }
+
+    const declaration = typeof manifest?.packageManager === 'string'
+      ? /^(npm|yarn|pnpm|bun)@(\d+\.\d+\.\d+(?:[-+][^\s]+)?)$/.exec(manifest.packageManager)
+      : null;
+    if (declaration) {
+      return { manager: declaration[1] as PackageManager, rootPath: directory, declaredVersion: declaration[2] };
+    }
+
+    // A pnpm workspace identifies the manager even before its first install.
+    if (await isFile(path.join(directory, 'pnpm-workspace.yaml'))) {
+      return { manager: 'pnpm', rootPath: directory };
+    }
+    for (const [name, info] of Object.entries(PACKAGE_MANAGERS)) {
+      for (const lockFile of info.lockFiles) {
+        if (await isFile(path.join(directory, lockFile))) {
+          return { manager: name as PackageManager, rootPath: directory };
+        }
       }
     }
-  }
+    if (await isFile(path.join(directory, '.yarnrc.yml'))) {
+      return { manager: 'yarn', rootPath: directory };
+    }
+    if (Array.isArray(manifest?.workspaces) ||
+        (manifest?.workspaces && typeof manifest.workspaces === 'object' && 'packages' in manifest.workspaces)) {
+      return { manager: 'npm', rootPath: directory };
+    }
 
-  // Default to npm if no lock file found
-  return 'npm';
+    // .git can be a directory or a file (worktree/submodule).
+    try {
+      await fs.promises.access(path.join(directory, '.git'), fs.constants.F_OK);
+      return { manager: 'npm', rootPath: directory };
+    } catch { /* Still within the same repository, or outside Git. */ }
+    const parent = path.dirname(directory);
+    if (parent === directory || path.basename(parent) === 'node_modules') {
+      return { manager: 'npm', rootPath: original };
+    }
+    directory = parent;
+  }
+}
+
+/** Detect the manager for the selected project, including inherited workspace configuration. */
+export async function detectPackageManager(projectPath: string): Promise<PackageManager> {
+  return (await resolvePackageManagerContext(projectPath)).manager;
 }
 
 /**
@@ -142,8 +191,13 @@ export function getAuditCommand(manager: PackageManager): string {
  * signal, as it exists only for berry.
  */
 export async function isYarnBerry(projectPath: string): Promise<boolean> {
+  const context = await resolvePackageManagerContext(projectPath);
+  if (context.manager === 'yarn' && context.declaredVersion) {
+    return Number(context.declaredVersion.split('.')[0]) >= 2;
+  }
+  const configurationRoot = context.rootPath;
   try {
-    const handle = await fs.promises.open(path.join(projectPath, 'yarn.lock'), 'r');
+    const handle = await fs.promises.open(path.join(configurationRoot, 'yarn.lock'), 'r');
     try {
       const buffer = Buffer.alloc(1024);
       const { bytesRead } = await handle.read(buffer, 0, buffer.length, 0);
@@ -158,7 +212,7 @@ export async function isYarnBerry(projectPath: string): Promise<boolean> {
   }
 
   try {
-    await fs.promises.access(path.join(projectPath, '.yarnrc.yml'), fs.constants.F_OK);
+    await fs.promises.access(path.join(configurationRoot, '.yarnrc.yml'), fs.constants.F_OK);
     return true;
   } catch {
     return false;
