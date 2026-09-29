@@ -47,14 +47,6 @@ interface AuditCacheEntry {
 
 const auditCache = new Map<string, AuditCacheEntry>();
 
-const EMPTY_AUDIT_RESULT: AuditResult = {
-  vulnerabilities: [],
-  metadata: {
-    vulnerabilities: { info: 0, low: 0, moderate: 0, high: 0, critical: 0 },
-    totalDependencies: 0,
-  },
-};
-
 /**
  * Run security audit using the detected package manager
  */
@@ -69,68 +61,50 @@ export async function runAudit(projectPath: string, options: RunAuditOptions = {
   const packageManager = await detectPackageManager(projectPath);
   const auditCommand = await resolveCommandPath(await getAuditCommandForProject(packageManager, projectPath));
 
+  let stdout: string;
+  let commandFailed = false;
   try {
-    const { stdout } = await execAsync(auditCommand, {
+    ({ stdout } = await execAsync(auditCommand, {
       cwd: projectPath,
       timeout: 60000,
       maxBuffer: 10 * 1024 * 1024, // 10MB buffer
-    });
-
-    const parsed = parseAuditOutput(packageManager, stdout);
-
-    const result: AuditResult = {
-      vulnerabilities: parsed.vulnerabilities.map(v => ({
-        ...v,
-        overview: v.title,
-      })),
-      metadata: {
-        vulnerabilities: parsed.metadata.vulnerabilities,
-        totalDependencies: 0, // Not available in all formats
-      },
-    };
-
-    auditCache.set(projectPath, {
-      result,
-      timestamp: Date.now(),
-    });
-
-    return result;
+    }));
   } catch (error) {
-    // Package managers return exit code 1 when vulnerabilities are found
-    // but still output valid data
-    if (error instanceof Error && 'stdout' in error) {
-      const stdout = (error as { stdout: string }).stdout;
-      if (stdout) {
-        const parsed = parseAuditOutput(packageManager, stdout);
-        const result: AuditResult = {
-          vulnerabilities: parsed.vulnerabilities.map(v => ({
-            ...v,
-            overview: v.title,
-          })),
-          metadata: {
-            vulnerabilities: parsed.metadata.vulnerabilities,
-            totalDependencies: 0,
-          },
-        };
-
-        auditCache.set(projectPath, {
-          result,
-          timestamp: Date.now(),
-        });
-
-        return result;
-      }
+    // A failed refresh must not leave a cached clean result available.
+    auditCache.delete(projectPath);
+    const failure = error as { code?: unknown; stdout?: unknown; killed?: boolean; signal?: unknown } | null;
+    if (
+      !failure ||
+      failure.killed ||
+      failure.signal ||
+      typeof failure.code !== 'number' ||
+      typeof failure.stdout !== 'string' ||
+      !failure.stdout.trim()
+    ) {
+      throw error;
     }
-
-    // Return and cache empty result if audit fully fails
-    const emptyResult = { ...EMPTY_AUDIT_RESULT };
-    auditCache.set(projectPath, {
-      result: emptyResult,
-      timestamp: Date.now(),
-    });
-
-    return emptyResult;
+    stdout = failure.stdout;
+    commandFailed = true;
   }
+
+  const parsed = parseAuditOutput(packageManager, stdout);
+  // Nonzero exits are normal for findings, but never proof of a clean audit.
+  const hasFindings =
+    parsed.vulnerabilities.length > 0 || Object.values(parsed.metadata.vulnerabilities).some(count => count > 0);
+  if (!parsed.valid || (commandFailed && !hasFindings)) {
+    auditCache.delete(projectPath);
+    throw new Error('Security audit did not return a valid report');
+  }
+
+  const result: AuditResult = {
+    vulnerabilities: parsed.vulnerabilities.map(v => ({ ...v, overview: v.title })),
+    metadata: {
+      vulnerabilities: parsed.metadata.vulnerabilities,
+      totalDependencies: 0, // Not available in all formats
+    },
+  };
+  auditCache.set(projectPath, { result, timestamp: Date.now() });
+  return result;
 }
 
 export function clearAuditCache(projectPath?: string): void {

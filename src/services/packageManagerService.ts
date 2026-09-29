@@ -213,6 +213,8 @@ export interface ParsedVulnerability {
 }
 
 export interface ParsedAudit {
+  /** False for errors, empty output, or an unrecognised report shape. */
+  valid: boolean;
   vulnerabilities: ParsedVulnerability[];
   metadata: { vulnerabilities: SeverityCounts };
 }
@@ -349,8 +351,7 @@ function fromNpmVulnerability(packageName: string, vulnerability: Record<string,
 /**
  * Parse audit output from any supported package manager.
  *
- * The manager is accepted for API symmetry but deliberately unused: the format
- * is detected from the payload, so a manager that changes shape between
+ * The format is detected from the payload, so a manager that changes shape between
  * versions (or a project audited by a different manager than detected) still
  * parses. Recognised shapes:
  *   - `{ vulnerabilities: { <pkg>: … } }`      npm 7+
@@ -359,8 +360,21 @@ function fromNpmVulnerability(packageName: string, vulnerability: Record<string,
  *   - `{"type":"auditAdvisory","data":{…}}`    yarn classic, one JSON per line
  *   - `{ <pkg>: [ … ] }`                       npm bulk advisory endpoint, bun
  */
-export function parseAuditOutput(_manager: PackageManager, output: string): ParsedAudit {
+export function parseAuditOutput(manager: PackageManager, output: string): ParsedAudit {
   const documents = parseJsonDocuments(output);
+
+  const hasError = documents.some(document => document.error !== undefined || document.type === 'error');
+  const recognised = documents.some(document =>
+    isRecord(document.vulnerabilities) ||
+    isRecord(document.advisories) ||
+    (isRecord(document.data) && Array.isArray(document.data.advisories)) ||
+    (document.type === 'auditAdvisory' && isRecord(document.data) && looksLikeAdvisory(document.data.advisory)) ||
+    (document.type === 'auditSummary' && isRecord(document.data) && !!toCounts(document.data.vulnerabilities)) ||
+    (isRecord(document.metadata) && !!toCounts(document.metadata.vulnerabilities)) ||
+    Object.values(document).some(entries => Array.isArray(entries) && entries.some(looksLikeAdvisory)) ||
+    // Bun's successful response can be an empty bulk advisory map.
+    (manager === 'bun' && Object.keys(document).length === 0)
+  );
 
   const vulnerabilities: ParsedVulnerability[] = [];
   let counts: SeverityCounts | undefined;
@@ -429,6 +443,7 @@ export function parseAuditOutput(_manager: PackageManager, output: string): Pars
   }
 
   return {
+    valid: recognised && !hasError,
     vulnerabilities: dedupeVulnerabilities(vulnerabilities),
     metadata: { vulnerabilities: counts ?? emptyCounts() },
   };
