@@ -9,6 +9,8 @@ webview-ui/**
 vsc-extension-quickstart.md
 **/tsconfig.json
 **/.eslintrc.json
+**/eslint.config.*
+**/vitest.config.*
 **/*.map
 **/*.ts
 webview-ui/node_modules/**
