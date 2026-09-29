@@ -171,6 +171,8 @@ export const ptBr: Translations = {
 
   // Semver update types
   semver: {
+    prerelease: 'PRÉ-LANÇAMENTO',
+    release: 'ESTÁVEL',
     major: 'MAJOR',
     minor: 'MINOR',
     patch: 'PATCH',

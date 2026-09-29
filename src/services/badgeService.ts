@@ -8,7 +8,7 @@
 
 import type { PackageJson } from '../../types';
 import { findPackageJson, readPackageJson } from './packageService';
-import { getPackageDetails, getSemverUpdateType } from './npmService';
+import { getPackageDetails, isUpdateAvailable } from './npmService';
 import { getCache } from './cacheService';
 import { runAudit } from './auditService';
 import { findAllProjectsMultiRoot, ScanOptions } from './workspaceService';
@@ -111,8 +111,7 @@ export async function countProjectUpdates(
       batch.map(async ([name, declaredVersion]) => {
         try {
           const details = await getPackageDetails(name, false, projectPath);
-          const updateType = getSemverUpdateType(declaredVersion, details.latestVersion);
-          if (updateType === 'major' || updateType === 'minor' || updateType === 'patch') {
+          if (isUpdateAvailable(declaredVersion, details.latestVersion)) {
             updates++;
           }
         } catch {

@@ -170,6 +170,8 @@ export const zhCn: Translations = {
 
   // Semver update types
   semver: {
+    prerelease: '预发布',
+    release: '稳定版',
     major: '主要',
     minor: '次要',
     patch: '补丁',

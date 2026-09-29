@@ -196,6 +196,24 @@ describe('configured private registries', () => {
 });
 
 describe('private metadata and search', () => {
+  it('orders valid versions by SemVer and does not mistake build metadata for a prerelease', async () => {
+    await privateClient();
+    metadataOverrides = {
+      versions: Object.fromEntries([
+        '1.0.0-beta.2', '1.0.0+build.7', '1.0.0', '1.0.0-beta.11',
+        '2.0.0', '1.0.0+build-beta', '1.0.0-alpha', '1.0.0-rc.1',
+        'latest', '^3.0.0', '1.0.0-beta.01',
+      ].map(version => [version, {}])),
+    };
+    const versions = await getPackageVersions('@company/demo', 20, project);
+    expect(versions.filter(v => v.releaseType === 'stable').map(v => v.version)).toEqual([
+      '2.0.0', '1.0.0+build.7', '1.0.0', '1.0.0+build-beta',
+    ]);
+    expect(versions.filter(v => v.releaseType === 'prerelease').map(v => v.version)).toEqual([
+      '1.0.0-rc.1', '1.0.0-beta.11', '1.0.0-beta.2', '1.0.0-alpha',
+    ]);
+  });
+
   it('fetches versions from GitLab and caches by registry instead of only package name', async () => {
     await privateClient();
     const first = await getPackageDetails('@company/demo', false, project);

@@ -170,6 +170,8 @@ export const ja: Translations = {
 
   // Semver update types
   semver: {
+    prerelease: 'プレリリース',
+    release: '安定版',
     major: 'メジャー',
     minor: 'マイナー',
     patch: 'パッチ',

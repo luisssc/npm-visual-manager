@@ -212,6 +212,7 @@
   },
   "devDependencies": {
     "@types/node": "^20.x",
+    "@types/semver": "^7.8.0",
     "@types/vscode": "^1.85.0",
     "@typescript-eslint/eslint-plugin": "^8.57.0",
     "@typescript-eslint/parser": "^8.57.0",
@@ -223,6 +224,7 @@
   },
   "dependencies": {
     "@npmcli/config": "^9.0.0",
-    "npm-registry-fetch": "^18.0.2"
+    "npm-registry-fetch": "^18.0.2",
+    "semver": "^7.8.5"
   }
 }

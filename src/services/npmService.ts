@@ -4,7 +4,8 @@
  */
 
 import { getRegistryClient, RegistryError, RegistryTarget } from './registryService';
-import type { PackageVersion } from '../../types';
+import { compare, minVersion, parse, validRange } from 'semver';
+import type { PackageVersion, SemverUpdateType } from '../../types';
 import { getCache, VersionCache } from './cacheService';
 
 export interface NpmPackageInfo {
@@ -33,7 +34,7 @@ export interface PackageDetails {
   packageUrl?: string;
 }
 
-export type SemverUpdateType = 'major' | 'minor' | 'patch' | 'none' | 'unknown';
+export type { SemverUpdateType } from '../../types';
 
 interface PackageContext {
   target: RegistryTarget;
@@ -160,12 +161,14 @@ export async function getPackageVersions(
 
   // Build version info array
   for (const [version, versionData] of versionEntries) {
-    // Skip deprecated versions unless it's the only one
+    const parsed = parse(version);
+    if (!parsed) {
+      continue;
+    }
     const data = versionData as { deprecated?: string };
     const date = getVersionPublishDate(info, version) ?? '';
 
-    // Detect if it's a pre-release version (contains -alpha, -beta, -rc, -dev, etc.)
-    const isPrerelease = /-\w/.test(version);
+    const isPrerelease = parsed.prerelease.length > 0;
 
     versions.push({
       version,
@@ -212,70 +215,50 @@ function extractRepositoryUrl(repository?: { url?: string } | string): string | 
 }
 
 /**
- * Clean version string by removing prefixes like ^, ~, >=, etc.
- */
-export function cleanVersion(version: string): string {
-  return version.replace(/^[\^~>=<]+/, '');
-}
-
-/**
- * Compare two semver versions (simplified)
- * Returns: -1 if v1 < v2, 0 if v1 === v2, 1 if v1 > v2
+ * Compare concrete versions by SemVer precedence, ignoring build metadata.
+ * Ranges and invalid versions are rejected instead of being coerced.
  */
 export function compareVersions(v1: string, v2: string): number {
-  const clean1 = cleanVersion(v1);
-  const clean2 = cleanVersion(v2);
+  return compare(v1, v2);
+}
 
-  const parts1 = clean1.split('.').map(Number);
-  const parts2 = clean2.split('.').map(Number);
-
-  for (let i = 0; i < Math.max(parts1.length, parts2.length); i++) {
-    const p1 = parts1[i] || 0;
-    const p2 = parts2[i] || 0;
-
-    if (p1 < p2) {
-      return -1;
-    }
-    if (p1 > p2) {
-      return 1;
-    }
-  }
-
-  return 0;
+/** Check for an update relative to the declared version or range minimum. */
+export function isUpdateAvailable(declared: string, latest: string): boolean {
+  const type = getSemverUpdateType(declared, latest);
+  return type !== 'none' && type !== 'unknown';
 }
 
 /**
- * Check if an update is available
+ * Preserve the declared-minimum policy: ^1.2.3 -> 1.2.4 is an update even
+ * though the target satisfies the range. Registry targets must be concrete.
+ * Tags, local specs and invalid/empty ranges have no comparable baseline.
  */
-export function isUpdateAvailable(installed: string, latest: string): boolean {
-  return compareVersions(cleanVersion(installed), latest) < 0;
-}
-
-/**
- * Determine the semver update type (major, minor, patch)
- */
-export function getSemverUpdateType(installed: string, latest: string): SemverUpdateType {
-  const cleanInstalled = cleanVersion(installed);
-  const cleanLatest = cleanVersion(latest);
-
-  const installedParts = cleanInstalled.split('.').map(Number);
-  const latestParts = cleanLatest.split('.').map(Number);
-
-  const major1 = installedParts[0] || 0;
-  const major2 = latestParts[0] || 0;
-  const minor1 = installedParts[1] || 0;
-  const minor2 = latestParts[1] || 0;
-  const patch1 = installedParts[2] || 0;
-  const patch2 = latestParts[2] || 0;
-
-  if (major1 !== major2) {
-    return major2 > major1 ? 'major' : 'unknown';
+export function getSemverUpdateType(declared: string, latest: string): SemverUpdateType {
+  const target = parse(latest);
+  if (!target || !declared.trim()) {
+    return 'unknown';
   }
-  if (minor1 !== minor2) {
-    return minor2 > minor1 ? 'minor' : 'unknown';
+
+  const current = parse(declared) ?? (validRange(declared) !== null ? minVersion(declared) : null);
+  if (!current) {
+    return 'unknown';
   }
-  if (patch1 !== patch2) {
-    return patch2 > patch1 ? 'patch' : 'unknown';
+
+  const precedence = compare(current, target);
+  if (precedence === 0) {
+    return 'none';
   }
-  return 'none';
+  if (precedence > 0) {
+    return 'unknown';
+  }
+  if (current.major !== target.major) {
+    return 'major';
+  }
+  if (current.minor !== target.minor) {
+    return 'minor';
+  }
+  if (current.patch !== target.patch) {
+    return 'patch';
+  }
+  return target.prerelease.length > 0 ? 'prerelease' : 'release';
 }

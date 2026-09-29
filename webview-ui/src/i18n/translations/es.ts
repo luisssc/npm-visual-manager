@@ -178,6 +178,8 @@ export const es: Translations = {
 
   // Semver update types
   semver: {
+    prerelease: 'PRE-RELEASE',
+    release: 'ESTABLE',
     major: 'MAJOR',
     minor: 'MINOR',
     patch: 'PATCH',

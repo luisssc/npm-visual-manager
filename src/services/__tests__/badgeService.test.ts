@@ -98,6 +98,19 @@ describe('collectDirectDependencies', () => {
 });
 
 describe('countProjectUpdates', () => {
+  it('counts prerelease advances and stable promotions but ignores build metadata', async () => {
+    mockFindPackageJson.mockResolvedValue('/project/package.json');
+    mockReadPackageJson.mockResolvedValue({
+      dependencies: {
+        preview: '1.0.0-beta.2', promotion: '^1.0.0-beta.1', metadata: '1.0.0+build.7',
+      },
+    });
+    mockGetPackageDetails.mockImplementation(async name => ({
+      latestVersion: name === 'preview' ? '1.0.0-beta.11' : '1.0.0',
+    }));
+    expect((await countProjectUpdates('/project')).updates).toBe(2);
+  });
+
   it('counts major, minor and patch updates but not up-to-date packages', async () => {
     mockFindPackageJson.mockResolvedValue('/project/package.json');
     mockReadPackageJson.mockResolvedValue({

@@ -170,6 +170,8 @@ export const ru: Translations = {
 
   // Semver update types
   semver: {
+    prerelease: 'ПРЕДРЕЛИЗ',
+    release: 'СТАБИЛЬНАЯ',
     major: 'MAJOR',
     minor: 'MINOR',
     patch: 'PATCH',

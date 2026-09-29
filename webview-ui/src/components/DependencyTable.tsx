@@ -103,7 +103,7 @@ type SortColumn = 'name' | 'installedVersion' | 'latestVersion' | 'type' | 'size
 type SortDirection = 'asc' | 'desc';
 
 const getSemverLabel = (
-  t: { semver: { major: string; minor: string; patch: string } },
+  t: { semver: { major: string; minor: string; patch: string; prerelease: string; release: string } },
   type: SemverUpdateType | undefined
 ): string => {
   switch (type) {
@@ -113,6 +113,10 @@ const getSemverLabel = (
       return t.semver.minor;
     case 'patch':
       return t.semver.patch;
+    case 'prerelease':
+      return t.semver.prerelease;
+    case 'release':
+      return t.semver.release;
     default:
       return '';
   }

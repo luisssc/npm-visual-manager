@@ -170,6 +170,8 @@ export const ko: Translations = {
 
   // Semver update types
   semver: {
+    prerelease: '프리릴리스',
+    release: '안정 버전',
     major: '주요',
     minor: '부분',
     patch: '패치',

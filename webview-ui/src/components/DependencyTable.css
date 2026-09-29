@@ -508,8 +508,13 @@ button.vulnerability-btn {
   background: var(--vscode-warningForeground, #ff9800);
 }
 
-.semver-patch {
+.semver-patch,
+.semver-release {
   background: var(--vscode-testing-iconPassed, #4caf50);
+}
+
+.semver-prerelease {
+  background: var(--vscode-charts-blue, #3794ff);
 }
 
 /* Tooltip - VS Code native style */

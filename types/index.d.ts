@@ -4,7 +4,7 @@
 
 export type PackageManager = 'npm' | 'yarn' | 'pnpm' | 'bun';
 
-export type SemverUpdateType = 'major' | 'minor' | 'patch' | 'none' | 'unknown';
+export type SemverUpdateType = 'major' | 'minor' | 'patch' | 'prerelease' | 'release' | 'none' | 'unknown';
 
 export interface VulnerabilityInfo {
   id: string;

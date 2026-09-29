@@ -175,6 +175,8 @@ export const en = {
 
   // Semver update types
   semver: {
+    prerelease: 'PRE-RELEASE',
+    release: 'STABLE',
     major: 'MAJOR',
     minor: 'MINOR',
     patch: 'PATCH',

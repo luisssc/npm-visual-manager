@@ -172,6 +172,8 @@ export const de: Translations = {
 
   // Semver update types
   semver: {
+    prerelease: 'VORABVERSION',
+    release: 'STABIL',
     major: 'MAJOR',
     minor: 'MINOR',
     patch: 'PATCH',

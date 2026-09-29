@@ -64,6 +64,35 @@ beforeEach(() => {
 
 afterEach(() => vi.useRealTimers());
 
+describe('SemVer updates', () => {
+  it.each([
+    ['release', '1.0.0', 'STABLE'],
+    ['prerelease', '1.0.0-beta.11', 'PRE-RELEASE'],
+  ] as const)('shows a %s update received from the host', (semverUpdateType, latestVersion, label) => {
+    const { container } = render(<App />, { wrapper: Wrapper });
+    const dependency = { name: 'demo', declaredVersion: '1.0.0-beta.2', installedVersion: '1.0.0-beta.2', type: 'dependencies' as const };
+    loadProjects([THEME], THEME.path, { dependencies: [dependency] });
+    sendFromHost({ type: 'VERSION_CHECK_RESULT', dependency, latestVersion, semverUpdateType });
+    expect(container.querySelector(`.semver-${semverUpdateType}`)).toHaveTextContent(label);
+    expect(container.querySelector('.update-btn')).toBeEnabled();
+    fireEvent.click(container.querySelector('.update-btn')!);
+    sendFromHost({ type: 'PACKAGE_VERSIONS_RESULT', packageName: 'demo', versions: [] });
+    fireEvent.click(container.querySelector('.modal-btn.confirm')!);
+    expect(postMessage).toHaveBeenCalledWith(expect.objectContaining({
+      type: 'UPDATE_PACKAGE', packageName: 'demo', version: latestVersion,
+    }));
+  });
+
+  it('does not offer an update for equal precedence with different metadata', () => {
+    const { container } = render(<App />, { wrapper: Wrapper });
+    const dependency = { name: 'demo', declaredVersion: '1.0.0+build.7', installedVersion: '1.0.0+build.7', type: 'dependencies' as const };
+    loadProjects([THEME], THEME.path, { dependencies: [dependency] });
+    sendFromHost({ type: 'VERSION_CHECK_RESULT', dependency, latestVersion: '1.0.0', semverUpdateType: 'none' });
+    expect(container.querySelector('.update-btn')).toBeNull();
+    expect(container.querySelector('.semver-badge')).toBeNull();
+  });
+});
+
 describe('publication dates', () => {
   it('shows unknown dates as a dash and preserves real dates for stable and prerelease versions', () => {
     vi.useFakeTimers();
