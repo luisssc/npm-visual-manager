@@ -64,6 +64,81 @@ beforeEach(() => {
 
 afterEach(() => vi.useRealTimers());
 
+describe('version selector failures', () => {
+  const dependency = {
+    name: 'demo', declaredVersion: '^1.0.0', installedVersion: '1.0.0',
+    latestVersion: '2.0.0', updateAvailable: true, type: 'dependencies' as const,
+  };
+
+  it('ends loading on failure and can retry repeatedly before selecting a version', () => {
+    const { container } = render(<App />, { wrapper: Wrapper });
+    loadProjects([THEME], THEME.path, { dependencies: [dependency] });
+    fireEvent.click(container.querySelector('.update-btn')!);
+    expect(container.querySelector('.modal-btn.confirm')).toBeDisabled();
+    for (const error of ['Registry unavailable', 'Registry access denied']) {
+      sendFromHost({ type: 'PACKAGE_VERSIONS_RESULT', packageName: 'demo', versions: [], error });
+      expect(screen.queryByText('Loading versions...')).not.toBeInTheDocument();
+      expect(screen.getByRole('alert')).toHaveTextContent(error);
+      expect(container.querySelector('.modal-btn.confirm')).toBeEnabled();
+      postMessage.mockClear();
+      fireEvent.click(screen.getByRole('button', { name: 'Retry' }));
+      expect(postMessage).toHaveBeenCalledTimes(1);
+      expect(postMessage).toHaveBeenCalledWith({ type: 'GET_PACKAGE_VERSIONS', packageName: 'demo', limit: 20 });
+      expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+      expect(screen.getByText('Loading versions...')).toBeInTheDocument();
+      expect(container.querySelector('.modal-btn.confirm')).toBeDisabled();
+    }
+    sendFromHost({ type: 'PACKAGE_VERSIONS_RESULT', packageName: 'demo', versions: [
+      { version: '1.9.0', date: '', releaseType: 'stable' },
+    ] });
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Retry' })).not.toBeInTheDocument();
+    fireEvent.click(container.querySelector('input[value="1.9.0"]')!);
+    fireEvent.click(container.querySelector('.modal-btn.confirm')!);
+    expect(postMessage).toHaveBeenCalledWith(expect.objectContaining({ type: 'UPDATE_PACKAGE', version: '1.9.0' }));
+  });
+
+  it('allows the known latest version after a list failure while respecting operation locks', () => {
+    const { container } = render(<App />, { wrapper: Wrapper });
+    loadProjects([THEME], THEME.path, { dependencies: [dependency] });
+    fireEvent.click(container.querySelector('.update-btn')!);
+    sendFromHost({ type: 'PACKAGE_VERSIONS_RESULT', packageName: 'demo', versions: [], error: 'Offline' });
+    sendFromHost({ type: 'PACKAGE_OPERATIONS_STATE', projectPath: THEME.path, pending: 1 });
+    expect(container.querySelector('.modal-btn.confirm')).toBeDisabled();
+    sendFromHost({ type: 'PACKAGE_OPERATIONS_STATE', projectPath: THEME.path, pending: 0 });
+    expect(container.querySelector('.modal-btn.confirm')).toBeEnabled();
+    fireEvent.click(container.querySelector('.modal-btn.confirm')!);
+    expect(postMessage).toHaveBeenCalledWith(expect.objectContaining({ type: 'UPDATE_PACKAGE', version: '2.0.0' }));
+  });
+
+  it('does not let another package result finish the open selector request', () => {
+    const { container } = render(<App />, { wrapper: Wrapper });
+    loadProjects([THEME], THEME.path, { dependencies: [dependency] });
+    fireEvent.click(container.querySelector('.update-btn')!);
+    sendFromHost({ type: 'PACKAGE_VERSIONS_RESULT', packageName: 'other', versions: [], error: 'Other error' });
+    expect(screen.getByText('Loading versions...')).toBeInTheDocument();
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+    expect(container.querySelector('.modal-btn.confirm')).toBeDisabled();
+    sendFromHost({ type: 'PACKAGE_VERSIONS_RESULT', packageName: 'demo', versions: [] });
+    expect(container.querySelector('.modal-btn.confirm')).toBeEnabled();
+  });
+
+  it('clears selector errors when switching projects and reopening the same package', () => {
+    const { container } = render(<App />, { wrapper: Wrapper });
+    loadProjects([THEME, PLUGIN], THEME.path, { dependencies: [dependency] });
+    fireEvent.click(container.querySelector('.update-btn')!);
+    sendFromHost({ type: 'PACKAGE_VERSIONS_RESULT', packageName: 'demo', versions: [], error: 'Project A error' });
+    expect(screen.getByRole('alert')).toHaveTextContent('Project A error');
+    fireEvent.change(screen.getByRole('combobox'), { target: { value: PLUGIN.path } });
+    loadProjects([THEME, PLUGIN], PLUGIN.path, { dependencies: [dependency] });
+    fireEvent.click(container.querySelector('.update-btn')!);
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+    expect(screen.getByText('Loading versions...')).toBeInTheDocument();
+    sendFromHost({ type: 'PACKAGE_VERSIONS_RESULT', packageName: 'demo', versions: [] });
+    expect(container.querySelector('.modal-btn.confirm')).toBeEnabled();
+  });
+});
+
 describe('SemVer updates', () => {
   it.each([
     ['release', '1.0.0', 'STABLE'],

@@ -40,6 +40,7 @@ function App() {
     requestVersions,
     isLoadingVersions,
     getVersionsForPackage,
+    getVersionsError,
     resetVersions,
   } = usePackageVersions();
 
@@ -218,12 +219,7 @@ function App() {
           break;
 
         case 'PACKAGE_VERSIONS_RESULT':
-          console.log(`[App] Received PACKAGE_VERSIONS_RESULT for ${message.packageName}:`, message.versions.length, 'versions');
-          if (message.error) {
-            console.error(`Failed to get versions for ${message.packageName}:`, message.error);
-          } else {
-            handleVersionsResult(message.packageName, message.versions);
-          }
+          handleVersionsResult(message.packageName, message.versions, message.error);
           break;
 
         case 'WHY_INSTALLED_RESULT':
@@ -477,6 +473,7 @@ function App() {
           onUninstall={handleUninstall}
           onGetPackageVersions={handleGetPackageVersions}
           getVersionsForPackage={getVersionsForPackage}
+          getVersionsError={getVersionsError}
           isLoadingVersions={isLoadingVersions}
           saveExact={saveExact}
           onWhyInstalled={handleWhyInstalled}

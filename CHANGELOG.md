@@ -15,6 +15,7 @@ All notable changes to the "npm-visual-manager" extension will be documented in 
 
 ### Fixed
 
+- **Version selector stayed loading after a failed request**: Failed responses now finish loading, show the registry error and offer a localized Retry button. Retrying clears the error and resumes loading; a successful response restores version selection. The known latest version remains usable after a list failure, while active package operations still prevent confirmation. Errors are tracked per package and cleared on project changes.
 - **SemVer comparisons misordered prereleases and build metadata**: Version ordering now uses npm's `semver` implementation. Prereleases precede their stable release, numeric prerelease identifiers sort numerically, and build metadata does not affect precedence or create updates. Invalid registry version keys are omitted from the selector, and hyphens in build metadata no longer mark stable versions as prereleases.
 - Declared versions and ranges are parsed separately from concrete registry versions. Update detection preserves the declared-minimum policy (for example, `^1.2.3` to `1.2.4` is an update), including compound and partial ranges; invalid specs do not produce fabricated updates. Prerelease advances and promotions to stable now appear in both the table and activity badge, with distinct labels in all nine interface languages.
 - **Monorepo subprojects were detected as npm**: Package manager detection now resolves the nearest project/workspace configuration through ancestor directories. It honors supported `packageManager` declarations, recognizes pnpm workspaces before the first install, and finds root lockfiles for npm, pnpm, Yarn and Bun, including `npm-shrinkwrap.json`. A project's own configuration takes precedence, repository boundaries prevent inheriting an unrelated parent's manager, and directories named like lockfiles are ignored. Commands continue to run in the selected subproject.
@@ -44,7 +45,8 @@ All notable changes to the "npm-visual-manager" extension will be documented in 
 
 - Added regression coverage for continuous update-check scheduling, concurrency limits, stale-result rejection and shared metadata requests, SemVer precedence, range parsing, prerelease update actions and counts, monorepo manager detection and installed-version resolution, private registry routing and authentication, per-project cache isolation, rollback ownership, audit failures, operation queues and UI locking, and missing or incorrect publication dates.
 - Private registry integration tests use a local HTTP server and fictional credentials, without contacting a corporate feed.
-- Validation: **308 passing tests** (281 extension/service tests and 27 webview tests), successful TypeScript compilation and webview production build, and no lint errors.
+- Added webview regressions for repeated version-list failures and recovery, confirmation after failure, operation locks, and package/project isolation.
+- Validation: **312 passing tests** (281 extension/service tests and 31 webview tests), successful TypeScript compilation and webview production build, and no lint errors.
 
 ## [1.9.3] - 2026-09-18
 

@@ -1139,6 +1139,12 @@ tr:hover .ignore-btn,
   margin: 12px 0;
 }
 
+.version-error {
+  padding: 16px;
+  color: var(--vscode-errorForeground);
+  overflow-wrap: anywhere;
+}
+
 .version-loading {
   padding: 20px;
   text-align: center;

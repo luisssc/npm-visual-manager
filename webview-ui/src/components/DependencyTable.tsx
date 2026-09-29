@@ -89,6 +89,7 @@ interface DependencyTableProps {
   onUninstall?: (packageName: string) => void;
   onGetPackageVersions?: (packageName: string) => void;
   getVersionsForPackage?: (packageName: string) => PackageVersion[];
+  getVersionsError?: (packageName: string) => string | undefined;
   isLoadingVersions?: (packageName: string) => boolean;
   saveExact?: boolean;
   onWhyInstalled?: (packageName: string) => void;
@@ -200,6 +201,7 @@ export const DependencyTable = ({
   onUninstall,
   onGetPackageVersions,
   getVersionsForPackage,
+  getVersionsError,
   isLoadingVersions,
   saveExact,
   onWhyInstalled,
@@ -942,6 +944,13 @@ export const DependencyTable = ({
               
               {isLoadingVersions?.(versionPickerOpen.name) ? (
                 <div className="version-loading">{t.states.loadingVersions || 'Loading versions...'}</div>
+              ) : getVersionsError?.(versionPickerOpen.name) ? (
+                <div className="version-error">
+                  <p role="alert">{getVersionsError(versionPickerOpen.name)}</p>
+                  <button className="retry-btn" onClick={() => onGetPackageVersions?.(versionPickerOpen.name)}>
+                    {t.buttons.retry}
+                  </button>
+                </div>
               ) : (
                 (() => {
                   const versions = getVersionsForPackage?.(versionPickerOpen.name) || [];

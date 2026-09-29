@@ -161,13 +161,21 @@ export function useVsCodeApi() {
 export function usePackageVersions() {
   const [versions, setVersions] = useState<Map<string, PackageVersion[]>>(new Map());
   const [loadingVersions, setLoadingVersions] = useState<Set<string>>(new Set());
+  const [versionErrors, setVersionErrors] = useState<Map<string, string>>(new Map());
   const resetVersions = useCallback(() => {
     setVersions(new Map());
     setLoadingVersions(new Set());
+    setVersionErrors(new Map());
   }, []);
 
-  const handleVersionsResult = useCallback((packageName: string, packageVersions: PackageVersion[]) => {
-    setVersions(prev => new Map(prev).set(packageName, packageVersions));
+  const handleVersionsResult = useCallback((packageName: string, packageVersions: PackageVersion[], error?: string) => {
+    setVersions(prev => new Map(prev).set(packageName, error ? [] : packageVersions));
+    setVersionErrors(prev => {
+      const next = new Map(prev);
+      if (error) next.set(packageName, error);
+      else next.delete(packageName);
+      return next;
+    });
     setLoadingVersions(prev => {
       const next = new Set(prev);
       next.delete(packageName);
@@ -176,6 +184,11 @@ export function usePackageVersions() {
   }, []);
 
   const requestVersions = useCallback((packageName: string, getPackageVersionsFn: (name: string) => void) => {
+    setVersionErrors(prev => {
+      const next = new Map(prev);
+      next.delete(packageName);
+      return next;
+    });
     setLoadingVersions(prev => new Set(prev).add(packageName));
     getPackageVersionsFn(packageName);
   }, []);
@@ -190,6 +203,11 @@ export function usePackageVersions() {
     [versions]
   );
 
+  const getVersionsError = useCallback(
+    (packageName: string) => versionErrors.get(packageName),
+    [versionErrors]
+  );
+
   return {
     versions,
     resetVersions,
@@ -197,6 +215,7 @@ export function usePackageVersions() {
     requestVersions,
     isLoadingVersions,
     getVersionsForPackage,
+    getVersionsError,
   };
 }
 
