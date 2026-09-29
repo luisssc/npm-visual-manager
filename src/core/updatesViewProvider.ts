@@ -16,6 +16,7 @@ import { getVSCodeLanguage } from '../i18n/getLanguage';
 import { getTranslations } from '../i18n';
 
 export interface UpdatesProjectSummary {
+  auditFailed?: boolean;
   name: string;
   path: string;
   relativePath: string;
@@ -24,6 +25,7 @@ export interface UpdatesProjectSummary {
 }
 
 export interface UpdatesSummary {
+  auditFailed?: boolean;
   updates: number;
   vulnerablePackages: number;
   /** Per package.json breakdown of the totals, when available */
@@ -80,7 +82,7 @@ export class UpdatesViewProvider implements vscode.TreeDataProvider<vscode.TreeI
       : new vscode.TreeItem(t.sidebar.openButton);
 
     item.iconPath = new vscode.ThemeIcon(
-      this._summary === undefined ? 'package' : this._summary.updates > 0 ? 'arrow-circle-up' : 'check'
+      this._summary === undefined ? 'package' : this._summary.auditFailed ? 'warning' : this._summary.updates > 0 ? 'arrow-circle-up' : 'check'
     );
     item.command = {
       command: 'npm-visual-manager.openManager',
@@ -103,7 +105,7 @@ export class UpdatesViewProvider implements vscode.TreeDataProvider<vscode.TreeI
     }
 
     return projects
-      .filter(project => project.updates > 0 || project.vulnerablePackages > 0)
+      .filter(project => project.updates > 0 || project.vulnerablePackages > 0 || project.auditFailed)
       .sort((a, b) => b.updates - a.updates || b.vulnerablePackages - a.vulnerablePackages)
       .map(project => {
         const label =
@@ -111,7 +113,7 @@ export class UpdatesViewProvider implements vscode.TreeDataProvider<vscode.TreeI
         const row = new vscode.TreeItem(label);
         row.description = this._summaryLabel(project);
         row.tooltip = `${project.name}\n${project.path}`;
-        row.iconPath = new vscode.ThemeIcon(project.updates > 0 ? 'arrow-circle-up' : 'shield');
+        row.iconPath = new vscode.ThemeIcon(project.auditFailed ? 'warning' : project.updates > 0 ? 'arrow-circle-up' : 'shield');
         // Opening with the project folder as the resource makes the panel focus
         // that package.json instead of the first one discovered.
         row.command = {
@@ -125,9 +127,10 @@ export class UpdatesViewProvider implements vscode.TreeDataProvider<vscode.TreeI
 
   private _summaryLabel(summary: UpdatesSummary): string {
     const t = getTranslations(getVSCodeLanguage());
-    return t.sidebar.badgeTooltip
+    const label = t.sidebar.badgeTooltip
       .replace('{updates}', String(summary.updates))
-      .replace('{vulnerable}', String(summary.vulnerablePackages));
+      .replace('{vulnerable}', summary.auditFailed ? '?' : String(summary.vulnerablePackages));
+    return summary.auditFailed ? `${label} — ${t.sidebar.auditUnavailable}` : label;
   }
 
   public dispose(): void {

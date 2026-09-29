@@ -83,6 +83,7 @@ export interface VersionInfo {
 }
 
 export interface UpdateHistory {
+  projectPath: string;
   timestamp: number;
   packages: Array<{
     name: string;
@@ -113,6 +114,7 @@ export type WebviewToHostMessage =
 
 // Messages from Extension Host to Webview
 export type HostToWebviewMessage =
+  | { type: 'PACKAGE_OPERATIONS_STATE'; projectPath: string; pending: number }
   | {
       type: 'DEPENDENCIES_DATA';
       dependencies: Dependency[];
@@ -123,10 +125,12 @@ export type HostToWebviewMessage =
       packageManager?: PackageManager;
       versions?: VersionInfo;
       lastUpdate?: UpdateHistory | null;
+      auditFailed?: boolean;
+      pendingOperations?: number;
       saveExact?: boolean;
     }
-  | { type: 'UPDATE_RESULT'; success: boolean; packageName: string; message: string }
-  | { type: 'ROLLBACK_RESULT'; success: boolean; message: string; rolledBackPackages?: string[] }
+  | { type: 'UPDATE_RESULT'; projectPath: string; success: boolean; packageName: string; message: string }
+  | { type: 'ROLLBACK_RESULT'; projectPath: string; success: boolean; message: string; rolledBackPackages?: string[] }
   | {
       type: 'VERSION_CHECK_RESULT';
       dependency: Dependency;
@@ -142,10 +146,10 @@ export type HostToWebviewMessage =
     }
   | { type: 'CACHE_CLEARED'; message: string }
   | { type: 'IGNORE_TOGGLED'; packageName: string; isIgnored: boolean }
-  | { type: 'UNINSTALL_RESULT'; packageName: string; success: boolean; message: string }
+  | { type: 'UNINSTALL_RESULT'; projectPath: string; packageName: string; success: boolean; message: string }
   | { type: 'SEARCH_RESULTS'; results: SearchResult[] }
   | { type: 'COLUMN_CONFIG'; config: ColumnConfig }
-  | { type: 'INSTALL_RESULT'; packageName: string; success: boolean; message: string }
+  | { type: 'INSTALL_RESULT'; projectPath: string; packageName: string; success: boolean; message: string }
   | { type: 'ERROR'; message: string }
   | { type: 'PROGRESS'; message: string }
   | { type: 'PACKAGE_VERSIONS_RESULT'; packageName: string; versions: PackageVersion[]; error?: string }

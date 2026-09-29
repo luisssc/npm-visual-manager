@@ -40,6 +40,7 @@ function App() {
     requestVersions,
     isLoadingVersions,
     getVersionsForPackage,
+    resetVersions,
   } = usePackageVersions();
 
   const [dependencies, setDependencies] = useState<Dependency[]>([]);
@@ -60,6 +61,7 @@ function App() {
   const [packageManager, setPackageManager] = useState<PackageManager>('npm');
   const [versions, setVersions] = useState<VersionInfo | null>(null);
   const [lastUpdate, setLastUpdate] = useState<UpdateHistory | null>(null);
+  const [auditFailed, setAuditFailed] = useState(false);
   const [rollbackMessage, setRollbackMessage] = useState<string | null>(null);
   const cacheInfoRef = useRef<{ fromCache: boolean; age?: number } | null>(null);
   const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
@@ -74,11 +76,39 @@ function App() {
   } | null>(null);
   const [whyLoadingPackage, setWhyLoadingPackage] = useState<string | null>(null);
 
+  const pendingRef = useRef(new Map<string, number>());
+  const [pendingOperations, setPendingOperations] = useState(new Map<string, number>());
+  const setProjectPending = useCallback((projectPath: string, pending: number) => {
+    if (pending > 0) pendingRef.current.set(projectPath, pending);
+    else pendingRef.current.delete(projectPath);
+    setPendingOperations(new Map(pendingRef.current));
+  }, []);
+  const isOperating = (pendingOperations.get(currentProjectPath) ?? 0) > 0;
+  // Lock immediately, including a second click before React renders again.
+  const beginOperation = useCallback(() => {
+    if (!currentProjectPath || pendingRef.current.has(currentProjectPath)) return false;
+    setProjectPending(currentProjectPath, 1);
+    return true;
+  }, [currentProjectPath, setProjectPending]);
+
   // Handle messages from Extension Host
   const handleMessage = useCallback(
     (message: HostToWebviewMessage) => {
       switch (message.type) {
+        case 'PACKAGE_OPERATIONS_STATE':
+          setProjectPending(message.projectPath, message.pending);
+          break;
+
         case 'DEPENDENCIES_DATA':
+          if (message.currentProjectPath && message.pendingOperations !== undefined) {
+            setProjectPending(message.currentProjectPath, message.pendingOperations);
+          }
+          if (message.currentProjectPath && message.currentProjectPath !== currentProjectPath) {
+            resetVersions();
+            setSearchResults([]);
+            setIsSearching(false);
+          }
+          setAuditFailed(message.auditFailed ?? false);
           setDependencies(message.dependencies);
           setPackageName(message.packageName);
           setColumnConfig(message.columnConfig);
@@ -153,16 +183,21 @@ function App() {
           break;
 
         case 'UPDATE_RESULT':
+          if (message.projectPath !== currentProjectPath) break;
           setProgressMessage(null);
           requestDependencies();
           break;
 
         case 'UNINSTALL_RESULT':
+          if (message.projectPath !== currentProjectPath) break;
           setProgressMessage(null);
           requestDependencies();
           break;
 
         case 'ROLLBACK_RESULT':
+          if (message.projectPath !== currentProjectPath) {
+            break;
+          }
           setProgressMessage(null);
           if (message.success) {
             setLastUpdate(null);
@@ -176,6 +211,7 @@ function App() {
           break;
 
         case 'INSTALL_RESULT':
+          if (message.projectPath !== currentProjectPath) break;
           setProgressMessage(null);
           break;
 
@@ -205,7 +241,7 @@ function App() {
           break;
       }
     },
-    [requestDependencies, handleVersionsResult]
+    [requestDependencies, handleVersionsResult, currentProjectPath, resetVersions, setProjectPending]
   );
 
   useVsCodeMessages(handleMessage);
@@ -218,21 +254,24 @@ function App() {
   }, [isReady, requestDependencies]);
 
   const handleUpdatePackage = (packageName: string, version: string, currentVersion?: string, useExactVersion?: boolean) => {
-    updatePackage(packageName, version, currentVersion, useExactVersion);
+    if (beginOperation()) updatePackage(packageName, version, currentVersion, useExactVersion);
   };
 
   const handleUpdateAll = (packages: { name: string; version: string; currentVersion?: string }[]) => {
-    updateAllPackages(packages);
+    if (packages.length && beginOperation()) updateAllPackages(packages);
   };
 
   const handleSelectProject = (path: string) => {
+    resetVersions();
+    setSearchResults([]);
+    setIsSearching(false);
     setCurrentProjectPath(path);
     setIsLoading(true);
     selectProject(path);
   };
 
   const handleRollback = () => {
-    rollbackLast();
+    if (beginOperation()) rollbackLast();
   };
 
   const handleRetry = () => {
@@ -257,10 +296,11 @@ function App() {
 
   const handleInstallNew = useCallback(
     (packageName: string, version: string, isDev: boolean) => {
+      if (!beginOperation()) return;
       installNewPackage(packageName, version, isDev);
       setSearchResults([]);
     },
-    [installNewPackage]
+    [installNewPackage, beginOperation]
   );
 
   const handleOpenExternal = useCallback(
@@ -272,9 +312,9 @@ function App() {
 
   const handleUninstall = useCallback(
     (packageName: string) => {
-      uninstallPackage(packageName);
+      if (beginOperation()) uninstallPackage(packageName);
     },
-    [uninstallPackage]
+    [uninstallPackage, beginOperation]
   );
 
   const handleGetPackageVersions = useCallback(
@@ -342,7 +382,8 @@ function App() {
   }
 
   return (
-    <div className="app">
+    <div className="app" aria-busy={isOperating}>
+      {isOperating && <div className="progress-bar" />}
       {progressMessage && (
         <>
           <div className="progress-bar"></div>
@@ -408,11 +449,19 @@ function App() {
       </header>
 
       <main className="app-content">
+        {auditFailed && (
+          <div className="audit-warning" role="alert">
+            <i className="codicon codicon-warning" />
+            <span>{t.tooltips.auditUnavailable}</span>
+            <button className="retry-btn" onClick={handleRetry}>{t.buttons.retry}</button>
+          </div>
+        )}
         <DependencyTable
+          key={`dependencies:${currentProjectPath}`}
           dependencies={dependencies}
           onUpdatePackage={handleUpdatePackage}
           onUpdateAll={handleUpdateAll}
-          isLoading={isLoading}
+          isLoading={isLoading || isOperating}
           columnConfig={columnConfig}
           showAllPackages={showAllPackages}
           nodeVersion={versions?.nodeVersion}
@@ -435,6 +484,8 @@ function App() {
           targetFile={targetFile}
         />
         <SearchPanel
+          key={`search:${currentProjectPath}`}
+          isOperating={isOperating}
           results={searchResults}
           onSearch={handleSearch}
           onInstall={handleInstallNew}

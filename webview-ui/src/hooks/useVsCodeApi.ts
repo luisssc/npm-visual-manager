@@ -161,6 +161,10 @@ export function useVsCodeApi() {
 export function usePackageVersions() {
   const [versions, setVersions] = useState<Map<string, PackageVersion[]>>(new Map());
   const [loadingVersions, setLoadingVersions] = useState<Set<string>>(new Set());
+  const resetVersions = useCallback(() => {
+    setVersions(new Map());
+    setLoadingVersions(new Set());
+  }, []);
 
   const handleVersionsResult = useCallback((packageName: string, packageVersions: PackageVersion[]) => {
     setVersions(prev => new Map(prev).set(packageName, packageVersions));
@@ -188,6 +192,7 @@ export function usePackageVersions() {
 
   return {
     versions,
+    resetVersions,
     handleVersionsResult,
     requestVersions,
     isLoadingVersions,

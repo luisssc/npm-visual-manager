@@ -18,6 +18,7 @@ export const ru: Translations = {
     tip2: 'Нажмите на иконку глаза, чтобы игнорировать обновления',
     madeBy: 'Сделано Luis Clement Cremades',
     updatesTitle: 'Обновления',
+    auditUnavailable: 'Аудит безопасности недоступен. Состояние безопасности неизвестно.',
     badgeTooltip: 'Доступно обновлений: {updates} · Уязвимых пакетов: {vulnerable}',
   },
 };

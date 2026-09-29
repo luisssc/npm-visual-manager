@@ -18,6 +18,7 @@ export const fr: Translations = {
     tip2: "Cliquez sur l'icône œil pour ignorer les mises à jour",
     madeBy: 'Fait par Luis Clement Cremades',
     updatesTitle: 'Mises à jour',
+    auditUnavailable: 'Audit de sécurité indisponible. Le statut de sécurité est inconnu.',
     badgeTooltip: '{updates} mises à jour disponibles · {vulnerable} paquets vulnérables',
   },
 };

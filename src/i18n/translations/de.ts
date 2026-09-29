@@ -18,6 +18,7 @@ export const de: Translations = {
     tip2: 'Klicken Sie auf das Augen-Symbol, um Updates zu ignorieren',
     madeBy: 'Gemacht von Luis Clement Cremades',
     updatesTitle: 'Aktualisierungen',
+    auditUnavailable: 'Sicherheitsprüfung nicht verfügbar. Der Sicherheitsstatus ist unbekannt.',
     badgeTooltip: '{updates} Updates verfügbar · {vulnerable} anfällige Pakete',
   },
 };

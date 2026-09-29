@@ -204,7 +204,6 @@ export const DependencyTable = ({
   const [sortColumn, setSortColumn] = useState<SortColumn>('name');
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
   const [filter, setFilter] = useState('');
-  const [updatingPackages, setUpdatingPackages] = useState<Set<string>>(new Set());
   const [selectedPackages, setSelectedPackages] = useState<Set<string>>(new Set());
   const [showIgnored, setShowIgnored] = useState(false);
   const [confirmUninstall, setConfirmUninstall] = useState<string | null>(null);
@@ -269,20 +268,12 @@ export const DependencyTable = ({
   };
 
   const confirmVersionUpdate = () => {
-    if (!versionPickerOpen || !selectedVersion) {
+    if (isLoading || !versionPickerOpen || !selectedVersion) {
       return;
     }
-    setUpdatingPackages(prev => new Set(prev).add(versionPickerOpen.name));
     // Pass useExactVersion flag from the checkbox
     onUpdatePackage(versionPickerOpen.name, selectedVersion, versionPickerOpen.declaredVersion, useExactVersion);
     setVersionPickerOpen(null);
-    setTimeout(() => {
-      setUpdatingPackages(prev => {
-        const next = new Set(prev);
-        next.delete(versionPickerOpen.name);
-        return next;
-      });
-    }, 3000);
   };
 
 
@@ -599,10 +590,16 @@ export const DependencyTable = ({
                               <i className="codicon codicon-warning" /> {dep.vulnerabilityCount || 1}
                             </button>
                           </Tooltip>
-                        ) : (
+                        ) : dep.hasVulnerabilities === false ? (
                           <Tooltip text={t.tooltips.noSecurityIssues}>
                             <span className="status-badge status-safe">
                               <i className="codicon codicon-shield" />
+                            </span>
+                          </Tooltip>
+                        ) : (
+                          <Tooltip text={t.tooltips.auditUnavailable}>
+                            <span className="status-badge" aria-label={t.tooltips.auditUnavailable}>
+                              <i className="codicon codicon-question" />
                             </span>
                           </Tooltip>
                         )}
@@ -676,9 +673,9 @@ export const DependencyTable = ({
                           <button
                             className="update-btn"
                             onClick={() => handleUpdate(dep)}
-                            disabled={updatingPackages.has(dep.name) || isLoading}
+                            disabled={isLoading}
                           >
-                            {updatingPackages.has(dep.name) ? '...' : t.buttons.update}
+                            {isLoading ? '...' : t.buttons.update}
                           </button>
                         ) : (
                           <span className="up-to-date">
@@ -859,7 +856,7 @@ export const DependencyTable = ({
                 {t.buttons.cancel}
               </button>
               <button
-                className="modal-btn confirm"
+                className="modal-btn confirm" disabled={isLoading}
                 onClick={() => {
                   onUninstall?.(confirmUninstall);
                   // Remove from selection as well
@@ -1007,7 +1004,7 @@ export const DependencyTable = ({
               <button
                 className="modal-btn confirm"
                 onClick={confirmVersionUpdate}
-                disabled={!selectedVersion || isLoadingVersions?.(versionPickerOpen.name)}
+                disabled={isLoading || !selectedVersion || isLoadingVersions?.(versionPickerOpen.name)}
               >
                 {t.buttons.update}
               </button>
@@ -1050,7 +1047,7 @@ export const DependencyTable = ({
               <button className="modal-btn cancel" onClick={() => setConfirmUpdateAll(null)}>
                 {t.buttons.cancel}
               </button>
-              <button className="modal-btn confirm" onClick={confirmUpdateAllPackages}>
+              <button className="modal-btn confirm" disabled={isLoading} onClick={confirmUpdateAllPackages}>
                 {t.buttons.updateAll}
               </button>
             </div>
@@ -1094,7 +1091,7 @@ export const DependencyTable = ({
               <button className="modal-btn cancel" onClick={() => setConfirmUpdateSelected(null)}>
                 {t.buttons.cancel}
               </button>
-              <button className="modal-btn confirm" onClick={confirmUpdateSelectedPackages}>
+              <button className="modal-btn confirm" disabled={isLoading} onClick={confirmUpdateSelectedPackages}>
                 {t.buttons.updateSelected}
               </button>
             </div>
@@ -1119,7 +1116,7 @@ export const DependencyTable = ({
                 {t.buttons.cancel}
               </button>
               <button
-                className="modal-btn confirm"
+                className="modal-btn confirm" disabled={isLoading}
                 onClick={() => {
                   onToggleIgnore?.(confirmIgnore.name);
                   setConfirmIgnore(null);
@@ -1168,7 +1165,7 @@ export const DependencyTable = ({
                 {t.buttons.cancel}
               </button>
               <button
-                className="modal-btn confirm"
+                className="modal-btn confirm" disabled={isLoading}
                 onClick={() => {
                   onRollback?.();
                   setConfirmRollback(false);
@@ -1287,7 +1284,7 @@ export const DependencyTable = ({
                     >
                       {v.url && (
                         <button
-                          className="modal-btn confirm"
+                          className="modal-btn confirm" disabled={isLoading}
                           onClick={() => onOpenExternal?.(v.url!)}
                           title="View advisory"
                         >

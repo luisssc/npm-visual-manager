@@ -18,6 +18,7 @@ export const ptBr: Translations = {
     tip2: 'Clique no ícone de olho para ignorar atualizações',
     madeBy: 'Feito por Luis Clement Cremades',
     updatesTitle: 'Atualizações',
+    auditUnavailable: 'Auditoria de segurança indisponível. O estado de segurança é desconhecido.',
     badgeTooltip: '{updates} atualizações disponíveis · {vulnerable} pacotes vulneráveis',
   },
 };

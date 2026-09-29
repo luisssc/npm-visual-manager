@@ -1,8 +1,8 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, act, fireEvent } from '@testing-library/react';
 import App from './App';
 import { I18nProvider } from './i18n/I18nContext';
-import type { HostToWebviewMessage, ProjectInfo } from '../../types';
+import type { HostToWebviewMessage, ProjectInfo, UpdateHistory } from '../../types';
 
 /**
  * Regression tests for issue #8: with several package.json files in one repo,
@@ -28,7 +28,11 @@ function sendFromHost(message: HostToWebviewMessage): void {
   });
 }
 
-function loadProjects(projects: ProjectInfo[], currentProjectPath: string): void {
+function loadProjects(
+  projects: ProjectInfo[],
+  currentProjectPath: string,
+  extra: Partial<Extract<HostToWebviewMessage, { type: 'DEPENDENCIES_DATA' }>> = {}
+): void {
   sendFromHost({
     type: 'DEPENDENCIES_DATA',
     dependencies: [
@@ -43,6 +47,7 @@ function loadProjects(projects: ProjectInfo[], currentProjectPath: string): void
     columnConfig: { size: true, type: false, lastUpdate: true, security: true, semverUpdate: true },
     projects,
     currentProjectPath,
+    ...extra,
   });
 }
 
@@ -55,6 +60,149 @@ beforeEach(() => {
     getState: vi.fn(),
     setState: vi.fn(),
   }));
+});
+
+afterEach(() => vi.useRealTimers());
+
+describe('package operation locking', () => {
+  const dependencies = [{
+    name: 'react', declaredVersion: '^18.0.0', installedVersion: '18.0.0',
+    type: 'dependencies' as const, updateAvailable: true, latestVersion: '19.0.0',
+  }];
+  const history: UpdateHistory = {
+    projectPath: THEME.path, timestamp: 1,
+    packages: [{ name: 'react', previousDeclaredVersion: '^17.0.0', previousInstalledVersion: '17.0.0', newVersion: '18.0.0' }],
+  };
+
+  it('keeps every write action locked beyond three seconds and through dependency reloads until completion', () => {
+    vi.useFakeTimers();
+    const { container } = render(<App />, { wrapper: Wrapper });
+    loadProjects([THEME, PLUGIN], THEME.path, { dependencies, lastUpdate: history });
+    fireEvent.click(container.querySelector('.update-btn')!);
+    sendFromHost({ type: 'PACKAGE_VERSIONS_RESULT', packageName: 'react', versions: [] });
+    fireEvent.click(container.querySelector('.modal-btn.confirm')!);
+    expect(postMessage).toHaveBeenCalledWith(expect.objectContaining({ type: 'UPDATE_PACKAGE', packageName: 'react' }));
+    expect(container.querySelector('.update-btn')).toBeDisabled();
+    act(() => vi.advanceTimersByTime(10000));
+    expect(container.querySelector('.update-btn')).toBeDisabled();
+    expect(container.querySelector('.update-all-btn')).toBeDisabled();
+    expect(container.querySelector('.uninstall-btn')).toBeDisabled();
+    expect(container.querySelector('.rollback-btn')).toBeDisabled();
+    loadProjects([THEME, PLUGIN], THEME.path, { dependencies, pendingOperations: 1 });
+    expect(container.querySelector('.update-btn')).toBeDisabled();
+    sendFromHost({ type: 'UPDATE_RESULT', projectPath: THEME.path, packageName: 'react', success: true, message: 'done' });
+    sendFromHost({ type: 'PACKAGE_OPERATIONS_STATE', projectPath: THEME.path, pending: 0 });
+    expect(container.querySelector('.update-btn')).toBeEnabled();
+    expect(container.querySelector('.uninstall-btn')).toBeEnabled();
+  });
+
+  it('keeps queued writes locked after the first result and releases after a failure drains the queue', () => {
+    const { container } = render(<App />, { wrapper: Wrapper });
+    loadProjects([THEME], THEME.path, { dependencies, pendingOperations: 2 });
+    sendFromHost({ type: 'UPDATE_RESULT', projectPath: THEME.path, packageName: 'react', success: true, message: 'done' });
+    sendFromHost({ type: 'PACKAGE_OPERATIONS_STATE', projectPath: THEME.path, pending: 1 });
+    expect(container.querySelector('.update-btn')).toBeDisabled();
+    sendFromHost({ type: 'INSTALL_RESULT', projectPath: THEME.path, packageName: 'other', success: false, message: 'failed' });
+    sendFromHost({ type: 'PACKAGE_OPERATIONS_STATE', projectPath: THEME.path, pending: 0 });
+    expect(container.querySelector('.update-btn')).toBeEnabled();
+  });
+
+  it('does not unlock project B when an operation from project A completes', () => {
+    const { container } = render(<App />, { wrapper: Wrapper });
+    loadProjects([THEME, PLUGIN], THEME.path, { dependencies, pendingOperations: 1 });
+    fireEvent.change(screen.getByRole('combobox'), { target: { value: PLUGIN.path } });
+    loadProjects([THEME, PLUGIN], PLUGIN.path, { dependencies, pendingOperations: 1 });
+    postMessage.mockClear();
+    sendFromHost({ type: 'UPDATE_RESULT', projectPath: THEME.path, packageName: 'react', success: true, message: 'done' });
+    sendFromHost({ type: 'PACKAGE_OPERATIONS_STATE', projectPath: THEME.path, pending: 0 });
+    expect(postMessage).not.toHaveBeenCalled();
+    expect(container.querySelector('.update-btn')).toBeDisabled();
+    sendFromHost({ type: 'PACKAGE_OPERATIONS_STATE', projectPath: PLUGIN.path, pending: 0 });
+    expect(container.querySelector('.update-btn')).toBeEnabled();
+  });
+
+  it.each(['bulk', 'uninstall', 'rollback', 'install'])('locks immediately when submitting %s', action => {
+    const { container } = render(<App />, { wrapper: Wrapper });
+    loadProjects([THEME], THEME.path, { dependencies, lastUpdate: history });
+    if (action === 'install') {
+      fireEvent.click(container.querySelector('.search-toggle-btn')!);
+      sendFromHost({ type: 'SEARCH_RESULTS', results: [{ name: 'other', version: '1.0.0', description: '', date: '' }] });
+      fireEvent.click(container.querySelector('.search-result-item')!);
+      fireEvent.click(container.querySelector('.install-btn')!);
+    } else {
+      const selector = action === 'bulk' ? '.update-all-btn' : action === 'uninstall' ? '.uninstall-btn' : '.rollback-btn';
+      fireEvent.click(container.querySelector(selector)!);
+      fireEvent.click(container.querySelector('.modal-btn.confirm')!);
+    }
+    expect(container.querySelector('.update-btn')).toBeDisabled();
+    expect(container.querySelector('.app')).toHaveAttribute('aria-busy', 'true');
+    expect(postMessage).toHaveBeenCalledWith(expect.objectContaining({
+      type: { bulk: 'UPDATE_ALL_PACKAGES', uninstall: 'UNINSTALL_PACKAGE', rollback: 'ROLLBACK_LAST', install: 'INSTALL_NEW_PACKAGE' }[action],
+    }));
+  });
+
+  it.each(['other', 'react'])('disables search install/uninstall for %s while an update is running', name => {
+    const { container } = render(<App />, { wrapper: Wrapper });
+    loadProjects([THEME], THEME.path, { dependencies });
+    fireEvent.click(container.querySelector('.search-toggle-btn')!);
+    sendFromHost({ type: 'SEARCH_RESULTS', results: [{ name, version: '1.0.0', description: '', date: '' }] });
+    fireEvent.click(container.querySelector('.search-result-item')!);
+    if (name === 'react') fireEvent.click(container.querySelector('.search-uninstall-btn')!);
+    sendFromHost({ type: 'PACKAGE_OPERATIONS_STATE', projectPath: THEME.path, pending: 1 });
+    const button = container.querySelector(name === 'react' ? '.search-uninstall-btn' : '.install-btn')!;
+    expect(button).toBeDisabled();
+    postMessage.mockClear();
+    fireEvent.click(button);
+    expect(postMessage).not.toHaveBeenCalled();
+    sendFromHost({ type: 'PACKAGE_OPERATIONS_STATE', projectPath: THEME.path, pending: 0 });
+    expect(button).toBeEnabled();
+  });
+});
+
+describe('security audit status', () => {
+  it('shows failed audits as unknown, supports retry, and clears the warning after success', () => {
+    const { container } = render(<App />, { wrapper: Wrapper });
+    loadProjects([THEME], THEME.path, { auditFailed: true });
+    fireEvent.click(container.querySelector('.toggle-packages-btn')!);
+
+    expect(screen.getByRole('alert')).toHaveTextContent('Security audit unavailable');
+    expect(container.querySelector('.status-safe')).toBeNull();
+    expect(screen.getByLabelText(/Security audit unavailable/)).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Retry' }));
+    expect(postMessage).toHaveBeenCalledWith({ type: 'REFRESH_CACHE' });
+
+    loadProjects([THEME], THEME.path, {
+      auditFailed: false,
+      dependencies: [{ name: 'react', declaredVersion: '^18.0.0', installedVersion: '18.0.0', type: 'dependencies', hasVulnerabilities: false }],
+    });
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+    expect(container.querySelector('.status-safe')).not.toBeNull();
+  });
+
+  it('does not mark missing audit information as safe', () => {
+    const { container } = render(<App />, { wrapper: Wrapper });
+    loadProjects([THEME], THEME.path);
+    fireEvent.click(container.querySelector('.toggle-packages-btn')!);
+    expect(container.querySelector('.status-safe')).toBeNull();
+  });
+});
+
+describe('rollback results across projects', () => {
+  it('does not clear B history when an earlier rollback of A completes', () => {
+    render(<App />, { wrapper: Wrapper });
+    const history: UpdateHistory = {
+      projectPath: PLUGIN.path,
+      timestamp: 1,
+      packages: [{ name: 'react', previousDeclaredVersion: '^17.0.0', previousInstalledVersion: '17.0.0', newVersion: '18.0.0' }],
+    };
+    loadProjects([THEME, PLUGIN], PLUGIN.path, { lastUpdate: history });
+    sendFromHost({ type: 'ROLLBACK_RESULT', projectPath: THEME.path, success: true, message: 'A rolled back' });
+    expect(screen.getByRole('button', { name: /Rollback/ })).toBeInTheDocument();
+    expect(screen.queryByText('A rolled back')).not.toBeInTheDocument();
+
+    sendFromHost({ type: 'ROLLBACK_RESULT', projectPath: PLUGIN.path, success: true, message: 'B rolled back' });
+    expect(screen.queryByRole('button', { name: /Rollback/ })).not.toBeInTheDocument();
+  });
 });
 
 describe('App header target file', () => {

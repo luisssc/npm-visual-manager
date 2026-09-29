@@ -9,13 +9,14 @@ interface SearchPanelProps {
   onInstall: (packageName: string, version: string, isDev: boolean) => void;
   onUninstall?: (packageName: string) => void;
   isLoading?: boolean;
+  isOperating?: boolean;
   installedPackages?: Dependency[];
   /** Workspace-relative package.json an install or uninstall writes to */
   targetFile?: string;
 }
 
 export const SearchPanel = memo(
-  ({ results, onSearch, onInstall, onUninstall, isLoading, installedPackages, targetFile }: SearchPanelProps) => {
+  ({ results, onSearch, onInstall, onUninstall, isLoading, isOperating, installedPackages, targetFile }: SearchPanelProps) => {
     const t = useTranslation();
     const [query, setQuery] = useState('');
     const [isCollapsed, setIsCollapsed] = useState(true);
@@ -130,7 +131,7 @@ export const SearchPanel = memo(
                         {targetFileNote}
                         <div className="install-actions">
                           <button
-                            className="search-uninstall-btn"
+                            className="search-uninstall-btn" disabled={isOperating}
                             onClick={() => {
                               onUninstall?.(selectedPackage.name);
                               setShowUninstallConfirm(false);
@@ -147,7 +148,7 @@ export const SearchPanel = memo(
                       </div>
                     ) : (
                       <div className="install-actions">
-                        <button className="search-uninstall-btn" onClick={() => setShowUninstallConfirm(true)}>
+                        <button className="search-uninstall-btn" disabled={isOperating} onClick={() => setShowUninstallConfirm(true)}>
                           <i className="codicon codicon-trash" /> {t.buttons.uninstall}
                         </button>
                         <button className="go-back-btn" onClick={() => setSelectedPackage(null)}>
@@ -174,7 +175,7 @@ export const SearchPanel = memo(
                     </div>
                     <div className="install-actions">
                       <button
-                        className="install-btn"
+                        className="install-btn" disabled={isOperating}
                         onClick={() => {
                           onInstall(selectedPackage.name, selectedPackage.version, isDev);
                           setSelectedPackage(null);

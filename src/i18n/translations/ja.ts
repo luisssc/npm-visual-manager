@@ -18,6 +18,7 @@ export const ja: Translations = {
     tip2: '目のアイコンをクリックして更新を無視',
     madeBy: 'Luis Clement Cremades 制作',
     updatesTitle: '更新',
+    auditUnavailable: 'セキュリティ監査を利用できません。安全性は不明です。',
     badgeTooltip: '利用可能な更新 {updates} 件 · 脆弱なパッケージ {vulnerable} 件',
   },
 };

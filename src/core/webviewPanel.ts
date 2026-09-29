@@ -29,6 +29,7 @@ import { isLocalPackageVersion } from '../utils/localPackage';
 import { getWhyInstalled } from '../services/whyService';
 import { requestBadgeRefresh } from '../services/badgeEvents';
 import { getVSCodeLanguage } from '../i18n/getLanguage';
+import { getPendingPackageOperations, onPackageOperationsChanged } from '../services/packageOperationQueue';
 import { PackageOperationsService } from '../services/packageOperationsService';
 
 /** Windows paths are shown with forward slashes, like the rest of the UI. */
@@ -44,13 +45,14 @@ export class NpmGuiManagerPanel {
   private _projects: Project[] = [];
   private _currentProjectPath: string;
   private _currentPackageManager: PackageManager = 'npm';
-  private _updateHistory: UpdateHistory | null = null;
+  private _updateHistories = new Map<string, UpdateHistory>();
   private _cache: VersionCache | null = null;
   private _packageOperationsService: PackageOperationsService;
   private _searchAbortController: AbortController | null = null;
   private _saveExact: boolean = false;
   private _fileWatcher: vscode.FileSystemWatcher | undefined;
   private _fileWatcherDebounce: NodeJS.Timeout | undefined;
+  private _loadGeneration = 0;
 
   public static async createOrShow(
     extensionUri: vscode.Uri,
@@ -235,10 +237,18 @@ export class NpmGuiManagerPanel {
     this._packageOperationsService = new PackageOperationsService(
       msg => this._sendMessage(msg),
       () => this._loadDependencies(),
-      history => {
-        this._updateHistory = history;
+      (history, projectPath) => {
+        if (history) {
+          this._updateHistories.set(projectPath, history);
+        } else {
+          this._updateHistories.delete(projectPath);
+        }
       }
     );
+
+    this._disposables.push(onPackageOperationsChanged((projectPath, pending) => {
+      this._sendMessage({ type: 'PACKAGE_OPERATIONS_STATE', projectPath, pending });
+    }));
 
     // Initialize cache for this project
     this._initializeCache();
@@ -348,15 +358,17 @@ export class NpmGuiManagerPanel {
         break;
       }
 
-      case 'ROLLBACK_LAST':
+      case 'ROLLBACK_LAST': {
+        const projectPath = this._currentProjectPath;
         await this._packageOperationsService.rollbackLastUpdate(
-          this._updateHistory,
+          () => this._updateHistories.get(projectPath) ?? null,
           this._currentProjectPath,
           this._currentPackageManager,
           this._targetFileLabel()
         );
         requestBadgeRefresh();
         break;
+      }
 
       case 'SEARCH_PACKAGES':
         await this._searchPackages(message.query);
@@ -463,6 +475,8 @@ export class NpmGuiManagerPanel {
   }
 
   private async _selectProject(projectPath: string): Promise<void> {
+    this._loadGeneration++;
+    this._searchAbortController?.abort();
     this._currentProjectPath = projectPath;
     await this._initializeCache();
     await this._loadDependencies();
@@ -526,10 +540,15 @@ export class NpmGuiManagerPanel {
    * Load dependencies from the current project's package.json
    */
   private async _loadDependencies(): Promise<void> {
+    const projectPath = this._currentProjectPath;
+    const generation = ++this._loadGeneration;
     try {
-      const packageJsonPath = await findPackageJson(this._currentProjectPath);
+      const packageJsonPath = await findPackageJson(projectPath);
 
       if (!packageJsonPath) {
+        if (generation !== this._loadGeneration) {
+          return;
+        }
         this._sendMessage({
           type: 'ERROR',
           message: 'No package.json found in the selected project',
@@ -539,17 +558,18 @@ export class NpmGuiManagerPanel {
 
       const packageJson = await readPackageJson(packageJsonPath);
       const columnConfig = this._getColumnConfig();
-      let dependencies = await extractDependencies(packageJson, this._currentProjectPath, {
+      let dependencies = await extractDependencies(packageJson, projectPath, {
         includeSize: columnConfig.size,
         concurrency: 10,
       });
 
       // Detect package manager for this project
-      this._currentPackageManager = await detectPackageManager(this._currentProjectPath);
+      const packageManager = await detectPackageManager(projectPath);
 
       // Run security audit (silently)
+      let auditFailed = false;
       try {
-        const auditResult = await runAudit(this._currentProjectPath);
+        const auditResult = await runAudit(projectPath);
 
         // Add vulnerability info to dependencies
         dependencies = dependencies.map(dep => ({
@@ -564,6 +584,7 @@ export class NpmGuiManagerPanel {
           })),
         }));
       } catch (auditError) {
+        auditFailed = true;
         console.warn('npm audit failed:', auditError);
         // Continue without audit data
       }
@@ -577,11 +598,15 @@ export class NpmGuiManagerPanel {
       }
 
       // Get current project name - show only project name, not path
-      const currentProject = this._projects.find(p => p.path === this._currentProjectPath);
+      const currentProject = this._projects.find(p => p.path === projectPath);
       const displayName = currentProject ? currentProject.name : packageJson.name || 'Unnamed Package';
 
       // Get Node and package manager versions
-      const versions = await getVersions(this._currentPackageManager);
+      const versions = await getVersions(packageManager);
+      if (generation !== this._loadGeneration || projectPath !== this._currentProjectPath) {
+        return;
+      }
+      this._currentPackageManager = packageManager;
 
       // Get extension config
       const extensionConfig = this._getExtensionConfig();
@@ -593,10 +618,12 @@ export class NpmGuiManagerPanel {
         packageName: displayName,
         columnConfig,
         projects: this._projects.map(p => ({ name: p.name, path: p.path, relativePath: p.relativePath })),
-        currentProjectPath: this._currentProjectPath,
-        packageManager: this._currentPackageManager,
+        currentProjectPath: projectPath,
+        packageManager,
         versions,
-        lastUpdate: this._updateHistory,
+        lastUpdate: this._updateHistories.get(this._currentProjectPath) ?? null,
+        auditFailed,
+        pendingOperations: getPendingPackageOperations(projectPath),
         saveExact: this._saveExact,
       });
 
@@ -611,6 +638,9 @@ export class NpmGuiManagerPanel {
       // Start checking updates in parallel
       await this._checkUpdates(dependencies);
     } catch (error) {
+      if (generation !== this._loadGeneration) {
+        return;
+      }
       this._sendMessage({
         type: 'ERROR',
         message: `Failed to load dependencies: ${error instanceof Error ? error.message : String(error)}`,
@@ -655,9 +685,13 @@ export class NpmGuiManagerPanel {
    * Get available versions for a package
    */
   private async _getPackageVersions(packageName: string, limit?: number): Promise<void> {
+    const projectPath = this._currentProjectPath;
     console.log(`[npm-visual-manager] Fetching versions for ${packageName}...`);
     try {
       const versions = await getPackageVersions(packageName, limit || 20);
+      if (projectPath !== this._currentProjectPath) {
+        return;
+      }
       console.log(`[npm-visual-manager] Found ${versions.length} versions for ${packageName}`);
       this._sendMessage({
         type: 'PACKAGE_VERSIONS_RESULT',
@@ -666,6 +700,9 @@ export class NpmGuiManagerPanel {
       });
     } catch (error) {
       console.error(`[npm-visual-manager] Error fetching versions for ${packageName}:`, error);
+      if (projectPath !== this._currentProjectPath) {
+        return;
+      }
       this._sendMessage({
         type: 'PACKAGE_VERSIONS_RESULT',
         packageName,
@@ -679,12 +716,17 @@ export class NpmGuiManagerPanel {
    * Check available updates for dependencies
    */
   private async _checkUpdates(dependencies: Dependency[], forceRefresh: boolean = false): Promise<void> {
+    const projectPath = this._currentProjectPath;
+    const generation = this._loadGeneration;
     const batchSize = 5; // Process in batches to avoid overloading
     const dependenciesToCheck = Array.from(
       new Map(dependencies.filter(dep => !dep.isIgnored).map(dep => [dep.name, dep] as const)).values()
     );
 
     for (let i = 0; i < dependenciesToCheck.length; i += batchSize) {
+      if (projectPath !== this._currentProjectPath || generation !== this._loadGeneration) {
+        return;
+      }
       const batch = dependenciesToCheck.slice(i, i + batchSize);
       const promises = batch.map(async dep => {
         try {
@@ -700,6 +742,9 @@ export class NpmGuiManagerPanel {
           }
 
           const details = await getPackageDetails(dep.name, forceRefresh);
+          if (projectPath !== this._currentProjectPath || generation !== this._loadGeneration) {
+            return;
+          }
           // Compare declared version (from package.json) with latest, not installed version
           const semverUpdateType = getSemverUpdateType(dep.declaredVersion, details.latestVersion);
 
@@ -716,6 +761,9 @@ export class NpmGuiManagerPanel {
             repositoryUrl: details.repositoryUrl,
           });
         } catch (error) {
+          if (projectPath !== this._currentProjectPath || generation !== this._loadGeneration) {
+            return;
+          }
           console.warn(`Failed to check version for ${dep.name}:`, error);
           this._sendMessage({
             type: 'VERSION_CHECK_RESULT',

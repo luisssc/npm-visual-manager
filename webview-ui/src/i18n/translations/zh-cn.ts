@@ -44,6 +44,7 @@ export const zhCn: Translations = {
     viewOnNpm: '在 npm 上查看',
     deprecated: '已弃用',
     vulnerabilities: '发现 {{count}} 个漏洞',
+    auditUnavailable: '安全审计不可用。安全状态未知。',
     noSecurityIssues: '未检测到安全问题',
     viewChangelog: '查看更新日志',
     uninstallPackage: '卸载此包',

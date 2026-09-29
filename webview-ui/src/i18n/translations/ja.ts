@@ -44,6 +44,7 @@ export const ja: Translations = {
     viewOnNpm: 'npm で表示',
     deprecated: '非推奨',
     vulnerabilities: '{{count}} 件の脆弱性が見つかりました',
+    auditUnavailable: 'セキュリティ監査を利用できません。安全性は不明です。',
     noSecurityIssues: 'セキュリティ問題は検出されませんでした',
     viewChangelog: '変更履歴を表示',
     uninstallPackage: 'このパッケージをアンインストール',

@@ -17,6 +17,7 @@ export const zhCn: Translations = {
     tip2: '点击眼睛图标忽略更新',
     madeBy: 'Luis Clement Cremades 制作',
     updatesTitle: '更新',
+    auditUnavailable: '安全审计不可用。安全状态未知。',
     badgeTooltip: '{updates} 个可用更新 · {vulnerable} 个存在漏洞的包',
   },
 };

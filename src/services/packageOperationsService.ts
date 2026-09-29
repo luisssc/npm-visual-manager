@@ -2,6 +2,7 @@ import * as vscode from 'vscode';
 import * as path from 'path';
 import * as fs from 'fs';
 import type { HostToWebviewMessage, UpdateHistory, PackageManager } from '../../types';
+import { enqueuePackageOperation } from './packageOperationQueue';
 import { runCommand } from '../utils/commandRunner';
 import { clearAuditCache } from './auditService';
 import { getInstallCommand, getPackageManagerInfo, getUninstallCommand } from './packageManagerService';
@@ -20,7 +21,7 @@ export class PackageOperationsService {
   constructor(
     private readonly sendMessage: (message: HostToWebviewMessage) => void,
     private readonly reloadDependencies: () => Promise<void>,
-    private readonly setUpdateHistory: (history: UpdateHistory | null) => void
+    private readonly setUpdateHistory: (history: UpdateHistory | null, projectPath: string) => void
   ) {}
 
   /**
@@ -35,79 +36,84 @@ export class PackageOperationsService {
     saveExact: boolean = false,
     targetFile?: string
   ): Promise<UpdateHistory | null> {
-    let newHistory: UpdateHistory | null = null;
+    return enqueuePackageOperation(currentProjectPath, async () => {
+      try {
+        let newHistory: UpdateHistory | null = null;
 
-    // Get exact installed version from node_modules before updating
-    const exactVersion = await getInstalledVersion(currentProjectPath, packageName);
+        // Get exact installed version from node_modules before updating
+        const exactVersion = await getInstalledVersion(currentProjectPath, packageName);
 
-    // Save to history before updating (use declared version for rollback)
-    if (currentVersion) {
-      newHistory = {
-        timestamp: Date.now(),
-        packages: [
-          {
-            name: packageName,
-            previousDeclaredVersion: currentVersion, // e.g. "^5"
-            previousInstalledVersion: exactVersion || currentVersion, // e.g. "5.9.3"
-            newVersion: version,
-          },
-        ],
-      };
-    }
-
-    // Note: Webview progress message removed - only using VS Code native notifications
-    try {
-      const installCmd = getInstallCommand(currentPackageManager, packageName, version, saveExact);
-
-      const result = await vscode.window.withProgress(
-        {
-          location: vscode.ProgressLocation.Notification,
-          title: `Updating ${packageName}${inFile(targetFile)}...`,
-          cancellable: false,
-        },
-        async () => {
-          return await runCommand(installCmd, {
-            cwd: currentProjectPath,
-            label: `Update ${packageName}@${version}`,
-          });
+        // Save to history before updating (use declared version for rollback)
+        if (currentVersion) {
+          newHistory = {
+            projectPath: currentProjectPath,
+            timestamp: Date.now(),
+            packages: [
+              {
+                name: packageName,
+                previousDeclaredVersion: currentVersion, // e.g. "^5"
+                previousInstalledVersion: exactVersion || currentVersion, // e.g. "5.9.3"
+                newVersion: version,
+              },
+            ],
+          };
         }
-      );
 
-      clearAuditCache(currentProjectPath);
-      if (result.exitCode === 0) {
-        this.setUpdateHistory(newHistory);
-      }
+        // Note: Webview progress message removed - only using VS Code native notifications
+        const installCmd = getInstallCommand(currentPackageManager, packageName, version, saveExact);
 
-      // Small delay to ensure file system is synced
-      await new Promise(resolve => setTimeout(resolve, 300));
-      await this.reloadDependencies();
-
-      if (result.exitCode !== 0) {
-        vscode.window.showErrorMessage(
-          `Update failed for ${packageName}${inFile(targetFile)} with exit code ${result.exitCode}. Check the Output channel for details.`
+        const result = await vscode.window.withProgress(
+          {
+            location: vscode.ProgressLocation.Notification,
+            title: `Updating ${packageName}${inFile(targetFile)}...`,
+            cancellable: false,
+          },
+          async () => {
+            return await runCommand(installCmd, {
+              cwd: currentProjectPath,
+              label: `Update ${packageName}@${version}`,
+            });
+          }
         );
+
+        clearAuditCache(currentProjectPath);
+        if (result.exitCode === 0) {
+          this.setUpdateHistory(newHistory, currentProjectPath);
+        }
+
+        // Small delay to ensure file system is synced
+        await new Promise(resolve => setTimeout(resolve, 300));
+        await this.reloadDependencies();
+
+        if (result.exitCode !== 0) {
+          vscode.window.showErrorMessage(
+            `Update failed for ${packageName}${inFile(targetFile)} with exit code ${result.exitCode}. Check the Output channel for details.`
+          );
+        }
+
+        this.sendMessage({
+          type: 'UPDATE_RESULT',
+          projectPath: currentProjectPath,
+          success: result.exitCode === 0,
+          packageName,
+          message:
+            result.exitCode === 0
+              ? `Successfully updated ${packageName}`
+              : `Update finished with exit code ${result.exitCode}`,
+        });
+
+        return result.exitCode === 0 ? newHistory : null;
+      } catch (error) {
+        this.sendMessage({
+          type: 'UPDATE_RESULT',
+          projectPath: currentProjectPath,
+          success: false,
+          packageName,
+          message: `Failed to update ${packageName}: ${error instanceof Error ? error.message : String(error)}`,
+        });
+        return null;
       }
-
-      this.sendMessage({
-        type: 'UPDATE_RESULT',
-        success: result.exitCode === 0,
-        packageName,
-        message:
-          result.exitCode === 0
-            ? `Successfully updated ${packageName}`
-            : `Update finished with exit code ${result.exitCode}`,
-      });
-
-      return result.exitCode === 0 ? newHistory : null;
-    } catch (error) {
-      this.sendMessage({
-        type: 'UPDATE_RESULT',
-        success: false,
-        packageName,
-        message: `Failed to update ${packageName}: ${error instanceof Error ? error.message : String(error)}`,
-      });
-      return null;
-    }
+    });
   }
 
   /**
@@ -120,88 +126,93 @@ export class PackageOperationsService {
     saveExact: boolean = false,
     targetFile?: string
   ): Promise<UpdateHistory | null> {
-    if (packages.length === 0) {
-      vscode.window.showInformationMessage('No packages to update');
-      return null;
-    }
-
-    const packageList = packages.map(p => `${p.name}@${p.version}`).join(' ');
-
-    // Get exact installed versions from node_modules before updating
-    const packageNames = packages.map(p => p.name);
-    const installedVersions = await getInstalledVersions(currentProjectPath, packageNames);
-
-    // Save to history before updating (use declared versions for rollback)
-    const newHistory: UpdateHistory = {
-      timestamp: Date.now(),
-      packages: packages
-        .filter(p => p.currentVersion)
-        .map(p => ({
-          name: p.name,
-          previousDeclaredVersion: p.currentVersion!, // e.g. "^5"
-          previousInstalledVersion: installedVersions.get(p.name) || p.currentVersion!,
-          newVersion: p.version,
-        })),
-    };
-
-    // Note: Webview progress message removed - only using VS Code native notifications
-    try {
-      const info = getPackageManagerInfo(currentPackageManager);
-      const exactFlag = saveExact ? ` ${info.exactFlag}` : '';
-      const command = `${info.addCommand}${exactFlag} ${packageList}`;
-
-      const result = await vscode.window.withProgress(
-        {
-          location: vscode.ProgressLocation.Notification,
-          title: `Updating ${packages.length} package(s)${inFile(targetFile)}...`,
-          cancellable: false,
-        },
-        async () => {
-          return await runCommand(command, {
-            cwd: currentProjectPath,
-            label: `Update ${packages.length} package(s)`,
-          });
+    return enqueuePackageOperation(currentProjectPath, async () => {
+      try {
+        if (packages.length === 0) {
+          vscode.window.showInformationMessage('No packages to update');
+          return null;
         }
-      );
 
-      clearAuditCache(currentProjectPath);
-      if (result.exitCode === 0) {
-        this.setUpdateHistory(newHistory);
-      }
+        const packageList = packages.map(p => `${p.name}@${p.version}`).join(' ');
 
-      // Small delay to ensure file system is synced
-      await new Promise(resolve => setTimeout(resolve, 300));
-      await this.reloadDependencies();
+        // Get exact installed versions from node_modules before updating
+        const packageNames = packages.map(p => p.name);
+        const installedVersions = await getInstalledVersions(currentProjectPath, packageNames);
 
-      if (result.exitCode !== 0) {
-        vscode.window.showErrorMessage(
-          `Update failed for ${packages.length} package(s)${inFile(targetFile)} with exit code ${result.exitCode}. Check the Output channel for details.`
+        // Save to history before updating (use declared versions for rollback)
+        const newHistory: UpdateHistory = {
+          projectPath: currentProjectPath,
+          timestamp: Date.now(),
+          packages: packages
+            .filter(p => p.currentVersion)
+            .map(p => ({
+              name: p.name,
+              previousDeclaredVersion: p.currentVersion!, // e.g. "^5"
+              previousInstalledVersion: installedVersions.get(p.name) || p.currentVersion!,
+              newVersion: p.version,
+            })),
+        };
+
+        // Note: Webview progress message removed - only using VS Code native notifications
+        const info = getPackageManagerInfo(currentPackageManager);
+        const exactFlag = saveExact ? ` ${info.exactFlag}` : '';
+        const command = `${info.addCommand}${exactFlag} ${packageList}`;
+
+        const result = await vscode.window.withProgress(
+          {
+            location: vscode.ProgressLocation.Notification,
+            title: `Updating ${packages.length} package(s)${inFile(targetFile)}...`,
+            cancellable: false,
+          },
+          async () => {
+            return await runCommand(command, {
+              cwd: currentProjectPath,
+              label: `Update ${packages.length} package(s)`,
+            });
+          }
         );
+
+        clearAuditCache(currentProjectPath);
+        if (result.exitCode === 0) {
+          this.setUpdateHistory(newHistory, currentProjectPath);
+        }
+
+        // Small delay to ensure file system is synced
+        await new Promise(resolve => setTimeout(resolve, 300));
+        await this.reloadDependencies();
+
+        if (result.exitCode !== 0) {
+          vscode.window.showErrorMessage(
+            `Update failed for ${packages.length} package(s)${inFile(targetFile)} with exit code ${result.exitCode}. Check the Output channel for details.`
+          );
+        }
+
+        this.sendMessage({
+          type: 'UPDATE_RESULT',
+          projectPath: currentProjectPath,
+          success: result.exitCode === 0,
+          packageName: packages.map(p => p.name).join(', '),
+          message:
+            result.exitCode === 0
+              ? `Successfully updated ${packages.length} package(s)`
+              : `Update finished with exit code ${result.exitCode}`,
+        });
+
+        return result.exitCode === 0 ? newHistory : null;
+      } catch (error) {
+        this.sendMessage({
+          type: 'UPDATE_RESULT',
+          projectPath: currentProjectPath,
+          success: false,
+          packageName: packages.map(p => p.name).join(', '),
+          message: `Failed to update packages: ${error instanceof Error ? error.message : String(error)}`,
+        });
+        vscode.window.showErrorMessage(
+          `Failed to update packages: ${error instanceof Error ? error.message : String(error)}`
+        );
+        return null;
       }
-
-      this.sendMessage({
-        type: 'UPDATE_RESULT',
-        success: result.exitCode === 0,
-        packageName: packages.map(p => p.name).join(', '),
-        message:
-          result.exitCode === 0
-            ? `Successfully updated ${packages.length} package(s)`
-            : `Update finished with exit code ${result.exitCode}`,
-      });
-
-      return result.exitCode === 0 ? newHistory : null;
-    } catch (error) {
-      this.sendMessage({
-        type: 'UPDATE_RESULT',
-        success: false,
-        packageName: packages.map(p => p.name).join(', '),
-        message: `Failed to update packages: ${error instanceof Error ? error.message : String(error)}`,
-      });
-      vscode.window.showErrorMessage(
-        `Failed to update packages: ${error instanceof Error ? error.message : String(error)}`
-      );
-      return null;
-    }
+    });
   }
 
   /**
@@ -213,75 +224,80 @@ export class PackageOperationsService {
     currentPackageManager: PackageManager,
     targetFile?: string
   ): Promise<void> {
-    try {
-      // Get exact installed version before uninstalling so we can rollback
-      const exactVersion = await getInstalledVersion(currentProjectPath, packageName);
+    return enqueuePackageOperation(currentProjectPath, async () => {
+      try {
+        // Get exact installed version before uninstalling so we can rollback
+        const exactVersion = await getInstalledVersion(currentProjectPath, packageName);
 
-      const newHistory: UpdateHistory | null = exactVersion
-        ? {
-            timestamp: Date.now(),
-            packages: [
-              {
-                name: packageName,
-                previousDeclaredVersion: exactVersion,
-                previousInstalledVersion: exactVersion,
-                newVersion: 'uninstalled',
-              },
-            ],
+        const newHistory: UpdateHistory | null = exactVersion
+          ? {
+              projectPath: currentProjectPath,
+              timestamp: Date.now(),
+              packages: [
+                {
+                  name: packageName,
+                  previousDeclaredVersion: exactVersion,
+                  previousInstalledVersion: exactVersion,
+                  newVersion: 'uninstalled',
+                },
+              ],
+            }
+          : null;
+
+        const uninstallCmd = getUninstallCommand(currentPackageManager, packageName);
+
+        // Note: Webview progress message removed - only using VS Code native notifications
+        const result = await vscode.window.withProgress(
+          {
+            location: vscode.ProgressLocation.Notification,
+            title: `Uninstalling ${packageName}${inFile(targetFile)}...`,
+            cancellable: false,
+          },
+          async () => {
+            return await runCommand(uninstallCmd, {
+              cwd: currentProjectPath,
+              label: `Uninstall ${packageName}`,
+            });
           }
-        : null;
+        );
 
-      const uninstallCmd = getUninstallCommand(currentPackageManager, packageName);
-
-      // Note: Webview progress message removed - only using VS Code native notifications
-      const result = await vscode.window.withProgress(
-        {
-          location: vscode.ProgressLocation.Notification,
-          title: `Uninstalling ${packageName}${inFile(targetFile)}...`,
-          cancellable: false,
-        },
-        async () => {
-          return await runCommand(uninstallCmd, {
-            cwd: currentProjectPath,
-            label: `Uninstall ${packageName}`,
-          });
+        if (result.exitCode === 0 && newHistory) {
+          this.setUpdateHistory(newHistory, currentProjectPath);
         }
-      );
 
-      if (result.exitCode === 0 && newHistory) {
-        this.setUpdateHistory(newHistory);
-      }
+        // Small delay to ensure file system is synced
+        await new Promise(resolve => setTimeout(resolve, 300));
+        await this.reloadDependencies();
 
-      // Small delay to ensure file system is synced
-      await new Promise(resolve => setTimeout(resolve, 300));
-      await this.reloadDependencies();
+        if (result.exitCode !== 0) {
+          vscode.window.showErrorMessage(
+            `Uninstall failed for ${packageName}${inFile(targetFile)} with exit code ${result.exitCode}. Check the Output channel for details.`
+          );
+        }
 
-      if (result.exitCode !== 0) {
+        this.sendMessage({
+          type: 'UNINSTALL_RESULT',
+          projectPath: currentProjectPath,
+          packageName,
+          success: result.exitCode === 0,
+          message:
+            result.exitCode === 0
+              ? `Successfully uninstalled ${packageName}`
+              : `Uninstall finished with exit code ${result.exitCode}`,
+        });
+      } catch (error) {
+        this.sendMessage({
+          type: 'UNINSTALL_RESULT',
+          projectPath: currentProjectPath,
+          packageName,
+          success: false,
+          message: `Failed to uninstall ${packageName}: ${error instanceof Error ? error.message : String(error)}`,
+        });
         vscode.window.showErrorMessage(
-          `Uninstall failed for ${packageName}${inFile(targetFile)} with exit code ${result.exitCode}. Check the Output channel for details.`
+          `Failed to uninstall package: ${error instanceof Error ? error.message : String(error)}`
         );
       }
-
-      this.sendMessage({
-        type: 'UNINSTALL_RESULT',
-        packageName,
-        success: result.exitCode === 0,
-        message:
-          result.exitCode === 0
-            ? `Successfully uninstalled ${packageName}`
-            : `Uninstall finished with exit code ${result.exitCode}`,
-      });
-    } catch (error) {
-      this.sendMessage({
-        type: 'UNINSTALL_RESULT',
-        packageName,
-        success: false,
-        message: `Failed to uninstall ${packageName}: ${error instanceof Error ? error.message : String(error)}`,
-      });
-      vscode.window.showErrorMessage(
-        `Failed to uninstall package: ${error instanceof Error ? error.message : String(error)}`
-      );
-    }
+    });
   }
 
   /**
@@ -296,129 +312,151 @@ export class PackageOperationsService {
     saveExact: boolean = false,
     targetFile?: string
   ): Promise<void> {
-    try {
-      const info = getPackageManagerInfo(currentPackageManager);
-      const devFlag = isDev ? info.devFlag || '--save-dev' : '';
-      const exactFlag = saveExact ? info.exactFlag : '';
-      const versionSuffix = version ? `@${version}` : '';
-      const command = `${info.addCommand} ${packageName}${versionSuffix} ${devFlag} ${exactFlag}`.trim();
+    return enqueuePackageOperation(currentProjectPath, async () => {
+      try {
+        const info = getPackageManagerInfo(currentPackageManager);
+        const devFlag = isDev ? info.devFlag || '--save-dev' : '';
+        const exactFlag = saveExact ? info.exactFlag : '';
+        const versionSuffix = version ? `@${version}` : '';
+        const command = `${info.addCommand} ${packageName}${versionSuffix} ${devFlag} ${exactFlag}`.trim();
 
-      // Note: Webview progress message removed - only using VS Code native notifications
-      const result = await vscode.window.withProgress(
-        {
-          location: vscode.ProgressLocation.Notification,
-          title: `Installing ${packageName}${inFile(targetFile)}...`,
-          cancellable: false,
-        },
-        async () => {
-          return await runCommand(command, {
-            cwd: currentProjectPath,
-            label: `Install ${packageName}${versionSuffix}`,
-          });
+        // Note: Webview progress message removed - only using VS Code native notifications
+        const result = await vscode.window.withProgress(
+          {
+            location: vscode.ProgressLocation.Notification,
+            title: `Installing ${packageName}${inFile(targetFile)}...`,
+            cancellable: false,
+          },
+          async () => {
+            return await runCommand(command, {
+              cwd: currentProjectPath,
+              label: `Install ${packageName}${versionSuffix}`,
+            });
+          }
+        );
+
+        // Small delay to ensure file system is synced
+        await new Promise(resolve => setTimeout(resolve, 300));
+        await this.reloadDependencies();
+
+        if (result.exitCode !== 0) {
+          vscode.window.showErrorMessage(
+            `Install failed for ${packageName}${inFile(targetFile)} with exit code ${result.exitCode}. Check the Output channel for details.`
+          );
         }
-      );
 
-      // Small delay to ensure file system is synced
-      await new Promise(resolve => setTimeout(resolve, 300));
-      await this.reloadDependencies();
-
-      if (result.exitCode !== 0) {
+        this.sendMessage({
+          type: 'INSTALL_RESULT',
+          projectPath: currentProjectPath,
+          success: result.exitCode === 0,
+          packageName,
+          message:
+            result.exitCode === 0
+              ? `Successfully installed ${packageName}`
+              : `Install finished with exit code ${result.exitCode}`,
+        });
+      } catch (error) {
+        this.sendMessage({
+          type: 'INSTALL_RESULT',
+          projectPath: currentProjectPath,
+          success: false,
+          packageName,
+          message: `Failed to install ${packageName}: ${error instanceof Error ? error.message : String(error)}`,
+        });
         vscode.window.showErrorMessage(
-          `Install failed for ${packageName}${inFile(targetFile)} with exit code ${result.exitCode}. Check the Output channel for details.`
+          `Failed to install package: ${error instanceof Error ? error.message : String(error)}`
         );
       }
-
-      this.sendMessage({
-        type: 'INSTALL_RESULT',
-        success: result.exitCode === 0,
-        packageName,
-        message:
-          result.exitCode === 0
-            ? `Successfully installed ${packageName}`
-            : `Install finished with exit code ${result.exitCode}`,
-      });
-    } catch (error) {
-      this.sendMessage({
-        type: 'INSTALL_RESULT',
-        success: false,
-        packageName,
-        message: `Failed to install ${packageName}: ${error instanceof Error ? error.message : String(error)}`,
-      });
-      vscode.window.showErrorMessage(
-        `Failed to install package: ${error instanceof Error ? error.message : String(error)}`
-      );
-    }
+    });
   }
 
   /**
    * Rollback the last update operation
    */
   public async rollbackLastUpdate(
-    updateHistory: UpdateHistory | null,
+    updateHistory: UpdateHistory | null | (() => UpdateHistory | null),
     currentProjectPath: string,
     currentPackageManager: PackageManager,
     targetFile?: string
   ): Promise<void> {
-    if (!updateHistory || updateHistory.packages.length === 0) {
-      this.sendMessage({
-        type: 'ROLLBACK_RESULT',
-        success: false,
-        message: 'No previous update to rollback',
-      });
-      return;
-    }
-
-    const packagesToRollback = updateHistory.packages;
-
-    // Note: Webview progress message removed - only using VS Code native notifications
-    try {
-      const info = getPackageManagerInfo(currentPackageManager);
-
-      // Install using the EXACT installed version to get the right package
-      // We'll restore the declared version in package.json after
-      const installArgs = packagesToRollback.map(p => `${p.name}@${p.previousInstalledVersion}`).join(' ');
-      const command = `${info.addCommand} ${installArgs}`;
-
-      const result = await vscode.window.withProgress(
-        {
-          location: vscode.ProgressLocation.Notification,
-          title: `Rolling back ${packagesToRollback.length} package(s)${inFile(targetFile)}...`,
-          cancellable: false,
-        },
-        async () => {
-          return await runCommand(command, {
-            cwd: currentProjectPath,
-            label: `Rollback ${packagesToRollback.length} package(s)`,
-          });
-        }
-      );
-
-      if (result.exitCode !== 0) {
-        throw new Error(`Rollback finished with exit code ${result.exitCode}. Check output channel.`);
+    return enqueuePackageOperation(currentProjectPath, async () => {
+      const history = typeof updateHistory === 'function' ? updateHistory() : updateHistory;
+      if (!history || history.packages.length === 0) {
+        this.sendMessage({
+          type: 'ROLLBACK_RESULT',
+          projectPath: currentProjectPath,
+          success: false,
+          message: 'No previous update to rollback',
+        });
+        return;
       }
 
-      clearAuditCache(currentProjectPath);
-      await this.restorePackageJsonVersions(packagesToRollback, currentProjectPath);
-      this.setUpdateHistory(null); // Clear history immediately on successful rollback
-      await this.reloadDependencies();
+      // History belongs to the project captured when the operation started.
+      // Never apply it to whichever project happens to be selected now.
+      if (history.projectPath !== currentProjectPath) {
+        this.sendMessage({
+          type: 'ROLLBACK_RESULT',
+          projectPath: currentProjectPath,
+          success: false,
+          message: 'Cannot rollback an operation from a different project',
+        });
+        return;
+      }
 
-      // Clear history after successful rollback
-      const rolledBackPackages = packagesToRollback.map(p => p.name);
+      const packagesToRollback = history.packages;
 
-      this.sendMessage({
-        type: 'ROLLBACK_RESULT',
-        success: true,
-        message: `Successfully rolled back ${packagesToRollback.length} package(s)`,
-        rolledBackPackages,
-      });
-    } catch (error) {
-      this.sendMessage({
-        type: 'ROLLBACK_RESULT',
-        success: false,
-        message: `Failed to rollback: ${error instanceof Error ? error.message : String(error)}`,
-      });
-      vscode.window.showErrorMessage(`Failed to rollback: ${error instanceof Error ? error.message : String(error)}`);
-    }
+      // Note: Webview progress message removed - only using VS Code native notifications
+      try {
+        const info = getPackageManagerInfo(currentPackageManager);
+
+        // Install using the EXACT installed version to get the right package
+        // We'll restore the declared version in package.json after
+        const installArgs = packagesToRollback.map(p => `${p.name}@${p.previousInstalledVersion}`).join(' ');
+        const command = `${info.addCommand} ${installArgs}`;
+
+        const result = await vscode.window.withProgress(
+          {
+            location: vscode.ProgressLocation.Notification,
+            title: `Rolling back ${packagesToRollback.length} package(s)${inFile(targetFile)}...`,
+            cancellable: false,
+          },
+          async () => {
+            return await runCommand(command, {
+              cwd: currentProjectPath,
+              label: `Rollback ${packagesToRollback.length} package(s)`,
+            });
+          }
+        );
+
+        if (result.exitCode !== 0) {
+          throw new Error(`Rollback finished with exit code ${result.exitCode}. Check output channel.`);
+        }
+
+        clearAuditCache(currentProjectPath);
+        await this.restorePackageJsonVersions(packagesToRollback, currentProjectPath);
+        this.setUpdateHistory(null, currentProjectPath); // Clear only this project's history
+        await this.reloadDependencies();
+
+        // Clear history after successful rollback
+        const rolledBackPackages = packagesToRollback.map(p => p.name);
+
+        this.sendMessage({
+          type: 'ROLLBACK_RESULT',
+          projectPath: currentProjectPath,
+          success: true,
+          message: `Successfully rolled back ${packagesToRollback.length} package(s)`,
+          rolledBackPackages,
+        });
+      } catch (error) {
+        this.sendMessage({
+          type: 'ROLLBACK_RESULT',
+          projectPath: currentProjectPath,
+          success: false,
+          message: `Failed to rollback: ${error instanceof Error ? error.message : String(error)}`,
+        });
+        vscode.window.showErrorMessage(`Failed to rollback: ${error instanceof Error ? error.message : String(error)}`);
+      }
+    });
   }
 
   /**

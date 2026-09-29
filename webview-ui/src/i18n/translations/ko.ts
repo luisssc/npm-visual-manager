@@ -44,6 +44,7 @@ export const ko: Translations = {
     viewOnNpm: 'npm에서 보기',
     deprecated: '사용 중단',
     vulnerabilities: '취약점 {{count}}개 발견',
+    auditUnavailable: '보안 감사를 사용할 수 없습니다. 보안 상태를 알 수 없습니다.',
     noSecurityIssues: '보안 문제가 감지되지 않음',
     viewChangelog: '변경 로그 보기',
     uninstallPackage: '이 패키지 제거',

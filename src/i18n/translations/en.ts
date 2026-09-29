@@ -21,6 +21,7 @@ export const en = {
      * localized through `package.nls.*.json` files in the extension root.
      */
     updatesTitle: 'Updates',
+    auditUnavailable: 'Security audit unavailable. Security status is unknown.',
     badgeTooltip: '{updates} updates available · {vulnerable} vulnerable packages',
   },
 };

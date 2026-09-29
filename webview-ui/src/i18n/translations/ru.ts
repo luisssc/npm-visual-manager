@@ -44,6 +44,7 @@ export const ru: Translations = {
     viewOnNpm: 'Посмотреть на npm',
     deprecated: 'Устарело',
     vulnerabilities: 'Найдено уязвимостей: {{count}}',
+    auditUnavailable: 'Аудит безопасности недоступен. Состояние безопасности неизвестно.',
     noSecurityIssues: 'Проблем безопасности не обнаружено',
     viewChangelog: 'Посмотреть журнал изменений',
     uninstallPackage: 'Удалить этот пакет',

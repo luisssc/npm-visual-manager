@@ -44,6 +44,7 @@ export const es: Translations = {
     viewOnNpm: 'Ver en npm',
     deprecated: 'Obsoleto',
     vulnerabilities: '{{count}} vulnerabilidades encontradas',
+    auditUnavailable: 'Auditoría de seguridad no disponible. El estado de seguridad es desconocido.',
     noSecurityIssues: 'No se detectaron problemas de seguridad',
     viewChangelog: 'Ver changelog',
     uninstallPackage: 'Desinstalar este paquete',

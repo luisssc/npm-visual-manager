@@ -18,6 +18,7 @@ export const ko: Translations = {
     tip2: '눈 아이콘을 클릭하여 업데이트 무시',
     madeBy: 'Luis Clement Cremades 제작',
     updatesTitle: '업데이트',
+    auditUnavailable: '보안 감사를 사용할 수 없습니다. 보안 상태를 알 수 없습니다.',
     badgeTooltip: '업데이트 가능 {updates}개 · 취약한 패키지 {vulnerable}개',
   },
 };

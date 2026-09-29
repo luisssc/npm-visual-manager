@@ -18,6 +18,7 @@ export const es: Translations = {
     tip2: 'Clica el icono del ojo para ignorar actualizaciones',
     madeBy: 'Hecho por Luis Clement Cremades',
     updatesTitle: 'Actualizaciones',
+    auditUnavailable: 'Auditoría de seguridad no disponible. El estado de seguridad es desconocido.',
     badgeTooltip: '{updates} actualizaciones disponibles · {vulnerable} paquetes vulnerables',
   },
 };

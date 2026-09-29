@@ -16,6 +16,7 @@ import { isLocalPackageVersion } from '../utils/localPackage';
 
 /** Per-project counts, so the workspace total can be attributed to a file. */
 export interface BadgeProjectSummary {
+  auditFailed?: boolean;
   /** package.json "name", or the folder name when absent */
   name: string;
   /** Absolute path of the project folder */
@@ -27,6 +28,7 @@ export interface BadgeProjectSummary {
 }
 
 export interface BadgeSummary {
+  auditFailed?: boolean;
   updates: number;
   vulnerablePackages: number;
   /**
@@ -136,9 +138,6 @@ export async function computeWorkspaceBadge(
     return { updates: 0, vulnerablePackages: 0 };
   }
 
-  // Reuse the persistent version cache so activation-time checks are cheap.
-  // Registry data is project-independent, so sharing one cache file is safe
-  // even if the panel later installs its own cache instance.
   const cache = getCache(workspaceRoots[0]!);
   await cache.load();
   setGlobalCache(cache);
@@ -148,12 +147,14 @@ export async function computeWorkspaceBadge(
   let updates = 0;
   let vulnerablePackages = 0;
   const perProject: BadgeProjectSummary[] = [];
+  let auditFailed = false;
 
   for (const project of projects) {
     const result = await countProjectUpdates(project.path, options);
     updates += result.updates;
 
     let vulnerableInThisProject = 0;
+    let projectAuditFailed = false;
     try {
       const audit = await runAudit(project.path);
       const vulnerableInProject = new Set<string>();
@@ -165,10 +166,12 @@ export async function computeWorkspaceBadge(
       vulnerableInThisProject = vulnerableInProject.size;
       vulnerablePackages += vulnerableInThisProject;
     } catch {
-      // Audit failure must never break the badge
+      projectAuditFailed = true;
+      auditFailed = true;
     }
 
     perProject.push({
+      ...(projectAuditFailed ? { auditFailed: true } : {}),
       name: project.name,
       path: project.path,
       relativePath: project.relativePath,
@@ -178,6 +181,5 @@ export async function computeWorkspaceBadge(
   }
 
   await cache.save();
-
-  return { updates, vulnerablePackages, projects: perProject };
+  return { updates, vulnerablePackages, projects: perProject, ...(auditFailed ? { auditFailed: true } : {}) };
 }

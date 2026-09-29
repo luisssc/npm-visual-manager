@@ -320,6 +320,8 @@ describe('computeWorkspaceBadge', () => {
 
     expect(summary.updates).toBe(1);
     expect(summary.vulnerablePackages).toBe(0);
+    expect(summary.auditFailed).toBe(true);
+    expect(summary.projects?.[0]?.auditFailed).toBe(true);
   });
 
   it('returns zeros for an empty workspace', async () => {

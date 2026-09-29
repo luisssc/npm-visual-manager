@@ -42,6 +42,7 @@ export const en = {
     viewOnNpm: 'View on npm',
     deprecated: 'Deprecated',
     vulnerabilities: '{{count}} vulnerabilities found',
+    auditUnavailable: 'Security audit unavailable. Security status is unknown.',
     noSecurityIssues: 'No security issues detected',
     viewChangelog: 'View changelog',
     uninstallPackage: 'Uninstall this package',

@@ -44,6 +44,7 @@ export const ptBr: Translations = {
     viewOnNpm: 'Ver no npm',
     deprecated: 'Obsoleto',
     vulnerabilities: '{{count}} vulnerabilidades encontradas',
+    auditUnavailable: 'Auditoria de segurança indisponível. O estado de segurança é desconhecido.',
     noSecurityIssues: 'Nenhum problema de segurança detectado',
     viewChangelog: 'Ver changelog',
     uninstallPackage: 'Desinstalar este pacote',
