@@ -1,5 +1,7 @@
 .vscode/**
 .vscode-test/**
+.kilo/**
+out/**/__tests__/**
 src/**
 webview-ui/**
 .gitignore

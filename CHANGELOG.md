@@ -2,7 +2,7 @@
 
 All notable changes to the "npm-visual-manager" extension will be documented in this file.
 
-## [2.0.0] - Unreleased
+## [2.0.0] - 2026-09-29
 
 ### Added
 
@@ -33,6 +33,7 @@ All notable changes to the "npm-visual-manager" extension will be documented in 
 
 ### Changed
 
+- Extension packages exclude local `.kilo` development files and compiled regression tests.
 - Update checks in the panel and activity badge continuously refill up to five concurrent lookup slots, so a slow dependency no longer blocks the next batch. A deterministic 50-dependency regression scenario (50 ms/1 s responses) completes in 2.7 s instead of 10 s with the former batches; actual gains depend on registry latency.
 - Simultaneous metadata reads for the same package, project and registry configuration share one in-flight request. Completed and failed requests are released, explicit refresh still fetches fresh data, and projects or reloaded credentials remain isolated.
 - Minimum supported VS Code version is now **1.86.0** to support the npm registry client dependencies.
