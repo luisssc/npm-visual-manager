@@ -281,6 +281,11 @@ export function getSemverUpdateType(declared: string, latest: string): SemverUpd
   if (precedence > 0) {
     return 'unknown';
   }
+  // A pre-release target is unstable whatever number it bumps; a "latest"
+  // dist-tag can point to one (e.g. 0.0.45 -> 0.0.46-24)
+  if (target.prerelease.length > 0) {
+    return 'prerelease';
+  }
   if (current.major !== target.major) {
     return 'major';
   }
