@@ -176,6 +176,8 @@ export const ptBr: Translations = {
     major: 'MAJOR',
     minor: 'MINOR',
     patch: 'PATCH',
+    filterLabel: 'Filtrar por tipo de atualização',
+    filterTooltip: 'Mostrar apenas atualizações {{type}} (clique novamente para remover)',
   },
 
   // Labels

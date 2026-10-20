@@ -100,8 +100,32 @@ interface DependencyTableProps {
   targetFile?: string;
 }
 
-type SortColumn = 'name' | 'installedVersion' | 'latestVersion' | 'type' | 'size' | 'lastPublishDate';
+type SortColumn = 'name' | 'installedVersion' | 'latestVersion' | 'type' | 'size' | 'semverUpdate' | 'lastPublishDate';
 type SortDirection = 'asc' | 'desc';
+
+// Update types offered as filter chips, in severity order
+const FILTERABLE_UPDATE_TYPES: SemverUpdateType[] = ['major', 'minor', 'patch', 'prerelease', 'release'];
+
+// Higher rank = riskier update. Ascending sort shows the riskiest first.
+const getSemverRank = (dep: Dependency): number => {
+  if (!dep.updateAvailable) {
+    return 0;
+  }
+  switch (dep.semverUpdateType) {
+    case 'major':
+      return 5;
+    case 'minor':
+      return 4;
+    case 'patch':
+      return 3;
+    case 'release':
+      return 2;
+    case 'prerelease':
+      return 1;
+    default:
+      return 0;
+  }
+};
 
 const getSemverLabel = (
   t: { semver: { major: string; minor: string; patch: string; prerelease: string; release: string } },
@@ -214,6 +238,7 @@ export const DependencyTable = ({
   const [sortColumn, setSortColumn] = useState<SortColumn>('name');
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
   const [filter, setFilter] = useState('');
+  const [semverFilter, setSemverFilter] = useState<Set<SemverUpdateType>>(new Set());
   const [selectedPackages, setSelectedPackages] = useState<Set<string>>(new Set());
   const [showIgnored, setShowIgnored] = useState(false);
   const [confirmUninstall, setConfirmUninstall] = useState<string | null>(null);
@@ -260,6 +285,18 @@ export const DependencyTable = ({
       setSortColumn(column);
       setSortDirection('asc');
     }
+  };
+
+  const toggleSemverFilter = (type: SemverUpdateType) => {
+    setSemverFilter(prev => {
+      const next = new Set(prev);
+      if (next.has(type)) {
+        next.delete(type);
+      } else {
+        next.add(type);
+      }
+      return next;
+    });
   };
 
   const handleUpdate = (dep: Dependency) => {
@@ -391,6 +428,13 @@ export const DependencyTable = ({
           case 'size':
             comparison = parseSize(a.size) - parseSize(b.size);
             break;
+          case 'semverUpdate':
+            comparison = getSemverRank(b) - getSemverRank(a);
+            if (comparison === 0) {
+              // Keep the name order within each group regardless of direction
+              return a.name.localeCompare(b.name);
+            }
+            break;
           case 'lastPublishDate':
             comparison = (a.lastPublishDate || '').localeCompare(b.lastPublishDate || '');
             break;
@@ -414,6 +458,11 @@ export const DependencyTable = ({
       );
     }
 
+    // Filter by update type (no chip selected = no filter)
+    if (semverFilter.size > 0) {
+      result = result.filter(d => d.updateAvailable && !!d.semverUpdateType && semverFilter.has(d.semverUpdateType));
+    }
+
     // Separate ignored from active
     const active = result.filter(d => !d.isIgnored);
     const ignored = result.filter(d => d.isIgnored);
@@ -422,9 +471,24 @@ export const DependencyTable = ({
       sortedAndFilteredDeps: sortDepsInternal(active),
       ignoredDeps: sortDepsInternal(ignored),
     };
-  }, [dependencies, sortColumn, sortDirection, filter, showAllPackages]);
+  }, [dependencies, sortColumn, sortDirection, filter, semverFilter, showAllPackages]);
 
-  const updateCount = dependencies.filter(d => d.updateAvailable && !d.isIgnored).length;
+  // Bulk actions only act on visible rows, so the counts must match them
+  const updateCount = sortedAndFilteredDeps.filter(d => d.updateAvailable).length;
+  const visibleSelectedCount = sortedAndFilteredDeps.filter(d => selectedPackages.has(d.name)).length;
+  const hasActiveFilter = filter.trim() !== '' || semverFilter.size > 0;
+
+  // Chip counts ignore the chip selection itself so every chip keeps its number
+  const semverCounts = useMemo(() => {
+    const counts = new Map<SemverUpdateType, number>();
+    for (const d of dependencies) {
+      if (d.updateAvailable && !d.isIgnored && d.semverUpdateType) {
+        counts.set(d.semverUpdateType, (counts.get(d.semverUpdateType) ?? 0) + 1);
+      }
+    }
+    return counts;
+  }, [dependencies]);
+  const semverChips = FILTERABLE_UPDATE_TYPES.filter(type => semverCounts.has(type) || semverFilter.has(type));
 
   const getSortIndicator = (column: SortColumn) => {
     if (sortColumn !== column) {
@@ -456,6 +520,26 @@ export const DependencyTable = ({
             onChange={e => setFilter(e.target.value)}
             className="filter-input"
           />
+          {semverChips.length > 0 && (
+            <div className="semver-filter" role="group" aria-label={t.semver.filterLabel}>
+              {semverChips.map(type => {
+                const label = getSemverLabel(t, type);
+                const active = semverFilter.has(type);
+                return (
+                  <button
+                    key={type}
+                    type="button"
+                    className={`semver-chip semver-chip-${type} ${active ? 'active' : ''}`}
+                    aria-pressed={active}
+                    onClick={() => toggleSemverFilter(type)}
+                    title={interpolate(t.semver.filterTooltip, { type: label })}
+                  >
+                    {label} <span className="semver-chip-count">{semverCounts.get(type) ?? 0}</span>
+                  </button>
+                );
+              })}
+            </div>
+          )}
           {(nodeVersion || packageManager) && (
             <div className="env-info">
               {nodeVersion && (
@@ -486,9 +570,9 @@ export const DependencyTable = ({
               <span>↩</span> {t.buttons.rollback}
             </button>
           )}
-          {selectedPackages.size > 0 ? (
+          {visibleSelectedCount > 0 ? (
             <button className="update-selected-btn" onClick={handleUpdateSelected} disabled={isLoading}>
-              {interpolate(t.buttons.updateSelected, {})} ({selectedPackages.size})
+              {interpolate(t.buttons.updateSelected, {})} ({visibleSelectedCount})
             </button>
           ) : (
             updateCount > 0 && (
@@ -508,9 +592,7 @@ export const DependencyTable = ({
                 <input
                   type="checkbox"
                   checked={
-                    selectedPackages.size > 0 &&
-                    selectedPackages.size ===
-                      sortedAndFilteredDeps.filter(d => d.updateAvailable && !d.isIgnored).length
+                    visibleSelectedCount > 0 && visibleSelectedCount === updateCount
                   }
                   onChange={e => handleSelectAll(e.target.checked)}
                   title={t.tooltips.selectAllUpdates}
@@ -535,7 +617,11 @@ export const DependencyTable = ({
                   {t.columns.size} {getSortIndicator('size')}
                 </th>
               )}
-              {columnConfig.semverUpdate && <th className="sortable update-type-col">{t.columns.update}</th>}
+              {columnConfig.semverUpdate && (
+                <th onClick={() => handleSort('semverUpdate')} className="sortable update-type-col">
+                  {t.columns.update} {getSortIndicator('semverUpdate')}
+                </th>
+              )}
               {columnConfig.lastUpdate && (
                 <th onClick={() => handleSort('lastPublishDate')} className="sortable date-col">
                   {t.columns.lastUpdate} {getSortIndicator('lastPublishDate')}
@@ -551,7 +637,7 @@ export const DependencyTable = ({
                 <td colSpan={visibleColumnCount} className="empty-state">
                   {dependencies.length === 0
                     ? t.states.noDependencies
-                    : !showAllPackages
+                    : !showAllPackages && !hasActiveFilter
                       ? t.states.allUpToDate
                       : t.states.noMatchFilter}
                 </td>

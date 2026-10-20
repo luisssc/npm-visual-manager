@@ -175,6 +175,8 @@ export const ko: Translations = {
     major: '주요',
     minor: '부분',
     patch: '패치',
+    filterLabel: '업데이트 유형으로 필터링',
+    filterTooltip: '{{type}} 업데이트만 표시 (다시 클릭하면 해제)',
   },
 
   // Labels

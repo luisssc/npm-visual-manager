@@ -48,6 +48,8 @@
 .filters {
   display: flex;
   gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
   flex: 1;
   min-width: 200px;
 }
@@ -66,6 +68,66 @@
 .filter-input:focus {
   outline: none;
   border-color: var(--focus-border);
+}
+
+.semver-filter {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+
+.semver-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  border: 1px solid var(--input-border, var(--border-color));
+  border-radius: 10px;
+  background: transparent;
+  color: var(--vscode-foreground);
+  font-size: 10px;
+  font-weight: 600;
+  cursor: pointer;
+  opacity: 0.75;
+}
+
+.semver-chip:hover {
+  opacity: 1;
+  background: var(--vscode-toolbar-hoverBackground);
+}
+
+.semver-chip:focus-visible {
+  outline: 1px solid var(--focus-border);
+  outline-offset: 1px;
+}
+
+.semver-chip.active {
+  opacity: 1;
+  color: var(--vscode-editor-background);
+  border-color: transparent;
+}
+
+.semver-chip-major.active {
+  background: var(--vscode-errorForeground, #f44336);
+}
+
+.semver-chip-minor.active {
+  background: var(--vscode-warningForeground, #ff9800);
+}
+
+.semver-chip-patch.active,
+.semver-chip-release.active {
+  background: var(--vscode-testing-iconPassed, #4caf50);
+}
+
+.semver-chip-prerelease.active {
+  background: var(--vscode-charts-blue, #3794ff);
+}
+
+.semver-chip-count {
+  font-weight: 400;
+  opacity: 0.85;
 }
 
 .refresh-btn {

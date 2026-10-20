@@ -180,6 +180,8 @@ export const en = {
     major: 'MAJOR',
     minor: 'MINOR',
     patch: 'PATCH',
+    filterLabel: 'Filter by update type',
+    filterTooltip: 'Show only {{type}} updates (click again to clear)',
   },
 };
 

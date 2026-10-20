@@ -15,7 +15,7 @@ A Visual Studio Code extension that provides a visual interface for managing NPM
 
 | Category | Capabilities |
 |----------|-------------|
-| **Dependency Management** | Visual table with sorting, filtering by type (prod/dev/peer), auto-refresh on `package.json` changes |
+| **Dependency Management** | Visual table with sorting (including by update type), filtering by name and by update type (Major/Minor/Patch), auto-refresh on `package.json` changes |
 | **Search & Install** | NPM registry search with debouncing, install as regular or dev dependency |
 | **Updates** | One-click individual or bulk updates, version rollbacks, ignore packages from checks |
 | **Security & Info** | Security audit integration, deprecation warnings, package sizes, direct links to changelogs, "why is it installed?" reverse dependency view |
@@ -56,8 +56,11 @@ Repos often hold more than one `package.json` (a monorepo, a WordPress theme plu
 
 ### Filtering
 
-- **Search**: Type in the filter box to search by package name
-- **Type Filter**: Use the dropdown to show only Production, Development, or Peer dependencies
+- **Search**: Type in the filter box to search by package name or declared version
+- **Update type**: Click the Major, Minor, Patch (and Pre-release/Stable, when present) chips next to the filter box to show only those updates. Chips can be combined, and each shows how many pending updates it covers. Click an active chip again to clear it.
+- **Sorting**: Click a column header to sort; click it again to reverse. Sorting by **Update** lists Major first, then Minor, Patch, Stable promotions and Pre-releases.
+
+"Update All", "Select all" and the update counter apply only to the packages currently visible, so you can, for example, filter by Patch and update just the patches.
 
 ### Search & Install Packages
 

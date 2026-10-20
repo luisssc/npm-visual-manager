@@ -175,6 +175,8 @@ export const zhCn: Translations = {
     major: '主要',
     minor: '次要',
     patch: '补丁',
+    filterLabel: '按更新类型筛选',
+    filterTooltip: '仅显示 {{type}} 更新（再次点击取消）',
   },
 
   // Labels

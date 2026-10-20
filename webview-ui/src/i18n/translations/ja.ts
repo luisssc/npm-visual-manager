@@ -175,6 +175,8 @@ export const ja: Translations = {
     major: 'メジャー',
     minor: 'マイナー',
     patch: 'パッチ',
+    filterLabel: '更新の種類で絞り込む',
+    filterTooltip: '{{type}} の更新のみ表示（もう一度クリックで解除）',
   },
 
   // Labels

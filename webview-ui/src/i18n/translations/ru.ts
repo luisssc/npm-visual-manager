@@ -175,6 +175,8 @@ export const ru: Translations = {
     major: 'MAJOR',
     minor: 'MINOR',
     patch: 'PATCH',
+    filterLabel: 'Фильтр по типу обновления',
+    filterTooltip: 'Показывать только обновления {{type}} (нажмите ещё раз, чтобы снять)',
   },
 
   // Labels

@@ -177,6 +177,8 @@ export const de: Translations = {
     major: 'MAJOR',
     minor: 'MINOR',
     patch: 'PATCH',
+    filterLabel: 'Nach Update-Typ filtern',
+    filterTooltip: 'Nur {{type}}-Updates anzeigen (erneut klicken zum Entfernen)',
   },
 
   // Labels

@@ -183,5 +183,7 @@ export const es: Translations = {
     major: 'MAJOR',
     minor: 'MINOR',
     patch: 'PATCH',
+    filterLabel: 'Filtrar por tipo de actualización',
+    filterTooltip: 'Mostrar solo actualizaciones {{type}} (clic de nuevo para quitar)',
   },
 };
