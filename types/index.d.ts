@@ -113,7 +113,8 @@ export type WebviewToHostMessage =
   | { type: 'OPEN_PACKAGE_JSON'; path: string }
   | { type: 'UNINSTALL_PACKAGE'; packageName: string }
   | { type: 'GET_PACKAGE_VERSIONS'; packageName: string; limit?: number }
-  | { type: 'GET_WHY_INSTALLED'; packageName: string };
+  | { type: 'GET_WHY_INSTALLED'; packageName: string }
+  | { type: 'EXPORT_UPDATE_PLAN'; dependencies: Dependency[] };
 
 // Messages from Extension Host to Webview
 export type HostToWebviewMessage =

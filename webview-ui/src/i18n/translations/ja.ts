@@ -3,6 +3,7 @@ import { Translations } from './en';
 export const ja: Translations = {
   // Buttons
   buttons: {
+    exportUpdatePlan: 'AI プロンプト',
     update: '更新',
     updateAll: 'すべて更新',
     updateSelected: '選択項目を更新',
@@ -59,6 +60,7 @@ export const ja: Translations = {
     rollbackUpdate: '最後の更新をロールバック ({{count}} 件)',
     rollbackUpdate_plural: '最後の更新をロールバック ({{count}} 件)',
     openPackageJson: 'この package.json を開く',
+    exportUpdatePlan: '表示中の更新を AI アシスタントに安全に適用させる Markdown プロンプトをコピー',
   },
 
   // Placeholders

@@ -232,6 +232,24 @@
   cursor: not-allowed;
 }
 
+.export-plan-btn {
+  background: var(--vscode-button-secondaryBackground);
+  color: var(--vscode-button-secondaryForeground);
+  border: none;
+  padding: 6px 14px;
+  border-radius: 2px;
+  font-size: 13px;
+  cursor: pointer;
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.export-plan-btn:hover {
+  background: var(--vscode-button-secondaryHoverBackground);
+}
+
 .env-info {
   display: flex;
   align-items: center;

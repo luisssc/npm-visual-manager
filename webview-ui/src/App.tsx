@@ -32,6 +32,7 @@ function App() {
     uninstallPackage,
     getPackageVersions,
     getWhyInstalled,
+    exportUpdatePlan,
     isReady,
   } = useVsCodeApi();
 
@@ -480,6 +481,7 @@ function App() {
           whyResult={whyResult}
           whyLoadingPackage={whyLoadingPackage}
           onCloseWhy={handleCloseWhy}
+          onExportUpdatePlan={exportUpdatePlan}
           targetFile={targetFile}
         />
         <SearchPanel

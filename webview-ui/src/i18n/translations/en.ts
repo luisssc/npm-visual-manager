@@ -1,6 +1,7 @@
 export const en = {
   // Buttons
   buttons: {
+    exportUpdatePlan: 'AI prompt',
     update: 'Update',
     updateAll: 'Update All',
     updateSelected: 'Update Selected',
@@ -57,6 +58,7 @@ export const en = {
     rollbackUpdate: 'Rollback last update ({{count}} package)',
     rollbackUpdate_plural: 'Rollback last update ({{count}} packages)',
     openPackageJson: 'Open this package.json',
+    exportUpdatePlan: 'Copy a Markdown prompt asking an AI assistant to apply the visible updates safely',
   },
 
   // Placeholders

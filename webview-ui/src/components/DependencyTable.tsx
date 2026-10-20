@@ -96,6 +96,8 @@ interface DependencyTableProps {
   whyResult?: { packageName: string; chains: string[][]; unsupported?: boolean; notInstalled?: boolean; error?: string } | null;
   whyLoadingPackage?: string | null;
   onCloseWhy?: () => void;
+  /** Sends the visible pending updates to the host to build an AI update prompt */
+  onExportUpdatePlan?: (dependencies: Dependency[]) => void;
   /** Workspace-relative package.json every action writes to (e.g. "apps/web/package.json") */
   targetFile?: string;
 }
@@ -232,6 +234,7 @@ export const DependencyTable = ({
   whyResult,
   whyLoadingPackage,
   onCloseWhy,
+  onExportUpdatePlan,
   targetFile,
 }: DependencyTableProps) => {
   const t = useTranslation();
@@ -557,6 +560,15 @@ export const DependencyTable = ({
           )}
         </div>
         <div className="toolbar-actions">
+          {onExportUpdatePlan && updateCount > 0 && (
+            <button
+              className="export-plan-btn"
+              onClick={() => onExportUpdatePlan(sortedAndFilteredDeps.filter(d => d.updateAvailable))}
+              title={t.tooltips.exportUpdatePlan}
+            >
+              <i className="codicon codicon-sparkle" /> {t.buttons.exportUpdatePlan}
+            </button>
+          )}
           {lastUpdate && onRollback && (
             <button
               className="rollback-btn"

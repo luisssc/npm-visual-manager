@@ -3,6 +3,7 @@ import { Translations } from './en';
 export const fr: Translations = {
   // Buttons
   buttons: {
+    exportUpdatePlan: 'Prompt IA',
     update: 'Mettre à jour',
     updateAll: 'Tout mettre à jour',
     updateSelected: 'Mettre à jour la sélection',
@@ -59,6 +60,7 @@ export const fr: Translations = {
     rollbackUpdate: 'Annuler la dernière mise à jour ({{count}} paquet)',
     rollbackUpdate_plural: 'Annuler la dernière mise à jour ({{count}} paquets)',
     openPackageJson: 'Ouvrir ce package.json',
+    exportUpdatePlan: 'Copier un prompt Markdown demandant à un assistant IA d’appliquer les mises à jour visibles en toute sécurité',
   },
 
   // Placeholders

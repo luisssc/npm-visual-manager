@@ -26,7 +26,7 @@ const DEPENDENCIES = [
 ];
 const NAMES = DEPENDENCIES.map(d => d.name);
 
-function renderTable(onUpdateAll = vi.fn(), showAllPackages = false) {
+function renderTable(onUpdateAll = vi.fn(), showAllPackages = false, onExportUpdatePlan = vi.fn()) {
   const result = render(
     <I18nProvider>
       <DependencyTable
@@ -36,6 +36,7 @@ function renderTable(onUpdateAll = vi.fn(), showAllPackages = false) {
         isLoading={false}
         columnConfig={{ size: false, type: false, lastUpdate: false, security: false, semverUpdate: true }}
         showAllPackages={showAllPackages}
+        onExportUpdatePlan={onExportUpdatePlan}
       />
     </I18nProvider>
   );
@@ -118,5 +119,22 @@ describe('update type sorting and filtering', () => {
     const { container, getByText } = renderTable();
     fireEvent.change(container.querySelector('.filter-input')!, { target: { value: 'zzz' } });
     expect(getByText('No packages match the current filter')).toBeInTheDocument();
+  });
+});
+
+describe('AI update prompt', () => {
+  it('sends only the visible, non-ignored pending updates', () => {
+    const onExport = vi.fn();
+    const { container, chip } = renderTable(vi.fn(), true, onExport);
+    fireEvent.click(chip('major'));
+    fireEvent.click(container.querySelector('.export-plan-btn')!);
+    expect(onExport).toHaveBeenCalledTimes(1);
+    expect(onExport.mock.calls[0]![0].map((d: Dependency) => d.name)).toEqual(['bravo', 'delta']);
+  });
+
+  it('is hidden when no update is visible', () => {
+    const { container } = renderTable();
+    fireEvent.change(container.querySelector('.filter-input')!, { target: { value: 'zzz' } });
+    expect(container.querySelector('.export-plan-btn')).toBeNull();
   });
 });

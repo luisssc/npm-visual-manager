@@ -133,6 +133,13 @@ export function useVsCodeApi() {
     [postMessage]
   );
 
+  const exportUpdatePlan = useCallback(
+    (dependencies: Dependency[]) => {
+      postMessage({ type: 'EXPORT_UPDATE_PLAN', dependencies });
+    },
+    [postMessage]
+  );
+
   return {
     get vscode() {
       return vscodeRef.current;
@@ -155,6 +162,7 @@ export function useVsCodeApi() {
     uninstallPackage,
     getPackageVersions,
     getWhyInstalled,
+    exportUpdatePlan,
   };
 }
 

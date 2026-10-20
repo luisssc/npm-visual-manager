@@ -3,6 +3,7 @@ import { Translations } from './en';
 export const ru: Translations = {
   // Buttons
   buttons: {
+    exportUpdatePlan: 'Промпт для ИИ',
     update: 'Обновить',
     updateAll: 'Обновить все',
     updateSelected: 'Обновить выбранные',
@@ -59,6 +60,7 @@ export const ru: Translations = {
     rollbackUpdate: 'Откатить последнее обновление ({{count}} пакет)',
     rollbackUpdate_plural: 'Откатить последнее обновление ({{count}} пакетов)',
     openPackageJson: 'Открыть этот package.json',
+    exportUpdatePlan: 'Скопировать Markdown-промпт, чтобы ИИ-ассистент безопасно применил видимые обновления',
   },
 
   // Placeholders

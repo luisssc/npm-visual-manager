@@ -3,6 +3,7 @@ import { Translations } from './en';
 export const zhCn: Translations = {
   // Buttons
   buttons: {
+    exportUpdatePlan: 'AI 提示词',
     update: '更新',
     updateAll: '更新全部',
     updateSelected: '更新选中',
@@ -59,6 +60,7 @@ export const zhCn: Translations = {
     rollbackUpdate: '回滚上次更新 ({{count}} 个包)',
     rollbackUpdate_plural: '回滚上次更新 ({{count}} 个包)',
     openPackageJson: '打开此 package.json',
+    exportUpdatePlan: '复制 Markdown 提示词，让 AI 助手安全地应用当前显示的更新',
   },
 
   // Placeholders

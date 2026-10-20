@@ -3,6 +3,7 @@ import { Translations } from './en';
 export const ko: Translations = {
   // Buttons
   buttons: {
+    exportUpdatePlan: 'AI 프롬프트',
     update: '업데이트',
     updateAll: '모두 업데이트',
     updateSelected: '선택 항목 업데이트',
@@ -59,6 +60,7 @@ export const ko: Translations = {
     rollbackUpdate: '마지막 업데이트 롤백 ({{count}}개 패키지)',
     rollbackUpdate_plural: '마지막 업데이트 롤백 ({{count}}개 패키지)',
     openPackageJson: '이 package.json 열기',
+    exportUpdatePlan: '표시된 업데이트를 AI 어시스턴트가 안전하게 적용하도록 하는 Markdown 프롬프트 복사',
   },
 
   // Placeholders

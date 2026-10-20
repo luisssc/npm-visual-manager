@@ -2,6 +2,29 @@
 
 All notable changes to the "npm-visual-manager" extension will be documented in this file.
 
+## [2.1.0] - 2026-10-20
+
+### Added
+
+- **Filter by update type** ([#12](https://github.com/luisssc/npm-visual-manager/issues/12)): Major, Minor and Patch chips next to the filter box show only those pending updates; Pre-release and Stable chips appear when such updates exist. Chips combine, show how many non-ignored updates each covers and clear on a second click. Localized in all nine interface languages.
+- **AI update prompt** ([#11](https://github.com/luisssc/npm-visual-manager/issues/11)): The **AI prompt** toolbar button copies a Markdown prompt for AI coding assistants with the pending updates currently visible, and can open it in an editor tab. Updates are grouped from lowest to highest risk with declared, installed and target versions, the matching command for the project's package manager (keeping dev dependencies in `devDependencies`), deprecation and vulnerability notes, flags for packages from the same repository that must be updated together (such as `react` and `react-dom`), and the `lint`, `test`, `build` and `typecheck` scripts to run after each step. Pre-release targets (including a `latest` tag that points to one) and breaking 0.x bumps are placed in the riskier groups. Only GitHub release notes are linked; registry URLs and other repository hosts are never included.
+- **Sort by update type**: The Update column header now sorts like the other columns. Ascending order lists Major first, then Minor, Patch, Stable promotions and Pre-releases, with packages without updates last; names keep alphabetical order within each group.
+
+### Fixed
+
+- **Pre-release targets labeled as patch, minor or major**: When the registry's `latest` tag points to a pre-release (for example `@vscode/codicons` 0.0.45 → 0.0.46-24), the update is now labeled PRE-RELEASE in the table, the update-type chips and the AI prompt. It still counts as a pending update.
+- The "Update All" and "Update Selected" counters, and the select-all checkbox, now count only the visible packages. Previously the counters included packages hidden by the text filter, although only the visible ones were updated.
+- When a filter hides every pending update, the table reports that no packages match the filter instead of claiming that all packages are up to date.
+
+### Changed
+
+- README: documented the update-type filter and sorting and the AI update prompt, and removed the outdated reference to a Production/Development/Peer dropdown that the interface no longer provides.
+- Extension and webview manifests and both lockfiles are synchronized at **2.1.0**.
+
+### Tests
+
+- Added coverage for update-type sorting in both directions, chip counts, combined filters, bulk updates restricted to filtered packages, selection counts after filtering and the empty-state message. Added coverage for the AI update prompt: risk grouping and ordering, pre-release targets (also in update-type detection), 0.x versions, same-repository grouping, verification scripts, package-manager commands per dependency type, GitHub-only release links, exclusion of registry URLs, and escaping of notes in Markdown tables.
+
 ## [2.0.0] - 2026-09-29
 
 ### Added

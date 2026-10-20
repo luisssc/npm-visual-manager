@@ -33,6 +33,7 @@ import { requestBadgeRefresh } from '../services/badgeEvents';
 import { getVSCodeLanguage } from '../i18n/getLanguage';
 import { getPendingPackageOperations, onPackageOperationsChanged } from '../services/packageOperationQueue';
 import { PackageOperationsService } from '../services/packageOperationsService';
+import { buildUpdatePlan } from '../services/updatePlanService';
 
 /** Windows paths are shown with forward slashes, like the rest of the UI. */
 function toPosixPath(value: string): string {
@@ -427,6 +428,42 @@ export class NpmGuiManagerPanel {
       case 'GET_WHY_INSTALLED':
         await this._getWhyInstalled(message.packageName);
         break;
+
+      case 'EXPORT_UPDATE_PLAN':
+        await this._exportUpdatePlan(message.dependencies);
+        break;
+    }
+  }
+
+  /**
+   * Copies a Markdown prompt for an AI assistant with the given pending updates
+   */
+  private async _exportUpdatePlan(dependencies: Dependency[]): Promise<void> {
+    let scripts: string[] = [];
+    try {
+      const packageJson = await readPackageJson(path.join(this._currentProjectPath, 'package.json'));
+      scripts = Object.keys(packageJson.scripts ?? {});
+    } catch {
+      // Without scripts the plan asks the assistant how it verified the changes
+    }
+
+    const plan = buildUpdatePlan({
+      dependencies,
+      packageManager: this._currentPackageManager,
+      targetFile: this._targetFileLabel(),
+      scripts,
+      saveExact: this._saveExact,
+    });
+    await vscode.env.clipboard.writeText(plan);
+
+    const openAction = 'Open in Editor';
+    const choice = await vscode.window.showInformationMessage(
+      `npm-visual-manager: AI update prompt for ${this._targetFileLabel()} copied to the clipboard.`,
+      openAction
+    );
+    if (choice === openAction) {
+      const document = await vscode.workspace.openTextDocument({ content: plan, language: 'markdown' });
+      await vscode.window.showTextDocument(document, { preview: false });
     }
   }
 

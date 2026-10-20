@@ -3,6 +3,7 @@ import { Translations } from './en';
 export const de: Translations = {
   // Buttons
   buttons: {
+    exportUpdatePlan: 'KI-Prompt',
     update: 'Aktualisieren',
     updateAll: 'Alle aktualisieren',
     updateSelected: 'Ausgewählte aktualisieren',
@@ -59,6 +60,7 @@ export const de: Translations = {
     rollbackUpdate: 'Letzte Aktualisierung zurücksetzen ({{count}} Paket)',
     rollbackUpdate_plural: 'Letzte Aktualisierung zurücksetzen ({{count}} Pakete)',
     openPackageJson: 'Diese package.json öffnen',
+    exportUpdatePlan: 'Markdown-Prompt kopieren, mit dem ein KI-Assistent die sichtbaren Updates sicher anwendet',
   },
 
   // Placeholders

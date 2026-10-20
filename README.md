@@ -17,7 +17,7 @@ A Visual Studio Code extension that provides a visual interface for managing NPM
 |----------|-------------|
 | **Dependency Management** | Visual table with sorting (including by update type), filtering by name and by update type (Major/Minor/Patch), auto-refresh on `package.json` changes |
 | **Search & Install** | NPM registry search with debouncing, install as regular or dev dependency |
-| **Updates** | One-click individual or bulk updates, version rollbacks, ignore packages from checks |
+| **Updates** | One-click individual or bulk updates, version rollbacks, ignore packages from checks, AI update prompt for coding assistants |
 | **Security & Info** | Security audit integration, deprecation warnings, package sizes, direct links to changelogs, "why is it installed?" reverse dependency view |
 | **Multi-Project** | Auto-detection in monorepos, project selector showing each `package.json` path, supports npm, yarn, pnpm, and bun |
 | **Localization** | 8 languages: Spanish, German, French, Chinese (Simplified), Japanese, Portuguese, Russian, Korean |
@@ -75,6 +75,14 @@ Click the eye icon 👁️ next to any package to ignore it from update checks. 
 ### Changelog Viewer
 
 Hover over any package row and click the book icon 📖 to open the package's GitHub releases page. This helps you review what changed before updating.
+
+### AI Update Prompt
+
+Prefer to let an AI coding assistant (Copilot, Cursor, Claude, etc.) handle the updates? Click **AI prompt** in the toolbar to copy a Markdown prompt with the pending updates currently visible in the table, so you can combine it with the filters above (for example, only Major updates). A notification lets you also open it in an editor tab.
+
+The prompt lists each package with its declared, installed and target version, groups them from lowest to highest risk (Patch, Minor, Major, Pre-release), and includes the exact command for your package manager. Pre-release targets and breaking 0.x bumps go to the riskier groups, and packages from the same repository (such as `react` and `react-dom`) are flagged to be updated together. It tells the assistant to update majors one at a time, read their release notes and run the project's `lint`, `test`, `build` or `typecheck` scripts after each step.
+
+The prompt never includes registry URLs or links to non-GitHub repositories, so internal hosts from private registries are not shared with an external AI service. Release notes are linked, not summarized: the assistant has to open them to check for breaking changes.
 
 ## Private registries (including GitLab)
 
