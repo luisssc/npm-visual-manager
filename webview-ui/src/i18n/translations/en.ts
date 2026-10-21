@@ -27,7 +27,8 @@ export const en = {
     latest: 'Latest',
     size: 'Size',
     update: 'Update',
-    lastUpdate: 'Last Update',
+    lastUpdate: 'You updated',
+    released: 'Published',
     action: 'Action',
   },
 
@@ -59,11 +60,13 @@ export const en = {
     rollbackUpdate_plural: 'Rollback last update ({{count}} packages)',
     openPackageJson: 'Open this package.json',
     exportUpdatePlan: 'Copy a Markdown prompt asking an AI assistant to apply the visible updates safely',
+    userLastUpdate: 'When you last installed or updated this package',
+    released: 'When this version was published',
   },
 
   // Placeholders
   placeholders: {
-    filterPackages: 'Filter packages...',
+    filterPackages: 'Filter name or update type',
     searchNpm: 'Search npm packages...',
   },
 
@@ -184,6 +187,11 @@ export const en = {
     patch: 'PATCH',
     filterLabel: 'Filter by update type',
     filterTooltip: 'Show only {{type}} updates (click again to clear)',
+  },
+
+  env: {
+    node: 'Node',
+    updateAvailable: '{{name}} update available: v{{version}}',
   },
 };
 

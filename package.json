@@ -122,7 +122,12 @@
         "npm-visual-manager.columns.lastUpdate": {
           "type": "boolean",
           "default": true,
-          "description": "Show Last Update column"
+          "description": "Show when you last installed or updated each package"
+        },
+        "npm-visual-manager.columns.released": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show when this version was published"
         },
         "npm-visual-manager.columns.security": {
           "type": "boolean",

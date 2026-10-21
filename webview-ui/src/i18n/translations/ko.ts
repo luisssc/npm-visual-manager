@@ -29,7 +29,8 @@ export const ko: Translations = {
     latest: '최신',
     size: '크기',
     update: '업데이트',
-    lastUpdate: '마지막 업데이트',
+    lastUpdate: '내가 갱신',
+    released: '게시일',
     action: '작업',
   },
 
@@ -61,11 +62,13 @@ export const ko: Translations = {
     rollbackUpdate_plural: '마지막 업데이트 롤백 ({{count}}개 패키지)',
     openPackageJson: '이 package.json 열기',
     exportUpdatePlan: '표시된 업데이트를 AI 어시스턴트가 안전하게 적용하도록 하는 Markdown 프롬프트 복사',
+    userLastUpdate: '이 패키지를 마지막으로 설치하거나 업데이트한 때',
+    released: '이 버전이 게시된 때',
   },
 
   // Placeholders
   placeholders: {
-    filterPackages: '패키지 필터링...',
+    filterPackages: '이름 또는 업데이트 유형으로 필터',
     searchNpm: 'npm 패키지 검색...',
   },
 
@@ -186,5 +189,10 @@ export const ko: Translations = {
     latest: '최신',
     deprecated: '지원 중단',
     prerelease: '프리릴리스',
+  },
+
+  env: {
+    node: 'Node',
+    updateAvailable: '{{name}} 업데이트 사용 가능: v{{version}}',
   },
 };

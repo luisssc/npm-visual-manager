@@ -55,12 +55,15 @@ export interface Dependency {
   repositoryUrl?: string;
   checkError?: string;
   vulnerabilities?: VulnerabilityInfo[];
+  /** When this dependency was last changed in the project (commit or this extension). */
+  userUpdatedAt?: string;
 }
 
 export interface ColumnConfig {
   size: boolean;
   type: boolean;
   lastUpdate: boolean;
+  released: boolean;
   security: boolean;
   semverUpdate: boolean;
 }
@@ -83,6 +86,10 @@ export interface ProjectInfo {
 export interface VersionInfo {
   nodeVersion: string;
   packageManagerVersion: string;
+  nodeLatestVersion?: string;
+  nodeUpdateAvailable?: boolean;
+  packageManagerLatestVersion?: string;
+  packageManagerUpdateAvailable?: boolean;
 }
 
 export interface UpdateHistory {
@@ -158,6 +165,7 @@ export type HostToWebviewMessage =
   | { type: 'INSTALL_RESULT'; projectPath: string; packageName: string; success: boolean; message: string }
   | { type: 'ERROR'; message: string }
   | { type: 'PROGRESS'; message: string }
+  | { type: 'RUNTIME_VERSIONS'; versions: VersionInfo }
   | { type: 'PACKAGE_VERSIONS_RESULT'; packageName: string; versions: PackageVersion[]; error?: string }
   | {
       type: 'WHY_INSTALLED_RESULT';

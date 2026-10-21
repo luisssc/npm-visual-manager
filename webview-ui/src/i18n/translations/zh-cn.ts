@@ -29,7 +29,8 @@ export const zhCn: Translations = {
     latest: '最新',
     size: '大小',
     update: '更新',
-    lastUpdate: '最后更新',
+    lastUpdate: '你的更新',
+    released: '发布时间',
     action: '操作',
   },
 
@@ -61,11 +62,13 @@ export const zhCn: Translations = {
     rollbackUpdate_plural: '回滚上次更新 ({{count}} 个包)',
     openPackageJson: '打开此 package.json',
     exportUpdatePlan: '复制 Markdown 提示词，让 AI 助手安全地应用当前显示的更新',
+    userLastUpdate: '你上次安装或更新此包的时间',
+    released: '此版本的发布时间',
   },
 
   // Placeholders
   placeholders: {
-    filterPackages: '筛选包...',
+    filterPackages: '按名称或更新类型筛选',
     searchNpm: '搜索 npm 包...',
   },
 
@@ -186,5 +189,10 @@ export const zhCn: Translations = {
     latest: '最新',
     deprecated: '已弃用',
     prerelease: '预发布',
+  },
+
+  env: {
+    node: 'Node',
+    updateAvailable: '{{name}} 有可用更新：v{{version}}',
   },
 };

@@ -6,6 +6,7 @@ import * as vscode from 'vscode';
 import * as path from 'path';
 import { NpmGuiManagerPanel } from './webviewPanel';
 import { setGlobalStorageUri } from '../services/cacheService';
+import { setUserUpdateStorageDir } from '../services/userUpdateService';
 import { NpmDependenciesProvider } from './sidebarProvider';
 import { UpdatesViewProvider } from './updatesViewProvider';
 import { computeWorkspaceBadge } from '../services/badgeService';
@@ -90,6 +91,7 @@ export function activate(context: vscode.ExtensionContext): void {
 
   // Set global storage URI for cache service
   setGlobalStorageUri(context.globalStorageUri);
+  setUserUpdateStorageDir(context.globalStorageUri.fsPath);
 
   // Register the main command (opens in panel)
   const openManagerCommand = vscode.commands.registerCommand(

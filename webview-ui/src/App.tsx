@@ -54,6 +54,7 @@ function App() {
     size: true,
     type: false,
     lastUpdate: true,
+    released: true,
     security: true,
     semverUpdate: true,
   });
@@ -238,6 +239,15 @@ function App() {
           setError(message.message);
           setIsLoading(false);
           break;
+
+        case 'RUNTIME_VERSIONS':
+          setVersions(message.versions);
+          break;
+
+        default: {
+          const unexpected: never = message;
+          void unexpected;
+        }
       }
     },
     [requestDependencies, handleVersionsResult, currentProjectPath, resetVersions, setProjectPending]
@@ -464,8 +474,12 @@ function App() {
           columnConfig={columnConfig}
           showAllPackages={showAllPackages}
           nodeVersion={versions?.nodeVersion}
+          nodeLatestVersion={versions?.nodeLatestVersion}
+          nodeUpdateAvailable={versions?.nodeUpdateAvailable}
           packageManager={packageManager}
           packageManagerVersion={versions?.packageManagerVersion}
+          packageManagerLatestVersion={versions?.packageManagerLatestVersion}
+          packageManagerUpdateAvailable={versions?.packageManagerUpdateAvailable}
           lastUpdate={lastUpdate}
           onRollback={handleRollback}
           rollbackMessage={rollbackMessage}

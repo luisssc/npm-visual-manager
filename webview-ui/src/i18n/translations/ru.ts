@@ -29,7 +29,8 @@ export const ru: Translations = {
     latest: 'Последняя',
     size: 'Размер',
     update: 'Обновление',
-    lastUpdate: 'Последнее обновление',
+    lastUpdate: 'Вы обновили',
+    released: 'Опубликовано',
     action: 'Действие',
   },
 
@@ -61,11 +62,13 @@ export const ru: Translations = {
     rollbackUpdate_plural: 'Откатить последнее обновление ({{count}} пакетов)',
     openPackageJson: 'Открыть этот package.json',
     exportUpdatePlan: 'Скопировать Markdown-промпт, чтобы ИИ-ассистент безопасно применил видимые обновления',
+    userLastUpdate: 'Когда вы в последний раз установили или обновили этот пакет',
+    released: 'Когда эта версия была опубликована',
   },
 
   // Placeholders
   placeholders: {
-    filterPackages: 'Фильтровать пакеты...',
+    filterPackages: 'Фильтр по имени или типу обновления',
     searchNpm: 'Искать пакеты npm...',
   },
 
@@ -186,5 +189,10 @@ export const ru: Translations = {
     latest: 'последняя',
     deprecated: 'устарело',
     prerelease: 'пре-релиз',
+  },
+
+  env: {
+    node: 'Node',
+    updateAvailable: 'Доступно обновление {{name}}: v{{version}}',
   },
 };

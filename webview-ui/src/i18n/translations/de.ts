@@ -29,7 +29,8 @@ export const de: Translations = {
     latest: 'Neueste',
     size: 'Größe',
     update: 'Aktualisierung',
-    lastUpdate: 'Letzte Aktualisierung',
+    lastUpdate: 'Von dir',
+    released: 'Veröffentlicht',
     action: 'Aktion',
   },
 
@@ -61,11 +62,13 @@ export const de: Translations = {
     rollbackUpdate_plural: 'Letzte Aktualisierung zurücksetzen ({{count}} Pakete)',
     openPackageJson: 'Diese package.json öffnen',
     exportUpdatePlan: 'Markdown-Prompt kopieren, mit dem ein KI-Assistent die sichtbaren Updates sicher anwendet',
+    userLastUpdate: 'Wann du dieses Paket zuletzt installiert oder aktualisiert hast',
+    released: 'Wann diese Version veröffentlicht wurde',
   },
 
   // Placeholders
   placeholders: {
-    filterPackages: 'Pakete filtern...',
+    filterPackages: 'Name oder Update-Typ filtern',
     searchNpm: 'npm-Pakete suchen...',
   },
 
@@ -188,5 +191,10 @@ export const de: Translations = {
     latest: 'neueste',
     deprecated: 'veraltet',
     prerelease: 'pre-release',
+  },
+
+  env: {
+    node: 'Node',
+    updateAvailable: '{{name}}-Update verfügbar: v{{version}}',
   },
 };

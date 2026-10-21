@@ -21,7 +21,8 @@ import {
   detectPackageManager,
   clearAuditCache,
 } from '../services/auditService';
-import { getVersions } from '../services/nodeVersionService';
+import { getVersions, withUpdateAvailability } from '../services/nodeVersionService';
+import { getUserPackageUpdates } from '../services/userUpdateService';
 import { searchPackages } from '../services/searchService';
 import { clearPackageSizeCache } from '../services/sizeService';
 import type { PackageManager } from '../../types';
@@ -640,8 +641,19 @@ export class NpmGuiManagerPanel {
       const currentProject = this._projects.find(p => p.path === projectPath);
       const displayName = currentProject ? currentProject.name : packageJson.name || 'Unnamed Package';
 
-      // Get Node and package manager versions
-      const versions = await getVersions(packageManager);
+      // Get Node and package manager versions. Update availability is filled in
+      // after the table is shown so a slow registry check does not block it.
+      const [versions, userUpdates] = await Promise.all([
+        getVersions(packageManager),
+        getUserPackageUpdates(projectPath).catch(error => {
+          console.warn('[npm-visual-manager] Could not read last update dates:', error);
+          return new Map<string, string>();
+        }),
+      ]);
+      dependencies = dependencies.map(dep => ({
+        ...dep,
+        userUpdatedAt: userUpdates.get(dep.name),
+      }));
       if (generation !== this._loadGeneration || projectPath !== this._currentProjectPath) {
         return;
       }
@@ -665,6 +677,7 @@ export class NpmGuiManagerPanel {
         pendingOperations: getPendingPackageOperations(projectPath),
         saveExact: this._saveExact,
       });
+      void this._publishRuntimeUpdates(packageManager, versions, generation, projectPath);
 
       // Update panel title with project name. The relative path is appended for
       // non-root projects: package.json names repeat (or are missing) across a
@@ -696,6 +709,21 @@ export class NpmGuiManagerPanel {
     }));
   }
 
+  private async _publishRuntimeUpdates(
+    manager: PackageManager,
+    versions: Awaited<ReturnType<typeof getVersions>>,
+    generation: number,
+    projectPath: string
+  ): Promise<void> {
+    try {
+      const enriched = await withUpdateAvailability(manager, versions);
+      if (generation !== this._loadGeneration || projectPath !== this._currentProjectPath) {return;}
+      this._sendMessage({ type: 'RUNTIME_VERSIONS', versions: enriched });
+    } catch (error) {
+      console.warn('[npm-visual-manager] Runtime version check failed:', error);
+    }
+  }
+
   /**
    * Get column visibility configuration
    */
@@ -705,6 +733,7 @@ export class NpmGuiManagerPanel {
       size: config.get('size', true),
       type: config.get('type', true),
       lastUpdate: config.get('lastUpdate', true),
+      released: config.get('released', true),
       security: config.get('security', true),
       semverUpdate: config.get('semverUpdate', true),
     };

@@ -44,7 +44,7 @@ function loadProjects(
       },
     ],
     packageName: 'build',
-    columnConfig: { size: true, type: false, lastUpdate: true, security: true, semverUpdate: true },
+    columnConfig: { size: true, type: false, lastUpdate: true, released: true, security: true, semverUpdate: true },
     projects,
     currentProjectPath,
     ...extra,

@@ -34,7 +34,7 @@ function renderTable(onUpdateAll = vi.fn(), showAllPackages = false, onExportUpd
         onUpdatePackage={vi.fn()}
         onUpdateAll={onUpdateAll}
         isLoading={false}
-        columnConfig={{ size: false, type: false, lastUpdate: false, security: false, semverUpdate: true }}
+        columnConfig={{ size: false, type: false, lastUpdate: false, released: false, security: false, semverUpdate: true }}
         showAllPackages={showAllPackages}
         onExportUpdatePlan={onExportUpdatePlan}
       />
@@ -113,6 +113,41 @@ describe('update type sorting and filtering', () => {
 
     fireEvent.click(chip('major'));
     expect(container.querySelector('.update-selected-btn')).toHaveTextContent('(2)');
+  });
+
+  it('filters by an update type typed into the package filter', () => {
+    const { container, rowNames } = renderTable(vi.fn(), true);
+    fireEvent.change(container.querySelector('.filter-input')!, { target: { value: 'minor' } });
+    expect(rowNames()).toEqual(['charlie']);
+
+    fireEvent.change(container.querySelector('.filter-input')!, { target: { value: 'maj' } });
+    expect(rowNames()).toEqual(['bravo', 'delta']);
+  });
+
+  it('labels node and the package manager and shows a newer version', () => {
+    const { container, getByText } = render(
+      <I18nProvider>
+        <DependencyTable
+          dependencies={DEPENDENCIES}
+          onUpdatePackage={vi.fn()}
+          onUpdateAll={vi.fn()}
+          isLoading={false}
+          columnConfig={{ size: false, type: false, lastUpdate: true, released: true, security: false, semverUpdate: true }}
+          showAllPackages
+          nodeVersion="26.11.1"
+          nodeLatestVersion="26.12.0"
+          nodeUpdateAvailable
+          packageManager="npm"
+          packageManagerVersion="11.20.0"
+          packageManagerLatestVersion="11.21.0"
+          packageManagerUpdateAvailable
+        />
+      </I18nProvider>
+    );
+    expect(getByText('Node')).toBeInTheDocument();
+    expect(container.querySelector('.node-badge .env-update')).toHaveTextContent('v26.12.0');
+    expect(container.querySelector('.pm-npm .env-update')).toHaveTextContent('v11.21.0');
+    expect(container.querySelector('th.date-col')).toBeNull();
   });
 
   it('reports no matches instead of "all up to date" when filters hide every update', () => {

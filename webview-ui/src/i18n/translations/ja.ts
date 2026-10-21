@@ -29,7 +29,8 @@ export const ja: Translations = {
     latest: '最新',
     size: 'サイズ',
     update: '更新',
-    lastUpdate: '最終更新',
+    lastUpdate: '自分の更新',
+    released: '公開日',
     action: 'アクション',
   },
 
@@ -61,11 +62,13 @@ export const ja: Translations = {
     rollbackUpdate_plural: '最後の更新をロールバック ({{count}} 件)',
     openPackageJson: 'この package.json を開く',
     exportUpdatePlan: '表示中の更新を AI アシスタントに安全に適用させる Markdown プロンプトをコピー',
+    userLastUpdate: 'このパッケージを最後にインストールまたは更新した日時',
+    released: 'このバージョンが公開された日時',
   },
 
   // Placeholders
   placeholders: {
-    filterPackages: 'パッケージをフィルタ...',
+    filterPackages: '名前または更新タイプで絞り込み',
     searchNpm: 'npm パッケージを検索...',
   },
 
@@ -186,5 +189,10 @@ export const ja: Translations = {
     latest: '最新',
     deprecated: '非推奨',
     prerelease: 'プレリリース',
+  },
+
+  env: {
+    node: 'Node',
+    updateAvailable: '{{name}} の更新があります: v{{version}}',
   },
 };

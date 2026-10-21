@@ -28,7 +28,10 @@ vi.mock('../../services/packageService', () => ({
     { name: 'demo', declaredVersion: '^1.0.0', installedVersion: '1.0.0', type: 'dependencies' },
   ]),
 }));
-vi.mock('../../services/nodeVersionService', () => ({ getVersions: vi.fn().mockResolvedValue({}) }));
+vi.mock('../../services/nodeVersionService', () => ({
+  getVersions: vi.fn().mockResolvedValue({}),
+  withUpdateAvailability: vi.fn(async (_manager: string, versions: object) => versions),
+}));
 vi.mock('fs', async importOriginal => ({
   ...(await importOriginal<typeof import('fs')>()),
   promises: { readFile: vi.fn().mockResolvedValue('{"dependencies":{"demo":"^2.0.0"}}'), writeFile: vi.fn() },
@@ -218,8 +221,10 @@ describe('audit status sent to the webview', () => {
     finishAudit(clean);
     await firstLoad;
     const messages = panel._panel.webview.postMessage.mock.calls.map((call: any[]) => call[0]);
-    expect(messages).toHaveLength(1);
-    expect(messages[0].currentProjectPath).toBe(projectB);
+    const dependencyMessages = messages.filter((message: { type: string }) => message.type === 'DEPENDENCIES_DATA');
+    expect(dependencyMessages).toHaveLength(1);
+    expect(dependencyMessages[0].currentProjectPath).toBe(projectB);
+    expect(messages.some((message: { currentProjectPath?: string }) => message.currentProjectPath === projectA)).toBe(false);
     expect(panel._checkUpdates).toHaveBeenCalledTimes(1);
   });
 
@@ -234,12 +239,18 @@ describe('audit status sent to the webview', () => {
         metadata: { vulnerabilities: { info: 0, low: 0, moderate: 0, high: 0, critical: 0 }, totalDependencies: 1 },
       });
     const send = panel._panel.webview.postMessage;
+    const latestDependencies = () => {
+      const payloads = send.mock.calls
+        .map((call: any[]) => call[0])
+        .filter((message: { type: string }) => message.type === 'DEPENDENCIES_DATA');
+      return payloads[payloads.length - 1];
+    };
     await panel._loadDependencies();
-    expect(send).toHaveBeenLastCalledWith(expect.objectContaining({ auditFailed: true }));
-    expect(send.mock.lastCall[0].dependencies[0].hasVulnerabilities).toBeUndefined();
+    expect(latestDependencies()).toEqual(expect.objectContaining({ auditFailed: true }));
+    expect(latestDependencies().dependencies[0].hasVulnerabilities).toBeUndefined();
 
     await panel._loadDependencies();
-    expect(send).toHaveBeenLastCalledWith(expect.objectContaining({ auditFailed: false }));
-    expect(send.mock.lastCall[0].dependencies[0].hasVulnerabilities).toBe(false);
+    expect(latestDependencies()).toEqual(expect.objectContaining({ auditFailed: false }));
+    expect(latestDependencies().dependencies[0].hasVulnerabilities).toBe(false);
   });
 });
