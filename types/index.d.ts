@@ -55,6 +55,8 @@ export interface Dependency {
   repositoryUrl?: string;
   checkError?: string;
   vulnerabilities?: VulnerabilityInfo[];
+  /** When this dependency last changed in the project (commit or this extension). */
+  userUpdatedAt?: string;
 }
 
 export interface ColumnConfig {

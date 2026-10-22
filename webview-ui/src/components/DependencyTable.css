@@ -633,6 +633,11 @@ button.vulnerability-btn {
   font-size: 12px;
 }
 
+.date-cell .tooltip {
+  white-space: pre;
+  text-align: left;
+}
+
 .date-cell .checking {
   color: var(--vscode-descriptionForeground, #888);
   font-style: italic;

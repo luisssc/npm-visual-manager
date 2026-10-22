@@ -61,6 +61,8 @@ export const ja: Translations = {
     rollbackUpdate_plural: '最後の更新をロールバック ({{count}} 件)',
     openPackageJson: 'この package.json を開く',
     exportUpdatePlan: '表示中の更新を AI アシスタントに安全に適用させる Markdown プロンプトをコピー',
+    userUpdate: '自分の更新',
+    published: '公開日',
   },
 
   // Placeholders

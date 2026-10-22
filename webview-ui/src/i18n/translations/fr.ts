@@ -61,6 +61,8 @@ export const fr: Translations = {
     rollbackUpdate_plural: 'Annuler la dernière mise à jour ({{count}} paquets)',
     openPackageJson: 'Ouvrir ce package.json',
     exportUpdatePlan: 'Copier un prompt Markdown demandant à un assistant IA d’appliquer les mises à jour visibles en toute sécurité',
+    userUpdate: 'Mis à jour par vous',
+    published: 'Publié',
   },
 
   // Placeholders

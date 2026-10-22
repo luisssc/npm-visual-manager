@@ -61,6 +61,8 @@ export const es: Translations = {
     rollbackUpdate_plural: 'Deshacer última actualización ({{count}} paquetes)',
     openPackageJson: 'Abrir este package.json',
     exportUpdatePlan: 'Copiar un prompt en Markdown para que un asistente de IA aplique las actualizaciones visibles de forma segura',
+    userUpdate: 'Tú actualizaste',
+    published: 'Publicado',
   },
 
   // Placeholders

@@ -138,3 +138,25 @@ describe('AI update prompt', () => {
     expect(container.querySelector('.export-plan-btn')).toBeNull();
   });
 });
+
+describe('last update tooltip', () => {
+  it('shows the publish date and when the user last updated the package', () => {
+    const { container } = render(
+      <I18nProvider>
+        <DependencyTable
+          dependencies={[
+            dep('alpha', 'patch', { lastPublishDate: '2026-10-19T00:00:00Z', userUpdatedAt: '2026-10-12T00:00:00Z' }),
+          ]}
+          onUpdatePackage={vi.fn()}
+          onUpdateAll={vi.fn()}
+          isLoading={false}
+          columnConfig={{ size: false, type: false, lastUpdate: true, security: false, semverUpdate: true }}
+          showAllPackages={false}
+        />
+      </I18nProvider>
+    );
+    expect(container.querySelector('.date-cell .tooltip')?.textContent).toBe(
+      'Published: 19/10/2026\nYou updated: 12/10/2026'
+    );
+  });
+});

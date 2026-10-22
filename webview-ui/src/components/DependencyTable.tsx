@@ -170,6 +170,18 @@ const parseSize = (sizeStr: string | undefined): number => {
   return value * Math.pow(1024, index);
 };
 
+/** Publish date and, when known, when the user last changed the dependency, one per line. */
+const dateTooltip = (
+  t: { tooltips: { published: string; userUpdate: string } },
+  dep: Pick<Dependency, 'lastPublishDate' | 'userUpdatedAt'>
+): string =>
+  [
+    dep.lastPublishDate && `${t.tooltips.published}: ${new Date(dep.lastPublishDate).toLocaleDateString('en-GB')}`,
+    dep.userUpdatedAt && `${t.tooltips.userUpdate}: ${new Date(dep.userUpdatedAt).toLocaleDateString('en-GB')}`,
+  ]
+    .filter(Boolean)
+    .join('\n');
+
 const formatDate = (
   t: {
     timeAgo: {
@@ -762,7 +774,7 @@ export const DependencyTable = ({
                     {columnConfig.lastUpdate && (
                       <td className="date-cell">
                         {dep.lastPublishDate ? (
-                          <Tooltip text={new Date(dep.lastPublishDate).toLocaleDateString('en-GB')}>
+                          <Tooltip text={dateTooltip(t, dep)}>
                             <span className="date-text">{formatDate(t, dep.lastPublishDate)}</span>
                           </Tooltip>
                         ) : dep.checkError ? (
@@ -895,7 +907,9 @@ export const DependencyTable = ({
                           {columnConfig.lastUpdate && (
                             <td className="date-cell">
                               {dep.lastPublishDate ? (
-                                <span className="date-text">{formatDate(t, dep.lastPublishDate)}</span>
+                                <Tooltip text={dateTooltip(t, dep)}>
+                                  <span className="date-text">{formatDate(t, dep.lastPublishDate)}</span>
+                                </Tooltip>
                               ) : dep.checkError ? (
                                 <Tooltip text={dep.checkError}>
                                   <span className="not-available">-</span>

@@ -7,6 +7,7 @@ import { runCommand } from '../utils/commandRunner';
 import { clearAuditCache } from './auditService';
 import { getInstallCommand, getPackageManagerInfo, getUninstallCommand } from './packageManagerService';
 import { getInstalledVersion, getInstalledVersions } from './installedVersionService';
+import { forgetUserPackageUpdate, recordUserPackageUpdates } from './userUpdateService';
 
 /**
  * Suffix appended to progress notifications and errors so every operation says
@@ -78,6 +79,7 @@ export class PackageOperationsService {
 
         clearAuditCache(currentProjectPath);
         if (result.exitCode === 0) {
+          recordUserPackageUpdates(currentProjectPath, [packageName]);
           this.setUpdateHistory(newHistory, currentProjectPath);
         }
 
@@ -174,6 +176,10 @@ export class PackageOperationsService {
 
         clearAuditCache(currentProjectPath);
         if (result.exitCode === 0) {
+          recordUserPackageUpdates(
+            currentProjectPath,
+            packages.map(pkg => pkg.name)
+          );
           this.setUpdateHistory(newHistory, currentProjectPath);
         }
 
@@ -261,8 +267,11 @@ export class PackageOperationsService {
           }
         );
 
-        if (result.exitCode === 0 && newHistory) {
-          this.setUpdateHistory(newHistory, currentProjectPath);
+        if (result.exitCode === 0) {
+          forgetUserPackageUpdate(currentProjectPath, packageName);
+          if (newHistory) {
+            this.setUpdateHistory(newHistory, currentProjectPath);
+          }
         }
 
         // Small delay to ensure file system is synced
@@ -334,6 +343,10 @@ export class PackageOperationsService {
             });
           }
         );
+
+        if (result.exitCode === 0) {
+          recordUserPackageUpdates(currentProjectPath, [packageName]);
+        }
 
         // Small delay to ensure file system is synced
         await new Promise(resolve => setTimeout(resolve, 300));

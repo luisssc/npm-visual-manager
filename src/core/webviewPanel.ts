@@ -22,6 +22,7 @@ import {
   clearAuditCache,
 } from '../services/auditService';
 import { getVersions } from '../services/nodeVersionService';
+import { getUserPackageUpdates } from '../services/userUpdateService';
 import { searchPackages } from '../services/searchService';
 import { clearPackageSizeCache } from '../services/sizeService';
 import type { PackageManager } from '../../types';
@@ -640,8 +641,15 @@ export class NpmGuiManagerPanel {
       const currentProject = this._projects.find(p => p.path === projectPath);
       const displayName = currentProject ? currentProject.name : packageJson.name || 'Unnamed Package';
 
-      // Get Node and package manager versions
-      const versions = await getVersions(packageManager);
+      // Get Node and package manager versions, and when each dependency last changed
+      const [versions, userUpdates] = await Promise.all([
+        getVersions(packageManager),
+        getUserPackageUpdates(projectPath).catch(error => {
+          console.warn('[npm-visual-manager] Could not read last update dates:', error);
+          return new Map<string, string>();
+        }),
+      ]);
+      dependencies = dependencies.map(dep => ({ ...dep, userUpdatedAt: userUpdates.get(dep.name) }));
       if (generation !== this._loadGeneration || projectPath !== this._currentProjectPath) {
         return;
       }

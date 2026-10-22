@@ -61,6 +61,8 @@ export const ko: Translations = {
     rollbackUpdate_plural: '마지막 업데이트 롤백 ({{count}}개 패키지)',
     openPackageJson: '이 package.json 열기',
     exportUpdatePlan: '표시된 업데이트를 AI 어시스턴트가 안전하게 적용하도록 하는 Markdown 프롬프트 복사',
+    userUpdate: '내가 갱신',
+    published: '게시일',
   },
 
   // Placeholders

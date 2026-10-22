@@ -61,6 +61,8 @@ export const zhCn: Translations = {
     rollbackUpdate_plural: '回滚上次更新 ({{count}} 个包)',
     openPackageJson: '打开此 package.json',
     exportUpdatePlan: '复制 Markdown 提示词，让 AI 助手安全地应用当前显示的更新',
+    userUpdate: '你的更新',
+    published: '发布于',
   },
 
   // Placeholders

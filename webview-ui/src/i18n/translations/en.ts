@@ -59,6 +59,8 @@ export const en = {
     rollbackUpdate_plural: 'Rollback last update ({{count}} packages)',
     openPackageJson: 'Open this package.json',
     exportUpdatePlan: 'Copy a Markdown prompt asking an AI assistant to apply the visible updates safely',
+    userUpdate: 'You updated',
+    published: 'Published',
   },
 
   // Placeholders

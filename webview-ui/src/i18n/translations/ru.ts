@@ -61,6 +61,8 @@ export const ru: Translations = {
     rollbackUpdate_plural: 'Откатить последнее обновление ({{count}} пакетов)',
     openPackageJson: 'Открыть этот package.json',
     exportUpdatePlan: 'Скопировать Markdown-промпт, чтобы ИИ-ассистент безопасно применил видимые обновления',
+    userUpdate: 'Вы обновили',
+    published: 'Опубликовано',
   },
 
   // Placeholders

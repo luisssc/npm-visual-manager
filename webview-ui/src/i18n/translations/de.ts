@@ -61,6 +61,8 @@ export const de: Translations = {
     rollbackUpdate_plural: 'Letzte Aktualisierung zurücksetzen ({{count}} Pakete)',
     openPackageJson: 'Diese package.json öffnen',
     exportUpdatePlan: 'Markdown-Prompt kopieren, mit dem ein KI-Assistent die sichtbaren Updates sicher anwendet',
+    userUpdate: 'Von dir aktualisiert',
+    published: 'Veröffentlicht',
   },
 
   // Placeholders
