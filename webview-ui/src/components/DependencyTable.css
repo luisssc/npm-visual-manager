@@ -38,7 +38,7 @@
 .toolbar {
   display: flex;
   justify-content: space-between;
-  align-items: flex-start;
+  align-items: center;
   padding: 12px 16px;
   border-bottom: 1px solid var(--border-color);
   gap: 16px;
@@ -47,32 +47,22 @@
 
 .filters {
   display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 6px;
-  flex: 1;
-  min-width: 0;
-}
-
-.filter-line {
-  display: flex;
-  align-items: center;
   gap: 8px;
+  align-items: center;
   flex-wrap: wrap;
-  width: 100%;
+  flex: 1;
+  min-width: 200px;
 }
 
 .filter-input {
   background: var(--input-bg);
   color: var(--input-fg);
   border: 1px solid var(--input-border);
-  padding: 0 10px;
+  padding: 6px 10px;
   border-radius: 2px;
   font-size: 13px;
-  width: 220px;
-  height: 28px;
-  flex: 0 1 220px;
-  box-sizing: border-box;
+  flex: 1;
+  max-width: 300px;
 }
 
 .filter-input:focus {
@@ -91,20 +81,19 @@
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  height: 28px;
-  padding: 0 8px;
+  padding: 3px 8px;
   border: 1px solid var(--input-border, var(--border-color));
-  border-radius: 14px;
-  background: var(--input-bg);
+  border-radius: 10px;
+  background: transparent;
   color: var(--vscode-foreground);
   font-size: 10px;
   font-weight: 600;
-  line-height: 1;
   cursor: pointer;
-  box-sizing: border-box;
+  opacity: 0.75;
 }
 
 .semver-chip:hover {
+  opacity: 1;
   background: var(--vscode-toolbar-hoverBackground);
 }
 
@@ -114,6 +103,7 @@
 }
 
 .semver-chip.active {
+  opacity: 1;
   color: var(--vscode-editor-background);
   border-color: transparent;
 }
@@ -215,7 +205,6 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  padding-top: 1px;
 }
 
 .rollback-btn {
@@ -265,29 +254,17 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  flex-wrap: wrap;
+  margin-left: 12px;
+  padding-left: 12px;
+  border-left: 1px solid var(--border-color);
 }
 
 .env-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
   font-size: 11px;
   padding: 2px 8px;
   border-radius: 4px;
   font-family: var(--vscode-editor-font-family, monospace);
   white-space: nowrap;
-}
-
-.env-name {
-  font-weight: 700;
-  letter-spacing: 0.02em;
-  text-transform: uppercase;
-}
-
-.env-update {
-  color: var(--warning-fg);
-  font-weight: 700;
 }
 
 .node-badge {
@@ -297,6 +274,7 @@
 
 .pm-badge {
   font-weight: 600;
+  text-transform: uppercase;
 }
 
 .pm-badge.npm {
@@ -319,12 +297,19 @@
   color: #8B4513;
 }
 
+.pm-version {
+  margin-left: 4px;
+  opacity: 0.8;
+  font-weight: 400;
+}
+
 /* Table */
 .table-wrapper {
   flex: 1;
-  min-width: 0;
-  /* Vertical scroll only. The fixed layout keeps every column, including
-     Action, inside the panel. */
+  /* The table uses `table-layout: fixed; width: 100%`, so its columns always
+     fit the wrapper — it never needs real horizontal scrolling. Hiding overflow-x
+     prevents a spurious horizontal scrollbar caused by the vertical scrollbar
+     width, sub-pixel rounding, or hover-only action buttons briefly overflowing. */
   overflow-x: hidden;
   overflow-y: auto;
 }
@@ -339,24 +324,16 @@
 .dependency-table thead {
   position: sticky;
   top: 0;
-  z-index: 2;
-}
-
-.dependency-table th,
-.dependency-table td {
-  box-sizing: border-box;
+  z-index: 1;
 }
 
 .dependency-table th {
   background: var(--header-bg);
-  padding: 8px;
+  padding: 10px 12px;
   text-align: left;
   font-weight: 600;
   border-bottom: 1px solid var(--border-color);
-  white-space: normal;
-  line-height: 1.25;
-  vertical-align: bottom;
-  overflow: hidden;
+  white-space: nowrap;
 }
 
 .dependency-table th.sortable {
@@ -369,27 +346,8 @@
 }
 
 .dependency-table td {
-  padding: 8px;
+  padding: 8px 12px;
   border-bottom: 1px solid var(--border-color);
-  overflow: hidden;
-}
-
-/* Taller rows so wrapped names, badges and dates stay readable. Body cells
-   must not clip that wrap; header cells still hide overflow. */
-.dependency-table tbody td {
-  height: 52px;
-  padding: 12px 8px;
-  vertical-align: middle;
-  overflow: visible;
-}
-
-/* Hover icons are positioned outside this cell, to the left of Update.
-   `.dependency-table td` is more specific than `.action-cell`, so the
-   visible overflow has to be repeated here or the icons stay clipped. */
-.dependency-table td.action-cell {
-  overflow: visible;
-  position: relative;
-  z-index: 1;
 }
 
 .dependency-table tbody tr:hover {
@@ -404,18 +362,9 @@
   background: color-mix(in srgb, var(--warning-fg) 10%, var(--row-hover-bg));
 }
 
-/* Package takes whatever width is left. Fixed data columns stay inside the
-   panel so Update is never pushed off, and the name column can wrap. */
-.checkbox-col { width: 36px; }
-.type-col { width: 8%; }
-.version-col { width: 14%; }
-.size-col { width: 8%; }
-.update-type-col { width: 9%; }
-.date-col { width: 11%; }
-.security-col { width: 7%; }
-.action-col { width: 112px; }
-
+/* Column widths */
 .checkbox-col {
+  width: 40px;
   text-align: center;
 }
 
@@ -432,17 +381,32 @@
   opacity: 0.5;
 }
 
+.package-col {
+  width: 150px;
+  max-width: 200px;
+}
+
 .package-link {
   color: var(--vscode-textLink-foreground);
   text-decoration: none;
   font-weight: 500;
-  line-height: 1.45;
-  overflow-wrap: break-word;
 }
 
 .package-link:hover {
   color: var(--vscode-textLink-activeForeground);
   text-decoration: underline;
+}
+
+.type-col {
+  width: 70px;
+}
+
+.version-col {
+  width: 100px;
+}
+
+.size-col {
+  width: 80px;
 }
 
 .size-cell {
@@ -455,10 +419,17 @@
 }
 
 .update-type-col {
+  width: 70px;
   text-align: center;
 }
 
+.date-col {
+  width: 70px;
+  white-space: nowrap;
+}
+
 .security-col {
+  width: 80px;
   text-align: center !important;
 }
 
@@ -466,8 +437,13 @@
   text-align: center !important;
 }
 
-.action-col,
+.action-col {
+  width: 190px;
+  text-align: center !important;
+}
+
 .action-cell {
+  width: 190px;
   text-align: center !important;
 }
 
@@ -479,21 +455,7 @@
 .package-info {
   display: flex;
   align-items: center;
-  gap: 6px;
-  min-width: 0;
-}
-
-.package-info > .tooltip-wrapper:first-child {
-  flex: 1 1 auto;
-  min-width: 0;
-}
-
-.package-info > .tooltip-wrapper:not(:first-child) {
-  flex: 0 0 auto;
-}
-
-.package-info .status-badge {
-  margin-left: 0;
+  gap: 8px;
 }
 
 .package-icon {
@@ -561,28 +523,6 @@ button.vulnerability-btn {
 }
 
 /* Version cells */
-.version-stack {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 3px;
-  min-width: 0;
-}
-
-.version-line {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  max-width: 100%;
-  min-width: 0;
-}
-
-.version-when {
-  color: var(--vscode-descriptionForeground, #888);
-  font-size: 11px;
-  line-height: 1.2;
-}
-
 .version-cell code {
   font-family: var(--vscode-editor-font-family, monospace);
   font-size: 12px;
@@ -693,6 +633,11 @@ button.vulnerability-btn {
   font-size: 12px;
 }
 
+.date-cell .tooltip {
+  white-space: pre;
+  text-align: left;
+}
+
 .date-cell .checking {
   color: var(--vscode-descriptionForeground, #888);
   font-style: italic;
@@ -743,10 +688,8 @@ button.vulnerability-btn {
   border-radius: 2px;
   font-size: 11px;
   cursor: pointer;
-  max-width: 100%;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  min-width: 50px;
+  margin-right: 4px;
 }
 
 .update-btn:hover:not(:disabled) {
@@ -776,34 +719,7 @@ button.vulnerability-btn {
   gap: 2px;
   min-height: 28px;
   width: 100%;
-}
-
-/* Update stays on top. Hover icons sit under it, inside this column,
-   so they do not cover Released. */
-.action-cluster {
-  position: relative;
-  display: flex;
-  flex-direction: column-reverse;
-  align-items: flex-end;
-  justify-content: center;
-  gap: 4px;
-  max-width: 100%;
-}
-
-.row-actions {
-  position: static;
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  min-height: 24px;
-  opacity: 0;
-  pointer-events: none;
-}
-
-tr:hover .row-actions,
-.action-cell:focus-within .row-actions {
-  opacity: 1;
-  pointer-events: auto;
+  padding: 0 4px;
 }
 
 .ignore-btn {
@@ -1143,15 +1059,6 @@ tr:hover .ignore-btn,
 .package-link-disabled {
   color: var(--vscode-descriptionForeground, #888);
   font-weight: 500;
-  line-height: 1.45;
-  overflow-wrap: break-word;
-}
-
-.size-cell,
-.date-cell,
-.update-type-cell {
-  white-space: normal;
-  line-height: 1.35;
 }
 
 .unignore-btn {
@@ -1186,7 +1093,6 @@ tr:hover .ignore-btn,
 /* Footer */
 .footer {
   display: flex;
-  flex-shrink: 0;
   justify-content: space-between;
   padding: 10px 16px;
   border-top: 1px solid var(--border-color);
@@ -1547,21 +1453,6 @@ tr:hover .why-btn,
 .why-btn:hover {
   background: var(--row-hover-bg);
   color: var(--vscode-foreground);
-}
-
-/* The group hides itself. Child opacity:0 would keep an icon invisible
-   even after the group is shown. */
-.row-actions .changelog-btn,
-.row-actions .why-btn,
-.row-actions .uninstall-btn,
-.row-actions .ignore-btn {
-  opacity: 1;
-}
-
-.row-actions .why-btn:disabled,
-.row-actions .uninstall-btn:disabled,
-.row-actions .ignore-btn:disabled {
-  opacity: 0.3;
 }
 
 .why-loading {

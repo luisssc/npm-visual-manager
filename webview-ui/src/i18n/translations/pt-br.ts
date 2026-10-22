@@ -29,8 +29,7 @@ export const ptBr: Translations = {
     latest: 'Mais Recente',
     size: 'Tamanho',
     update: 'Atualização',
-    lastUpdate: 'Você atualizou',
-    released: 'Publicado',
+    lastUpdate: 'Última Atualização',
     action: 'Ação',
   },
 
@@ -62,13 +61,13 @@ export const ptBr: Translations = {
     rollbackUpdate_plural: 'Reverter última atualização ({{count}} pacotes)',
     openPackageJson: 'Abrir este package.json',
     exportUpdatePlan: 'Copiar um prompt em Markdown pedindo a um assistente de IA que aplique as atualizações visíveis com segurança',
-    userLastUpdate: 'Quando você instalou ou atualizou este pacote pela última vez',
-    released: 'Quando esta versão foi publicada',
+    userUpdate: 'Você atualizou',
+    published: 'Publicado',
   },
 
   // Placeholders
   placeholders: {
-    filterPackages: 'Filtrar por nome ou tipo de atualização',
+    filterPackages: 'Filtrar pacotes...',
     searchNpm: 'Pesquisar pacotes npm...',
   },
 
@@ -190,10 +189,5 @@ export const ptBr: Translations = {
     latest: 'mais recente',
     deprecated: 'obsoleto',
     prerelease: 'pre-release',
-  },
-
-  env: {
-    node: 'Node',
-    updateAvailable: 'Atualização de {{name}} disponível: v{{version}}',
   },
 };

@@ -29,8 +29,7 @@ export const fr: Translations = {
     latest: 'Dernier',
     size: 'Taille',
     update: 'Mise à jour',
-    lastUpdate: 'Par vous',
-    released: 'Publié',
+    lastUpdate: 'Dernière mise à jour',
     action: 'Action',
   },
 
@@ -62,13 +61,13 @@ export const fr: Translations = {
     rollbackUpdate_plural: 'Annuler la dernière mise à jour ({{count}} paquets)',
     openPackageJson: 'Ouvrir ce package.json',
     exportUpdatePlan: 'Copier un prompt Markdown demandant à un assistant IA d’appliquer les mises à jour visibles en toute sécurité',
-    userLastUpdate: 'Quand vous avez installé ou mis à jour ce paquet pour la dernière fois',
-    released: 'Quand cette version a été publiée',
+    userUpdate: 'Mis à jour par vous',
+    published: 'Publié',
   },
 
   // Placeholders
   placeholders: {
-    filterPackages: 'Filtrer par nom ou type de mise à jour',
+    filterPackages: 'Filtrer les paquets...',
     searchNpm: 'Rechercher des paquets npm...',
   },
 
@@ -190,10 +189,5 @@ export const fr: Translations = {
     patch: 'PATCH',
     filterLabel: 'Filtrer par type de mise à jour',
     filterTooltip: 'Afficher uniquement les mises à jour {{type}} (cliquer à nouveau pour retirer)',
-  },
-
-  env: {
-    node: 'Node',
-    updateAvailable: 'Mise à jour {{name}} disponible : v{{version}}',
   },
 };

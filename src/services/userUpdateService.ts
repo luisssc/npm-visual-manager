@@ -1,81 +1,56 @@
 /**
  * When the user last changed each direct dependency.
- * Git blame of the committed package.json runs once per HEAD. Updates made
- * in this extension are stored separately so they show up before the next commit.
- * ponytail: blame is cached until HEAD moves. A rewritten commit that keeps the
- * same HEAD hash keeps the previous dates until the next commit.
+ * The git history of the committed package.json is read once per HEAD. Updates
+ * made in this extension are stored separately so they show up before the next commit.
  */
 
 import { execFile } from 'child_process';
 import * as fs from 'fs';
 import * as path from 'path';
+import { validRange } from 'semver';
 import { promisify } from 'util';
 
 const execFileAsync = promisify(execFile);
 const STORE_FILENAME = 'user-package-updates.json';
-const DEPENDENCY_SECTIONS = new Set(['dependencies', 'devDependencies', 'peerDependencies']);
 
 type Store = Record<string, Record<string, string>>;
 
 let storageDir: string | null = null;
 let loadedFor: string | null = null;
 let store: Store = {};
-const blameCache = new Map<string, { head: string; updates: Map<string, string> }>();
+const historyCache =new Map<string, { head: string; updates: Map<string, string> }>();
 
 export function setUserUpdateStorageDir(dir: string): void {
   storageDir = dir;
 }
 
-export function parseBlameForDependencies(blameOutput: string): Map<string, string> {
+/**
+ * Reads `git log -p` of package.json, newest commit first, and returns the
+ * author date of the last commit that changed each dependency's version.
+ * Lines whose version did not change (a trailing comma, re-indentation, a move
+ * between sections) are ignored, so reformatting does not reset the dates.
+ */
+export function parseDependencyHistory(logOutput: string): Map<string, string> {
   const updates = new Map<string, string>();
-  const timeByHash = new Map<string, string>();
-  let currentHash = '';
-  let currentTime: string | null = null;
-  let inSection = false;
-  let depth = 0;
 
-  for (const line of blameOutput.split('\n')) {
-    const header = /^([0-9a-f]{40}) /.exec(line);
-    if (header?.[1]) {
-      currentHash = header[1];
-      currentTime = /^0+$/.test(currentHash) ? null : (timeByHash.get(currentHash) ?? null);
-      continue;
+  for (const commit of logOutput.split('\0')) {
+    const lines = commit.trimStart().split('\n');
+    const date = lines[0]?.trim();
+    if (!date) {continue;}
+
+    const removed = new Map<string, string>();
+    const added = new Map<string, string>();
+    for (const line of lines.slice(1)) {
+      if (line.startsWith('---') || line.startsWith('+++')) {continue;}
+      const sign = line[0];
+      if (sign !== '+' && sign !== '-') {continue;}
+      const entry = /^\s*"([^"]+)"\s*:\s*"([^"]*)"/.exec(line.slice(1));
+      if (!entry?.[1] || entry[2] === undefined || !isVersionSpec(entry[2])) {continue;}
+      (sign === '+' ? added : removed).set(entry[1], entry[2]);
     }
 
-    if (line.startsWith('author-time ')) {
-      const unix = Number(line.slice('author-time '.length));
-      if (!/^0+$/.test(currentHash) && Number.isFinite(unix) && unix > 0) {
-        currentTime = new Date(unix * 1000).toISOString();
-        timeByHash.set(currentHash, currentTime);
-      } else {
-        currentTime = null;
-      }
-      continue;
-    }
-
-    if (!line.startsWith('\t')) {continue;}
-
-    const trimmed = line.slice(1).trim();
-    const section = /^"([^"]+)"\s*:\s*\{(.*)$/.exec(trimmed);
-    if (!inSection && section?.[1] && DEPENDENCY_SECTIONS.has(section[1])) {
-      inSection = true;
-      depth = 1 + countChar(section[2] ?? '', '{') - countChar(section[2] ?? '', '}');
-      if (depth <= 0) {
-        inSection = false;
-        depth = 0;
-      }
-      continue;
-    }
-    if (!inSection) {continue;}
-
-    if (depth === 1 && currentTime) {
-      const entry = /^"([^"]+)"\s*:\s*"/.exec(trimmed);
-      if (entry?.[1]) {updates.set(entry[1], currentTime);}
-    }
-    depth += countChar(trimmed, '{') - countChar(trimmed, '}');
-    if (depth <= 0) {
-      inSection = false;
-      depth = 0;
+    for (const [name, version] of added) {
+      if (!updates.has(name) && removed.get(name) !== version) {updates.set(name, date);}
     }
   }
 
@@ -141,22 +116,26 @@ async function readGitDependencyUpdates(projectPath: string): Promise<Map<string
     return new Map();
   }
 
-  const cached = blameCache.get(projectPath);
+  const cached = historyCache.get(projectPath);
   if (cached?.head === head) {return cached.updates;}
 
   try {
-    const { stdout } = await execFileAsync('git', ['blame', '-p', 'HEAD', '--', 'package.json'], {
-      cwd: projectPath,
-      timeout: 8000,
-      maxBuffer: 2 * 1024 * 1024,
-      encoding: 'utf8',
-    });
-    const updates = parseBlameForDependencies(String(stdout));
-    blameCache.set(projectPath, { head, updates });
+    const { stdout } = await execFileAsync(
+      'git',
+      ['log', '-p', '-U0', '--no-color', '--no-ext-diff', '--format=%x00%aI', 'HEAD', '--', 'package.json'],
+      {
+        cwd: projectPath,
+        timeout: 8000,
+        maxBuffer: 16 * 1024 * 1024,
+        encoding: 'utf8',
+      }
+    );
+    const updates = parseDependencyHistory(String(stdout));
+    historyCache.set(projectPath, { head, updates });
     return updates;
   } catch {
     const updates = new Map<string, string>();
-    blameCache.set(projectPath, { head, updates });
+    historyCache.set(projectPath, { head, updates });
     return updates;
   }
 }
@@ -181,10 +160,7 @@ function persist(): void {
   fs.writeFileSync(path.join(storageDir, STORE_FILENAME), JSON.stringify(store));
 }
 
-function countChar(value: string, char: string): number {
-  let count = 0;
-  for (const item of value) {
-    if (item === char) {count += 1;}
-  }
-  return count;
+/** Skips scripts and other string fields that share a dependency's name. */
+function isVersionSpec(value: string): boolean {
+  return validRange(value) !== null || /^(npm|workspace|file|link|git|git\+[a-z]+|github|https?):/.test(value);
 }

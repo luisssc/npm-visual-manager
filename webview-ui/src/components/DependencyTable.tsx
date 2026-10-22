@@ -10,19 +10,6 @@ const Tooltip = ({ text, children }: { text: string; children: ReactNode }) => (
   </span>
 );
 
-/** Break scoped names at the slash so a narrow Package column wraps cleanly. */
-const renderPackageName = (name: string) =>
-  name.split('/').map((part, index, parts) => (
-    <span key={`${part}-${index}`}>
-      {part}
-      {index < parts.length - 1 ? (
-        <>
-          /<wbr />
-        </>
-      ) : null}
-    </span>
-  ));
-
 // Component for collapsible prerelease versions section
 interface PrereleaseSectionProps {
   versions: PackageVersion[];
@@ -92,12 +79,8 @@ interface DependencyTableProps {
   columnConfig: ColumnConfig;
   showAllPackages: boolean;
   nodeVersion?: string;
-  nodeLatestVersion?: string;
-  nodeUpdateAvailable?: boolean;
   packageManager?: string;
   packageManagerVersion?: string;
-  packageManagerLatestVersion?: string;
-  packageManagerUpdateAvailable?: boolean;
   lastUpdate?: UpdateHistory | null;
   onRollback?: () => void;
   rollbackMessage?: string | null;
@@ -119,15 +102,7 @@ interface DependencyTableProps {
   targetFile?: string;
 }
 
-type SortColumn =
-  | 'name'
-  | 'installedVersion'
-  | 'latestVersion'
-  | 'type'
-  | 'size'
-  | 'semverUpdate'
-  | 'userUpdatedAt'
-  | 'lastPublishDate';
+type SortColumn = 'name' | 'installedVersion' | 'latestVersion' | 'type' | 'size' | 'semverUpdate' | 'lastPublishDate';
 type SortDirection = 'asc' | 'desc';
 
 // Update types offered as filter chips, in severity order
@@ -169,52 +144,10 @@ const getSemverLabel = (
       return t.semver.prerelease;
     case 'release':
       return t.semver.release;
-    case 'none':
-    case 'unknown':
-    case undefined:
+    default:
       return '';
-    default: {
-      const unexpected: never = type;
-      return unexpected;
-    }
   }
 };
-
-type SemverLabels = { major: string; minor: string; patch: string; prerelease: string; release: string };
-
-function wordsForUpdateType(type: SemverUpdateType, labels: SemverLabels): string[] {
-  switch (type) {
-    case 'major':
-      return ['major', labels.major];
-    case 'minor':
-      return ['minor', labels.minor];
-    case 'patch':
-      return ['patch', labels.patch];
-    case 'prerelease':
-      return ['prerelease', 'pre-release', labels.prerelease];
-    case 'release':
-      return ['release', 'stable', labels.release];
-    case 'none':
-    case 'unknown':
-      return [];
-    default: {
-      const unexpected: never = type;
-      return unexpected;
-    }
-  }
-}
-
-/** "min" matches minor, "major" matches the major chip, including the translated label. */
-function updateTypesMatchingQuery(query: string, labels: SemverLabels): SemverUpdateType[] {
-  const normalized = query.trim().toLowerCase();
-  if (normalized.length < 3) return [];
-  return FILTERABLE_UPDATE_TYPES.filter(type =>
-    wordsForUpdateType(type, labels).some(word => {
-      const label = word.toLowerCase();
-      return label === normalized || label.startsWith(normalized);
-    })
-  );
-}
 
 const parseSize = (sizeStr: string | undefined): number => {
   if (!sizeStr || sizeStr === '-') {
@@ -236,6 +169,18 @@ const parseSize = (sizeStr: string | undefined): number => {
   }
   return value * Math.pow(1024, index);
 };
+
+/** Publish date and, when known, when the user last changed the dependency, one per line. */
+const dateTooltip = (
+  t: { tooltips: { published: string; userUpdate: string } },
+  dep: Pick<Dependency, 'lastPublishDate' | 'userUpdatedAt'>
+): string =>
+  [
+    dep.lastPublishDate && `${t.tooltips.published}: ${new Date(dep.lastPublishDate).toLocaleDateString('en-GB')}`,
+    dep.userUpdatedAt && `${t.tooltips.userUpdate}: ${new Date(dep.userUpdatedAt).toLocaleDateString('en-GB')}`,
+  ]
+    .filter(Boolean)
+    .join('\n');
 
 const formatDate = (
   t: {
@@ -284,12 +229,8 @@ export const DependencyTable = ({
   columnConfig,
   showAllPackages,
   nodeVersion,
-  nodeLatestVersion,
-  nodeUpdateAvailable,
   packageManager,
   packageManagerVersion,
-  packageManagerLatestVersion,
-  packageManagerUpdateAvailable,
   lastUpdate,
   onRollback,
   rollbackMessage,
@@ -509,16 +450,9 @@ export const DependencyTable = ({
               return a.name.localeCompare(b.name);
             }
             break;
-          case 'userUpdatedAt':
-            comparison = (a.userUpdatedAt || '').localeCompare(b.userUpdatedAt || '');
-            break;
           case 'lastPublishDate':
             comparison = (a.lastPublishDate || '').localeCompare(b.lastPublishDate || '');
             break;
-          default: {
-            const unexpected: never = sortColumn;
-            return unexpected;
-          }
         }
         return sortDirection === 'asc' ? comparison : -comparison;
       });
@@ -534,17 +468,9 @@ export const DependencyTable = ({
     // Filter by search text
     if (filter.trim()) {
       const filterLower = filter.toLowerCase();
-      const typeMatches = updateTypesMatchingQuery(filter, t.semver);
-      result = result.filter(d => {
-        const textMatch =
-          d.name.toLowerCase().includes(filterLower) || d.declaredVersion.toLowerCase().includes(filterLower);
-        const typeMatch =
-          typeMatches.length > 0 &&
-          d.updateAvailable &&
-          !!d.semverUpdateType &&
-          typeMatches.includes(d.semverUpdateType);
-        return textMatch || typeMatch;
-      });
+      result = result.filter(
+        d => d.name.toLowerCase().includes(filterLower) || d.declaredVersion.toLowerCase().includes(filterLower)
+      );
     }
 
     // Filter by update type (no chip selected = no filter)
@@ -560,7 +486,7 @@ export const DependencyTable = ({
       sortedAndFilteredDeps: sortDepsInternal(active),
       ignoredDeps: sortDepsInternal(ignored),
     };
-  }, [dependencies, sortColumn, sortDirection, filter, semverFilter, showAllPackages, t]);
+  }, [dependencies, sortColumn, sortDirection, filter, semverFilter, showAllPackages]);
 
   // Bulk actions only act on visible rows, so the counts must match them
   const updateCount = sortedAndFilteredDeps.filter(d => d.updateAvailable).length;
@@ -595,81 +521,51 @@ export const DependencyTable = ({
     5 + // Always visible: Checkbox, Package, Installed, Latest, Action
     (columnConfig.type ? 1 : 0) +
     (columnConfig.size ? 1 : 0) +
-    (columnConfig.semverUpdate ? 1 : 0);
-
-  const versionWhen = (value: string | undefined, meaning: string) =>
-    value ? (
-      <Tooltip text={`${meaning} (${new Date(value).toLocaleDateString('en-GB')})`}>
-        <span className="version-when">{formatDate(t, value)}</span>
-      </Tooltip>
-    ) : null;
+    (columnConfig.semverUpdate ? 1 : 0) +
+    (columnConfig.lastUpdate ? 1 : 0);
 
   return (
     <div className="dependency-table-container">
       <div className="toolbar">
         <div className="filters">
-          <div className="filter-line">
-            <input
-              type="text"
-              placeholder={t.placeholders.filterPackages}
-              value={filter}
-              onChange={e => setFilter(e.target.value)}
-              className="filter-input"
-            />
-            {semverChips.length > 0 && (
-              <div className="semver-filter" role="group" aria-label={t.semver.filterLabel}>
-                {semverChips.map(type => {
-                  const label = getSemverLabel(t, type);
-                  const active = semverFilter.has(type);
-                  return (
-                    <button
-                      key={type}
-                      type="button"
-                      className={`semver-chip semver-chip-${type} ${active ? 'active' : ''}`}
-                      aria-pressed={active}
-                      onClick={() => toggleSemverFilter(type)}
-                      title={interpolate(t.semver.filterTooltip, { type: label })}
-                    >
-                      {label} <span className="semver-chip-count">{semverCounts.get(type) ?? 0}</span>
-                    </button>
-                  );
-                })}
-              </div>
-            )}
-          </div>
+          <input
+            type="text"
+            placeholder={t.placeholders.filterPackages}
+            value={filter}
+            onChange={e => setFilter(e.target.value)}
+            className="filter-input"
+          />
+          {semverChips.length > 0 && (
+            <div className="semver-filter" role="group" aria-label={t.semver.filterLabel}>
+              {semverChips.map(type => {
+                const label = getSemverLabel(t, type);
+                const active = semverFilter.has(type);
+                return (
+                  <button
+                    key={type}
+                    type="button"
+                    className={`semver-chip semver-chip-${type} ${active ? 'active' : ''}`}
+                    aria-pressed={active}
+                    onClick={() => toggleSemverFilter(type)}
+                    title={interpolate(t.semver.filterTooltip, { type: label })}
+                  >
+                    {label} <span className="semver-chip-count">{semverCounts.get(type) ?? 0}</span>
+                  </button>
+                );
+              })}
+            </div>
+          )}
           {(nodeVersion || packageManager) && (
             <div className="env-info">
               {nodeVersion && (
-                <span
-                  className={`env-badge node-badge${nodeUpdateAvailable ? ' has-update' : ''}`}
-                  title={
-                    nodeUpdateAvailable && nodeLatestVersion
-                      ? interpolate(t.env.updateAvailable, { name: t.env.node, version: nodeLatestVersion })
-                      : `${t.env.node} v${nodeVersion}`
-                  }
-                >
-                  <span className="env-name">{t.env.node}</span>
-                  <span className="env-version">v{nodeVersion}</span>
-                  {nodeUpdateAvailable && nodeLatestVersion && <span className="env-update">↑ v{nodeLatestVersion}</span>}
+                <span className="env-badge node-badge" title={`Node.js v${nodeVersion}`}>
+                  ⬢ v{nodeVersion}
                 </span>
               )}
               {packageManager && (
-                <span
-                  className={`env-badge pm-badge pm-${packageManager}${packageManagerUpdateAvailable ? ' has-update' : ''}`}
-                  title={
-                    packageManagerUpdateAvailable && packageManagerLatestVersion
-                      ? interpolate(t.env.updateAvailable, {
-                          name: packageManager,
-                          version: packageManagerLatestVersion,
-                        })
-                      : `${packageManager}${packageManagerVersion ? ` v${packageManagerVersion}` : ''}`
-                  }
-                >
-                  <span className="env-name">{packageManager}</span>
-                  {packageManagerVersion && <span className="env-version">v{packageManagerVersion}</span>}
-                  {packageManagerUpdateAvailable && packageManagerLatestVersion && (
-                    <span className="env-update">↑ v{packageManagerLatestVersion}</span>
-                  )}
+                <span className={`env-badge pm-badge pm-${packageManager}`}>
+                  {packageManager}
+                  {packageManagerVersion && <span className="pm-version">v{packageManagerVersion}</span>}
                 </span>
               )}
             </div>
@@ -750,6 +646,12 @@ export const DependencyTable = ({
                   {t.columns.update} {getSortIndicator('semverUpdate')}
                 </th>
               )}
+              {columnConfig.lastUpdate && (
+                <th onClick={() => handleSort('lastPublishDate')} className="sortable date-col">
+                  {t.columns.lastUpdate} {getSortIndicator('lastPublishDate')}
+                </th>
+              )}
+
               <th className="action-col">{t.columns.action}</th>
             </tr>
           </thead>
@@ -786,7 +688,7 @@ export const DependencyTable = ({
                             rel="noopener noreferrer"
                             className="package-link"
                           >
-                            {renderPackageName(dep.name)}
+                            {dep.name}
                           </a>
                         </Tooltip>
                         {dep.isDeprecated && (
@@ -835,31 +737,23 @@ export const DependencyTable = ({
                       </td>
                     )}
                     <td className="version-cell">
-                      <div className="version-stack">
-                        <span className="version-line">
-                          <code title={dep.declaredVersion}>{dep.declaredVersion}</code>
-                          {dep.declaredVersion !== dep.installedVersion && (
-                            <Tooltip text={`${t.columns.installed}: ${dep.installedVersion}`}>
-                              <span className="version-mismatch-icon">*</span>
-                            </Tooltip>
-                          )}
-                        </span>
-                        {columnConfig.lastUpdate && versionWhen(dep.userUpdatedAt, t.tooltips.userLastUpdate)}
-                      </div>
+                      <code title={dep.declaredVersion}>{dep.declaredVersion}</code>
+                      {dep.declaredVersion !== dep.installedVersion && (
+                        <Tooltip text={`${t.columns.installed}: ${dep.installedVersion}`}>
+                          <span className="version-mismatch-icon">*</span>
+                        </Tooltip>
+                      )}
                     </td>
                     <td className="version-cell">
-                      <div className="version-stack">
-                        {dep.latestVersion ? (
-                          <code className={dep.updateAvailable ? 'latest-version' : ''}>{dep.latestVersion}</code>
-                        ) : dep.checkError ? (
-                          <Tooltip text={dep.checkError}>
-                            <span className="not-available">-</span>
-                          </Tooltip>
-                        ) : (
-                          <span className="checking">{t.states.checking}</span>
-                        )}
-                        {columnConfig.released && versionWhen(dep.lastPublishDate, t.tooltips.released)}
-                      </div>
+                      {dep.latestVersion ? (
+                        <code className={dep.updateAvailable ? 'latest-version' : ''}>{dep.latestVersion}</code>
+                      ) : dep.checkError ? (
+                        <Tooltip text={dep.checkError}>
+                          <span className="not-available">-</span>
+                        </Tooltip>
+                      ) : (
+                        <span className="checking">{t.states.checking}</span>
+                      )}
                     </td>
                     {columnConfig.size && (
                       <td className="size-cell">
@@ -877,74 +771,88 @@ export const DependencyTable = ({
                         )}
                       </td>
                     )}
+                    {columnConfig.lastUpdate && (
+                      <td className="date-cell">
+                        {dep.lastPublishDate ? (
+                          <Tooltip text={dateTooltip(t, dep)}>
+                            <span className="date-text">{formatDate(t, dep.lastPublishDate)}</span>
+                          </Tooltip>
+                        ) : dep.checkError ? (
+                          <Tooltip text={dep.checkError}>
+                            <span className="not-available">-</span>
+                          </Tooltip>
+                        ) : dep.latestVersion ? (
+                          <span className="not-available">—</span>
+                        ) : (
+                          <span className="checking">{t.states.checkingShort}</span>
+                        )}
+                      </td>
+                    )}
+
                     <td className="action-cell">
                       <div className="action-buttons">
-                        <div className="action-cluster">
-                          <div className="row-actions">
-                            {dep.repositoryUrl && (
-                              <Tooltip text={t.tooltips.viewChangelog}>
-                                <button
-                                  className="changelog-btn"
-                                  onClick={() => onOpenExternal?.(`${dep.repositoryUrl}/releases`)}
-                                  title={t.tooltips.viewChangelog}
-                                >
-                                  <i className="codicon codicon-book" />
-                                </button>
-                              </Tooltip>
-                            )}
-                            {onWhyInstalled && (
-                              <Tooltip text={t.whyInstalled.tooltip}>
-                                <button
-                                  className="why-btn"
-                                  onClick={e => {
-                                    e.stopPropagation();
-                                    onWhyInstalled(dep.name);
-                                  }}
-                                  disabled={isLoading}
-                                  title={t.whyInstalled.tooltip}
-                                >
-                                  <i className="codicon codicon-type-hierarchy" />
-                                </button>
-                              </Tooltip>
-                            )}
+                        {dep.updateAvailable && dep.latestVersion ? (
+                          <button
+                            className="update-btn"
+                            onClick={() => handleUpdate(dep)}
+                            disabled={isLoading}
+                          >
+                            {isLoading ? '...' : t.buttons.update}
+                          </button>
+                        ) : (
+                          <span className="up-to-date">
+                            <i className="codicon codicon-check" />
+                          </span>
+                        )}
+                        {dep.repositoryUrl && (
+                          <Tooltip text={t.tooltips.viewChangelog}>
                             <button
-                              className="uninstall-btn"
+                              className="changelog-btn"
+                              onClick={() => onOpenExternal?.(`${dep.repositoryUrl}/releases`)}
+                              title={t.tooltips.viewChangelog}
+                            >
+                              <i className="codicon codicon-book" />
+                            </button>
+                          </Tooltip>
+                        )}
+                        {onWhyInstalled && (
+                          <Tooltip text={t.whyInstalled.tooltip}>
+                            <button
+                              className="why-btn"
                               onClick={e => {
                                 e.stopPropagation();
-                                setConfirmUninstall(dep.name);
+                                onWhyInstalled(dep.name);
                               }}
                               disabled={isLoading}
-                              title={t.tooltips.uninstallPackage}
-                              type="button"
+                              title={t.whyInstalled.tooltip}
                             >
-                              <i className="codicon codicon-trash" />
+                              <i className="codicon codicon-type-hierarchy" />
                             </button>
-                            <button
-                              className="ignore-btn"
-                              onClick={e => {
-                                e.stopPropagation();
-                                setConfirmIgnore({ name: dep.name, isIgnored: false });
-                              }}
-                              disabled={isLoading}
-                              title={t.tooltips.ignorePackage}
-                            >
-                              <i className="codicon codicon-eye-closed" />
-                            </button>
-                          </div>
-                          {dep.updateAvailable && dep.latestVersion ? (
-                            <button
-                              className="update-btn"
-                              onClick={() => handleUpdate(dep)}
-                              disabled={isLoading}
-                            >
-                              {isLoading ? '...' : t.buttons.update}
-                            </button>
-                          ) : (
-                            <span className="up-to-date">
-                              <i className="codicon codicon-check" />
-                            </span>
-                          )}
-                        </div>
+                          </Tooltip>
+                        )}
+                        <button
+                          className="uninstall-btn"
+                          onClick={e => {
+                            e.stopPropagation();
+                            setConfirmUninstall(dep.name);
+                          }}
+                          disabled={isLoading}
+                          title={t.tooltips.uninstallPackage}
+                          type="button"
+                        >
+                          <i className="codicon codicon-trash" />
+                        </button>
+                        <button
+                          className="ignore-btn"
+                          onClick={e => {
+                            e.stopPropagation();
+                            setConfirmIgnore({ name: dep.name, isIgnored: false });
+                          }}
+                          disabled={isLoading}
+                          title={t.tooltips.ignorePackage}
+                        >
+                          <i className="codicon codicon-eye-closed" />
+                        </button>
                       </div>
                     </td>
                   </tr>
@@ -966,7 +874,7 @@ export const DependencyTable = ({
                           </td>
                           <td className="package-name">
                             <div className="package-info">
-                              <span className="package-link-disabled">{renderPackageName(dep.name)}</span>
+                              <span className="package-link-disabled">{dep.name}</span>
                             </div>
                           </td>
                           {columnConfig.type && (
@@ -977,24 +885,18 @@ export const DependencyTable = ({
                             </td>
                           )}
                           <td className="version-cell">
-                            <div className="version-stack">
-                              <code title={dep.declaredVersion}>{dep.declaredVersion}</code>
-                              {columnConfig.lastUpdate && versionWhen(dep.userUpdatedAt, t.tooltips.userLastUpdate)}
-                            </div>
+                            <code title={dep.declaredVersion}>{dep.declaredVersion}</code>
                           </td>
                           <td className="version-cell">
-                            <div className="version-stack">
-                              {dep.latestVersion ? (
-                                <code>{dep.latestVersion}</code>
-                              ) : dep.checkError ? (
-                                <Tooltip text={dep.checkError}>
-                                  <span className="not-available">-</span>
-                                </Tooltip>
-                              ) : (
-                                <span className="checking">{t.states.checkingShort}</span>
-                              )}
-                              {columnConfig.released && versionWhen(dep.lastPublishDate, t.tooltips.released)}
-                            </div>
+                            {dep.latestVersion ? (
+                              <code>{dep.latestVersion}</code>
+                            ) : dep.checkError ? (
+                              <Tooltip text={dep.checkError}>
+                                <span className="not-available">-</span>
+                              </Tooltip>
+                            ) : (
+                              <span className="checking">{t.states.checkingShort}</span>
+                            )}
                           </td>
                           {columnConfig.size && (
                             <td className="size-cell">
@@ -1002,6 +904,23 @@ export const DependencyTable = ({
                             </td>
                           )}
                           {columnConfig.semverUpdate && <td className="update-type-cell" />}
+                          {columnConfig.lastUpdate && (
+                            <td className="date-cell">
+                              {dep.lastPublishDate ? (
+                                <Tooltip text={dateTooltip(t, dep)}>
+                                  <span className="date-text">{formatDate(t, dep.lastPublishDate)}</span>
+                                </Tooltip>
+                              ) : dep.checkError ? (
+                                <Tooltip text={dep.checkError}>
+                                  <span className="not-available">-</span>
+                                </Tooltip>
+                              ) : dep.latestVersion ? (
+                                <span className="not-available">—</span>
+                              ) : (
+                                <span className="checking">{t.states.checkingShort}</span>
+                              )}
+                            </td>
+                          )}
                           <td className="action-cell">
                             <div className="action-buttons">
                               <Tooltip text={t.tooltips.unignorePackage}>
